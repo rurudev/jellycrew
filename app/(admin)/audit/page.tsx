@@ -107,8 +107,8 @@ export default async function AuditPage(props: PageProps<"/audit">) {
             </option>
           ))}
         </NativeSelect>
-        <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" />
-        <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" />
+        <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" className="w-auto" />
+        <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" className="w-auto" />
         <Button type="submit" variant="outline">
           Filter
         </Button>

@@ -89,7 +89,7 @@ export function BulkForm({
               ))}
             </NativeSelect>
           ) : null}
-          {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} aria-label="Expiry date" required /> : null}
+          {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} aria-label="Expiry date" className="w-auto" required /> : null}
           {param === "days" ? <Input type="number" name="days" min={1} defaultValue={state.days ?? 30} className="w-24" aria-label="Days" required /> : null}
           {param === "label" ? <Input name="label" defaultValue={state.label ?? ""} placeholder="label" className="w-40" aria-label="Label" required maxLength={50} /> : null}
           <Button type="submit" variant="outline" disabled={pending}>

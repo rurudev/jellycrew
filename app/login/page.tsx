@@ -22,12 +22,12 @@ export default async function LoginPage(props: PageProps<"/login">) {
       <div className="w-full max-w-sm space-y-6">
         <div>
           <h1 className="text-xl font-semibold">jellycrew</h1>
-          <p className="text-zinc-500">
+          <p className="text-muted-foreground">
             Sign in with a Jellyfin administrator account
             {status.serverName ? (
               <>
                 {" "}
-                for <span className="font-medium text-zinc-700 dark:text-zinc-300">{status.serverName}</span>
+                for <span className="font-medium text-foreground">{status.serverName}</span>
               </>
             ) : null}
             .

@@ -13,7 +13,7 @@ import { SessionsTable } from "@/components/sessions/sessions-table";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -69,9 +69,9 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
         }
         actions={
           <>
-            <Button variant="outline" nativeButton={false} render={<Link href={`/users/${id}/policy`} />}>
+            <Link href={`/users/${id}/policy`} className={buttonVariants({ variant: "outline" })}>
               Edit access
-            </Button>
+            </Link>
             <form action={setEnabledAction}>
               <input type="hidden" name="userId" value={id} />
               <input type="hidden" name="enabled" value={row.isDisabled ? "1" : "0"} />
@@ -169,9 +169,9 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
       <Section
         title="Access"
         actions={
-          <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/users/${id}/policy`} />}>
+          <Link href={`/users/${id}/policy`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             Edit
-          </Button>
+          </Link>
         }
       >
         <PolicyView policy={policy} refData={ref} />

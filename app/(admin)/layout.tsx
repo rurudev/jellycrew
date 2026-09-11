@@ -21,19 +21,19 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
   const [status, theme] = await Promise.all([getServerStatus(), getTheme()]);
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-2">
           <Link href="/" className="font-semibold">
             jellycrew
           </Link>
-          <nav className="flex gap-4 text-zinc-600 dark:text-zinc-300">
+          <nav className="flex gap-4 text-muted-foreground">
             {nav.map((n) => (
-              <Link key={n.href} href={n.href} className="hover:text-zinc-900 dark:hover:text-white">
+              <Link key={n.href} href={n.href} className="hover:text-foreground">
                 {n.label}
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-3 text-xs text-zinc-500">
+          <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
             <span title={status.reachable ? `Jellyfin ${status.version}` : status.error}>
               {status.serverName ?? "Jellyfin"} {status.version ? `· ${status.version}` : "· unreachable"}
             </span>

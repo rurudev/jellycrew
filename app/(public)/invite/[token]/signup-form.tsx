@@ -71,16 +71,16 @@ export function SignupForm({ token, requireEmail, minPasswordLength }: { token: 
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
       <FormField id="username" label="Username">
-        <Input name="username" className="h-11 text-lg" required maxLength={64} autoComplete="username" autoFocus />
+        <Input name="username" size="lg" required maxLength={64} autoComplete="username" autoFocus />
       </FormField>
       <FormField id="password" label="Password" help={`At least ${minPasswordLength} characters.`}>
-        <Input name="password" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
       </FormField>
       <FormField id="passwordConfirm" label="Repeat password">
-        <Input name="passwordConfirm" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
       </FormField>
       <FormField id="email" label={requireEmail ? "Email" : "Email (optional)"} help="Used only for password resets after you verify it.">
-        <Input name="email" className="h-11 text-lg" type="email" required={requireEmail} autoComplete="email" />
+        <Input name="email" size="lg" type="email" required={requireEmail} autoComplete="email" />
       </FormField>
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Creating account…" : "Create account"}

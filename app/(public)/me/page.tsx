@@ -61,13 +61,13 @@ export default async function MePage(props: PageProps<"/me">) {
       <Section title="Password">
         <form action={changePasswordAction} className="grid gap-3 sm:grid-cols-3">
           <FormField id="currentPassword" label="Current password">
-            <Input name="currentPassword" className="h-11 text-lg" type="password" required autoComplete="current-password" />
+            <Input name="currentPassword" size="lg" type="password" required autoComplete="current-password" />
           </FormField>
           <FormField id="newPassword" label="New password">
-            <Input name="newPassword" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+            <Input name="newPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
           </FormField>
           <FormField id="confirmPassword" label="Repeat new password">
-            <Input name="confirmPassword" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+            <Input name="confirmPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
           </FormField>
           <div className="space-y-1 sm:col-span-3">
             <SubmitButton variant="outline" size="lg" pendingLabel="Changing…">
@@ -92,7 +92,7 @@ export default async function MePage(props: PageProps<"/me">) {
           <div className="space-y-3">
             <form action={setEmailAction} className="flex flex-wrap items-end gap-2">
               <FormField id="email" label={overview.email ? "Change email address" : "Add email address"} className="min-w-64">
-                <Input name="email" className="h-11 text-lg" type="email" required autoComplete="email" />
+                <Input name="email" size="lg" type="email" required autoComplete="email" />
               </FormField>
               <SubmitButton variant="outline" size="lg" pendingLabel="Sending…">
                 Send verification link

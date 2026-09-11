@@ -35,10 +35,10 @@ export function SelfLoginForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
       <FormField id="username" label="Jellyfin username">
-        <Input name="username" className="h-11 text-lg" required autoComplete="username" autoFocus />
+        <Input name="username" size="lg" required autoComplete="username" autoFocus />
       </FormField>
       <FormField id="password" label="Password">
-        <Input name="password" className="h-11 text-lg" type="password" required autoComplete="current-password" />
+        <Input name="password" size="lg" type="password" required autoComplete="current-password" />
       </FormField>
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Signing in…" : "Sign in"}

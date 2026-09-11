@@ -28,7 +28,7 @@ export function ResetRequestForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       {message ? <Alert tone={message.tone}>{message.text}</Alert> : null}
       <FormField id="identifier" label="Username or email address">
-        <Input name="identifier" className="h-11 text-lg" required maxLength={200} autoComplete="username" autoFocus />
+        <Input name="identifier" size="lg" required maxLength={200} autoComplete="username" autoFocus />
       </FormField>
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Sending…" : "Send reset link"}

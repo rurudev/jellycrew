@@ -50,10 +50,10 @@ export function ResetForm({ token, minPasswordLength }: { token: string; minPass
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
       <FormField id="password" label="New password" help={`At least ${minPasswordLength} characters.`}>
-        <Input name="password" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
+        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
       </FormField>
       <FormField id="passwordConfirm" label="Repeat new password">
-        <Input name="passwordConfirm" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
       </FormField>
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Saving…" : "Set new password"}

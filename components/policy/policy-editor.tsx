@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -240,9 +240,9 @@ export function PolicyEditor({
         <Button type="submit" variant="outline" disabled={pending}>
           {pending ? "Working…" : "Preview changes"}
         </Button>
-        <Button nativeButton={false} render={<Link href={cancelHref} />} variant="ghost">
+        <Link href={cancelHref} className={buttonVariants({ variant: "ghost" })}>
           Cancel
-        </Button>
+        </Link>
       </div>
     </form>
   );
