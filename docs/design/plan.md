@@ -10,7 +10,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done, merged 2026-09-11 (rebased onto shadcn) |
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done, merged 2026-09-11 |
-| 5 | Console shell (header, nav, status) | `design/shell` | planned |
+| 5 | Console shell (header, nav, status) | `design/shell` | done (2026-09-11, on branch) |
 | 6 | Users list | `design/users-list` | planned |
 | 7 | User detail layout | `design/user-detail-layout` | planned |
 | 8 | User actions menu and dialogs | `design/user-actions` | planned |
@@ -110,7 +110,7 @@ Update the State column (planned → in progress → done, with the merge commit
 
 ### 5. Console shell — `design/shell`
 
-**Files.** `app/(admin)/layout.tsx`, new `components/shell/nav-link.tsx` (client, `usePathname` → `aria-current`), `components/shell/server-status.tsx`, `components/shell/skip-link.tsx`.
+**Files.** `app/(admin)/layout.tsx`, new `components/shell/nav-link.tsx` (client, `usePathname` → `aria-current`), `components/shell/server-status.tsx` (moved from `app/(admin)`, adds the dot item), `components/shell/skip-link.tsx`; the theme toggle hides its label below `sm`.
 
 **What changes.** Wordmark, six links with `aria-current` and accent underline, status dot with server name and version (tooltip carries the error when unreachable), theme toggle, user name, sign-out as ghost; links become a horizontally scrolling row under 768 px and the status collapses to the dot; skip link to `main`; the version-mismatch and unreachable alerts keep their place under the header. 24 px gutters, 1280 px content width.
 

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { Callout } from "@/components/ui/callout";
 import { getServerStatus } from "@/lib/services/system";
+import { cn } from "@/lib/utils";
 
 /**
  * One Jellyfin status probe per request, shared by the header item and the alerts below it.
@@ -8,13 +9,25 @@ import { getServerStatus } from "@/lib/services/system";
  */
 const status = cache(() => getServerStatus());
 
+/** The dot is always visible; the name and version only from md up. */
 export async function ServerStatusItem() {
   const s = await status();
+  const name = s.serverName ?? "Jellyfin";
+  const tone = !s.reachable ? "bg-destructive" : s.compatible ? "bg-success" : "bg-warning";
+  const detail = !s.reachable ? s.error : s.compatible ? `Jellyfin ${s.version}` : `Jellyfin ${s.version}; tested against ${s.targetVersion}`;
   return (
-    <span title={s.reachable ? `Jellyfin ${s.version}` : s.error}>
-      {s.serverName ?? "Jellyfin"} {s.version ? `· ${s.version}` : "· unreachable"}
+    <span className="flex items-center gap-1.5" title={detail}>
+      <span aria-hidden className={cn("size-2 shrink-0 rounded-full", tone)} />
+      <span className="hidden md:inline">
+        {name} · {s.reachable ? s.version : "unreachable"}
+      </span>
+      <span className="sr-only">{s.reachable ? `${name} reachable` : `${name} unreachable`}</span>
     </span>
   );
+}
+
+export function ServerStatusFallback() {
+  return <span aria-hidden className="size-2 shrink-0 rounded-full bg-muted-foreground/40" />;
 }
 
 export async function ServerStatusAlerts() {

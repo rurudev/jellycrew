@@ -35,7 +35,7 @@ export function ThemeToggle({ theme }: { theme: Theme | null }) {
       title={`Switch to ${themeLabel(next).toLowerCase()} theme`}
     >
       <Icon data-icon="inline-start" />
-      {themeLabel(shown)}
+      <span className="hidden sm:inline">{themeLabel(shown)}</span>
     </Button>
   );
 }
