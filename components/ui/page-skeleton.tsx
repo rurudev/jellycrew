@@ -64,11 +64,18 @@ export function DetailSkeleton() {
           <Skeleton className="h-8 w-20" />
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SectionSkeleton lines={5} />
-        <SectionSkeleton lines={7} />
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-4">
+          <SectionSkeleton lines={6} />
+          <SectionSkeleton lines={3} />
+          <SectionSkeleton lines={3} />
+        </div>
+        <div className="space-y-4">
+          <SectionSkeleton lines={3} />
+          <SectionSkeleton lines={7} />
+          <SectionSkeleton lines={5} />
+        </div>
       </div>
-      <SectionSkeleton lines={10} />
     </div>
   );
 }

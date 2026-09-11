@@ -21,8 +21,12 @@ export function PlayMethodBadge({ s }: { s: SessionView }) {
   );
 }
 
-export function SessionsTable({ sessions, showUser = true, returnTo, variant = "card" }: { sessions: SessionView[]; showUser?: boolean; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
-  const cols = showUser ? 7 : 6;
+export type SessionColumn = "user" | "client" | "device" | "nowPlaying" | "method" | "lastActivity" | "actions";
+export const SESSION_COLUMNS: readonly SessionColumn[] = ["user", "client", "device", "nowPlaying", "method", "lastActivity", "actions"];
+
+export function SessionsTable({ sessions, columns = SESSION_COLUMNS, returnTo, variant = "card" }: { sessions: SessionView[]; /** Which columns to show; a user's own page leaves out `user`. */ columns?: readonly SessionColumn[]; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
+  const showUser = columns.includes("user");
+  const cols = columns.length;
   return (
     <Table variant={variant}>
       <TableHeader>

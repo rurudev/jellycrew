@@ -1,4 +1,4 @@
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
 import { POLICY_GROUPS, fieldsInGroup, type PolicyFieldDef } from "@/lib/policy/fields";
 import type { ReferenceData } from "@/lib/services/reference";
 
@@ -74,8 +74,34 @@ export function PolicyValue({ field, value, refData }: { field: PolicyFieldDef; 
   }
 }
 
+/**
+ * One label/value row. The raw field name is hidden while an ancestor carries `data-keys="off"`
+ * (the access section's "Show field names" toggle); elsewhere it is always shown.
+ */
+export function PolicyRow({ field, value, refData, drift = false }: { field: PolicyFieldDef; value: unknown; refData: ReferenceData; /** Differs from the assigned profile. */ drift?: boolean }) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] gap-2 py-1.5">
+      <dt>
+        <span className="inline-flex items-center gap-1.5">
+          {field.label}
+          {drift ? (
+            <span title="Differs from the assigned profile" className="inline-flex">
+              <StatusDot tone="warning" />
+              <span className="sr-only">differs from the assigned profile</span>
+            </span>
+          ) : null}
+        </span>
+        <code className="block text-xs text-muted-foreground [[data-keys=off]_&]:hidden">{field.key}</code>
+      </dt>
+      <dd className="text-right">
+        <PolicyValue field={field} value={value} refData={refData} />
+      </dd>
+    </div>
+  );
+}
+
 /** Read-only grouped rendering of a full UserPolicy, plus any keys the catalog does not know. */
-export function PolicyView({ policy, refData }: { policy: Record<string, unknown>; refData: ReferenceData }) {
+export function PolicyView({ policy, refData, drift }: { policy: Record<string, unknown>; refData: ReferenceData; /** Keys that differ from the assigned profile. */ drift?: ReadonlySet<string> }) {
   const known = new Set<string>();
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -88,15 +114,7 @@ export function PolicyView({ policy, refData }: { policy: Record<string, unknown
             <p className="mb-2 text-xs text-muted-foreground">{g.description}</p>
             <dl className="divide-y divide-border">
               {fields.map((f) => (
-                <div key={f.key} className="grid grid-cols-[1fr_1fr] gap-2 py-1.5">
-                  <dt>
-                    <div>{f.label}</div>
-                    <code className="text-xs text-muted-foreground">{f.key}</code>
-                  </dt>
-                  <dd className="text-right">
-                    <PolicyValue field={f} value={policy[f.key]} refData={refData} />
-                  </dd>
-                </div>
+                <PolicyRow key={f.key} field={f} value={policy[f.key]} refData={refData} drift={drift?.has(f.key)} />
               ))}
             </dl>
           </section>

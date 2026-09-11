@@ -1,7 +1,8 @@
 import { POLICY_FIELD_BY_KEY } from "@/lib/policy/fields";
 import type { FieldChange } from "@/lib/policy/diff";
 
-function show(v: unknown): string {
+/** Plain-text rendering of a policy value, for diffs and compact lists. */
+export function showPolicyValue(v: unknown): string {
   if (v === null || v === undefined) return "—";
   if (typeof v === "boolean") return v ? "Yes" : "No";
   if (Array.isArray(v)) return v.length ? v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ") : "none";
@@ -30,8 +31,8 @@ export function DiffTable({ changes, beforeLabel = "Before", afterLabel = "After
                 <div>{def?.label ?? c.key}</div>
                 <code className="text-xs text-muted-foreground">{c.key}</code>
               </td>
-              <td className="py-1 pr-2 break-all text-destructive">{show(c.before)}</td>
-              <td className="py-1 break-all text-success">{show(c.after)}</td>
+              <td className="py-1 pr-2 break-all text-destructive">{showPolicyValue(c.before)}</td>
+              <td className="py-1 break-all text-success">{showPolicyValue(c.after)}</td>
             </tr>
           );
         })}

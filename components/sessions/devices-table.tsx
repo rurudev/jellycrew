@@ -6,7 +6,11 @@ import { Timestamp } from "@/components/ui/timestamp";
 import type { DeviceView } from "@/lib/services/devices";
 import { revokeDeviceAction } from "@/app/(admin)/sessions/actions";
 
-export function DevicesTable({ devices, showUser = true, returnTo, variant = "card" }: { devices: DeviceView[]; showUser?: boolean; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
+export type DeviceColumn = "device" | "app" | "lastUser" | "lastUsed" | "actions";
+export const DEVICE_COLUMNS: readonly DeviceColumn[] = ["device", "app", "lastUser", "lastUsed", "actions"];
+
+export function DevicesTable({ devices, columns = DEVICE_COLUMNS, returnTo, variant = "card" }: { devices: DeviceView[]; /** Which columns to show; a user's own page leaves out `lastUser`. */ columns?: readonly DeviceColumn[]; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
+  const showUser = columns.includes("lastUser");
   return (
     <Table variant={variant}>
       <TableHeader>
