@@ -1,0 +1,38 @@
+import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { getDb } from "@/lib/db";
+import { setting } from "@/lib/db/schema";
+
+/** Every persisted setting, with its validation and default. */
+export const SettingSchemas = {
+  deviceId: z.string().min(8),
+} as const;
+
+export type SettingKey = keyof typeof SettingSchemas;
+export type SettingValue<K extends SettingKey> = z.infer<(typeof SettingSchemas)[K]>;
+
+export function getSetting<K extends SettingKey>(key: K): SettingValue<K> | undefined {
+  const row = getDb().select().from(setting).where(eq(setting.key, key)).get();
+  if (!row) return undefined;
+  const parsed = SettingSchemas[key].safeParse(row.value);
+  return parsed.success ? (parsed.data as SettingValue<K>) : undefined;
+}
+
+export function setSetting<K extends SettingKey>(key: K, value: SettingValue<K>): void {
+  const parsed = SettingSchemas[key].parse(value);
+  getDb()
+    .insert(setting)
+    .values({ key, value: parsed })
+    .onConflictDoUpdate({ target: setting.key, set: { value: parsed } })
+    .run();
+}
+
+/** The stable DeviceId sent in every Jellyfin auth header. Generated once per installation. */
+export function ensureDeviceId(): string {
+  const existing = getSetting("deviceId");
+  if (existing) return existing;
+  const id = randomUUID().replace(/-/g, "");
+  setSetting("deviceId", id);
+  return id;
+}
