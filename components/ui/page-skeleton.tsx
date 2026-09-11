@@ -105,6 +105,34 @@ export function UserDetailSkeleton() {
   );
 }
 
+/** The policy editor: a jump list beside a column of grouped field cards. */
+export function EditorSkeleton() {
+  return (
+    <div className="space-y-4" role="status" aria-label="Loading">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-5 w-56" />
+      </div>
+      <div className="grid items-start gap-4 lg:grid-cols-[12rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)]">
+        <div className="hidden space-y-2 lg:block">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Skeleton key={i} className="h-6" style={{ width: `${60 + ((i * 13) % 35)}%` }} />
+          ))}
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-8 w-56" />
+          </div>
+          <SectionSkeleton lines={4} />
+          <SectionSkeleton lines={6} />
+          <SectionSkeleton lines={5} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FormSkeleton() {
   return (
     <div className="space-y-4" role="status" aria-label="Loading">

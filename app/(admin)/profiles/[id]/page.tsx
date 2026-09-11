@@ -117,15 +117,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
       </div>
 
       <Section title="Policy" description="Only profile-managed fields. Saving changes the profile; members drift until the profile is applied.">
-        <PolicyEditor
-          action={saveProfilePolicyAction}
-          policy={profile.policy}
-          hash={policyHash(profile.policy)}
-          refData={toEditorRefData(ref)}
-          scope="profile"
-          hidden={{ profileId: id }}
-          cancelHref="/profiles"
-        />
+        <PolicyEditor action={saveProfilePolicyAction} policy={profile.policy} hash={policyHash(profile.policy)} refData={toEditorRefData(ref)} target={{ kind: "profile", id }} />
       </Section>
 
       <Section title="Danger zone">

@@ -20,17 +20,9 @@ export default async function UserPolicyPage(props: PageProps<"/users/[id]/polic
       <PageHeader
         breadcrumb={[{ label: "Users", href: "/users" }, { label: detail.row.name, href: `/users/${id}` }, { label: "Edit access" }]}
         title={`Edit access for ${detail.row.name}`}
-        description="Changes are previewed as a diff before they are written. If the policy changes on the server while you edit, the save is refused and you can reapply your edits."
+        description="Every change is shown as a diff before it is written. If someone else edits this policy while you work, the save is refused and your edits are reapplied to the current one."
       />
-      <PolicyEditor
-        action={saveUserPolicyAction}
-        policy={detail.policy}
-        hash={policyHash(detail.policy)}
-        refData={toEditorRefData(ref)}
-        scope="all"
-        hidden={{ userId: id }}
-        cancelHref={`/users/${id}`}
-      />
+      <PolicyEditor action={saveUserPolicyAction} policy={detail.policy} hash={policyHash(detail.policy)} refData={toEditorRefData(ref)} target={{ kind: "user", id }} />
     </div>
   );
 }
