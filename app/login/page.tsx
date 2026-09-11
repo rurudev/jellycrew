@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/session";
 import { getServerStatus } from "@/lib/services/system";
 import { Alert } from "@/components/ui/alert";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getTheme } from "@/lib/theme-server";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
@@ -11,9 +13,12 @@ export default async function LoginPage(props: PageProps<"/login">) {
   if (session) redirect("/");
   const search = await props.searchParams;
   const next = typeof search.next === "string" ? search.next : undefined;
-  const status = await getServerStatus();
+  const [status, theme] = await Promise.all([getServerStatus(), getTheme()]);
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <main className="relative flex flex-1 items-center justify-center p-6">
+      <div className="absolute top-3 right-3">
+        <ThemeToggle theme={theme} />
+      </div>
       <div className="w-full max-w-sm space-y-6">
         <div>
           <h1 className="text-xl font-semibold">jellycrew</h1>

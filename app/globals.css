@@ -7,7 +7,7 @@
     :root                 dark
     [data-theme="light"]  light
     no attribute          follows prefers-color-scheme
-  Every text/background pair is asserted in lib/ui/contrast.test.ts.
+  Contrast of text, soft fills and control borders is asserted in lib/ui/contrast.test.ts.
 */
 :root {
   color-scheme: dark;
@@ -16,7 +16,7 @@
   --surface: light-dark(#ffffff, #14161a);
   --surface-2: light-dark(#f1f2f5, #1b1e24);
   --edge: light-dark(#e2e4e9, #272b33);
-  --edge-strong: light-dark(#c9cdd5, #3a404a);
+  --edge-strong: light-dark(#868d98, #626977);
 
   --fg: light-dark(#15171c, #e8eaed);
   --fg-muted: light-dark(#4f5663, #9aa2ad);
@@ -97,10 +97,7 @@
   --text-2xl: 1.625rem;
   --text-2xl--line-height: 2rem;
 
-  /* Shape: 4 badges and chips, 6 controls, 8 sections and dialogs. */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  /* Shape uses Tailwind's defaults unchanged: rounded-sm 4 px (badges, chips), rounded-md 6 px (controls), rounded-lg 8 px (sections, dialogs). */
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }

@@ -44,14 +44,14 @@ Update the State column (planned → in progress → done, with the merge commit
 
 ### 1. Foundation — `design/foundation`
 
-**Files.** `app/globals.css`, `app/layout.tsx`, new `lib/theme.ts` and `lib/theme.test.ts`, new `lib/ui/contrast.test.ts`, new `components/ui/theme-toggle.tsx` (client), new `app/theme-actions.ts` (server action that sets the cookie), one-line insertions of the toggle in `app/(admin)/layout.tsx` and `app/(public)/layout.tsx`, `DECISIONS.md`.
+**Files.** `app/globals.css`, `app/layout.tsx`, new `lib/theme.ts` and `lib/theme.test.ts`, new `lib/theme-server.ts`, new `lib/ui/contrast.test.ts`, new `components/ui/theme-toggle.tsx` (client), one-line insertions of the toggle in `app/(admin)/layout.tsx`, `app/(public)/layout.tsx` and `app/login/page.tsx`, `DECISIONS.md`.
 
 **What changes.**
 - Replace the two existing tokens with the full set from direction §2.1–2.4 as CSS variables, written once with `light-dark()` and switched by `color-scheme`: `:root` is dark, `[data-theme="light"]` is light, and `:root:not([data-theme])` follows `prefers-color-scheme`. Names: `--color-canvas` (page), `--color-surface`, `--color-surface-2`, `--color-edge`, `--color-edge-strong`, `--color-fg`, `--color-fg-muted`, `--color-fg-subtle`, `--color-accent`, `--color-accent-fg`, `--color-accent-soft`, `--color-ok`/`-soft`, `--color-warn`/`-soft`, `--color-danger`/`-soft`; `--radius-*`; `--ease-standard`; `--duration-fast|base|slow`. Exposed through `@theme inline` so utilities read as meaning (`bg-surface`, `text-fg-muted`, `border-edge`, `ring-accent`).
 - Redefine Tailwind's `--text-*` scale to the direction's seven steps with paired line heights, so existing `text-sm` becomes 13/18 without touching call sites; `font-variant-numeric: tabular-nums` on `body`.
 - Global `:focus-visible` outline (2 px accent, 2 px offset), `::selection`, `prefers-reduced-motion` rule per direction §2.4.
 - `@custom-variant dark` bound to `[data-theme="dark"]` and to `prefers-color-scheme` when no attribute is set, so the 70 existing `dark:` classes follow the toggle during the migration. Removed in package 16.
-- Root layout reads the `jellycrew_theme` cookie (validated by `lib/theme.ts`) and sets `data-theme` on `<html>`. `ThemeToggle` cycles system → light → dark through the server action, then `router.refresh()`.
+- Root layout reads the `jellycrew_theme` cookie (validated by `lib/theme.ts`) and sets `data-theme` on `<html>`. `ThemeToggle` cycles system → light → dark by writing the cookie from the browser and switching the attribute in place (no server action: it would re-render every layout per click). The toggle is also mounted on `/login`, which sits outside both route groups.
 
 **Verified by.** `lib/ui/contrast.test.ts` parses `globals.css` and asserts WCAG ratios for every text/background pair in both themes (fg ≥ 7:1, fg-muted ≥ 5.5:1, fg-subtle ≥ 4.5:1, accent-fg on accent ≥ 4.5:1, semantic tones on every surface ≥ 4.5:1). `lib/theme.test.ts` covers cookie parsing. Lint, typecheck, unit. Playwright: `/login` and `/users` in system, light and dark; reload keeps the theme with no flash; existing `dark:` styling follows the toggle.
 

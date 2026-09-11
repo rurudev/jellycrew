@@ -23,17 +23,17 @@ Neutral ramp with a faint cool cast, one accent, four semantic tones. Everything
 | `--surface` | `#14161a` | `#ffffff` | tables, sections, dialogs |
 | `--surface-2` | `#1b1e24` | `#f1f2f5` | inputs, hover rows, alternate fills |
 | `--edge` | `#272b33` | `#e2e4e9` | hairlines |
-| `--edge-strong` | `#3a404a` | `#c9cdd5` | focused borders, dividers that must be seen |
+| `--edge-strong` | `#626977` | `#868d98` | control borders and dividers that must be seen (≥ 3:1 on canvas and surface) |
 | `--fg` | `#e8eaed` | `#15171c` | primary text |
-| `--fg-muted` | `#9aa2ad` | `#5c6370` | secondary text, labels (≥ 6:1) |
-| `--fg-subtle` | `#7e8794` | `#727b89` | tertiary text, only where it is still information (≥ 4.5:1) |
+| `--fg-muted` | `#9aa2ad` | `#4f5663` | secondary text, labels (≥ 5.5:1 on every surface) |
+| `--fg-subtle` | `#7e8794` | `#5d6572` | tertiary text, only where it is still information (≥ 4.5:1 on every surface) |
 | `--accent` | `#9d97ff` | `#5b4fe0` | links, primary buttons, focus ring, selected, active nav |
 | `--accent-fg` | `#0c0d10` | `#ffffff` | text on accent |
 | `--accent-soft` | `rgb(157 151 255 / .14)` | `rgb(91 79 224 / .10)` | selected rows, info chips |
-| `--ok`, `--warn`, `--danger` | `#4ade80`, `#fbbf24`, `#f87171` | `#15803d`, `#b45309`, `#b91c1c` | status text and dots |
+| `--ok`, `--warn`, `--danger` | `#4ade80`, `#fbbf24`, `#f87171` | `#11703a`, `#9a4707`, `#b91c1c` | status text and dots |
 | `--ok-soft`, `--warn-soft`, `--danger-soft` | 14 % alpha of the above | 10 % alpha | badge and alert fills |
 
-Rules: colour means something or it is neutral. Status uses the semantic tones; labels are neutral chips; "admin" and "hidden" are muted mono tags, not purple badges. The accent appears in at most three places per screen (primary action, focus, current-nav). The zinc-400-style "subtle" grey is retired from informational text. Contrast of every token pair is verified in the foundation package and recorded in the token file as comments.
+Rules: colour means something or it is neutral. Status uses the semantic tones; labels are neutral chips; "admin" and "hidden" are muted mono tags, not purple badges. The accent appears in at most three places per screen (primary action, focus, current-nav). The zinc-400-style "subtle" grey is retired from informational text. Contrast of every token pair is enforced by `lib/ui/contrast.test.ts`, which reads the values out of `globals.css`; the table above shows the shipped values.
 
 ### 2.2 Typography
 
@@ -69,7 +69,7 @@ Motion only where it explains a state change, never as decoration.
 
 ### 2.5 Dark and light
 
-Dark is the default and the design target; light is a first-class mirror, not an inversion. A `data-theme` attribute on `<html>` with values `dark`, `light` or absent (follow system) is set from a `jellycrew_theme` cookie read in the root layout, so the server renders the right theme without a flash. A toggle in the console header cycles system → light → dark. The guest surface follows the same cookie and otherwise the OS.
+Dark is the default and the design target; light is a first-class mirror, not an inversion. A `data-theme` attribute on `<html>` with values `dark`, `light` or absent (follow system) is set from a `jellycrew_theme` cookie read in the root layout, so the server renders the right theme without a flash. The toggle in the console header cycles system → light → dark and writes the cookie from the browser itself, so switching is instant and never re-renders the page. The guest surface follows the same cookie and otherwise the OS.
 
 ### 2.6 Keyboard
 
