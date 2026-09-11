@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listProfilesWithCounts } from "@/lib/services/profiles";
 import { listUsers } from "@/lib/services/users";
 import { Notice } from "@/components/notice";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { createProfileAction } from "./actions";
 
 export const metadata = { title: "Profiles" };
@@ -25,33 +26,33 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
       <PageHeader title="Profiles" count={profiles.length} />
       <Notice params={params} />
       <Table>
-        <thead>
-          <tr>
-            <Th>Name</Th>
-            <Th>Description</Th>
-            <Th className="text-right">Members</Th>
-            <Th className="text-right">Drifting</Th>
-            <Th>Default expiry</Th>
-            <Th>Inactivity</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {profiles.length === 0 ? <EmptyRow colSpan={6}>No profiles yet. Create one below.</EmptyRow> : null}
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead className="text-right">Members</TableHead>
+            <TableHead className="text-right">Drifting</TableHead>
+            <TableHead>Default expiry</TableHead>
+            <TableHead>Inactivity</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {profiles.length === 0 ? <EmptyState.Row colSpan={6} title="No profiles yet" description="A profile is a reusable set of library, playback and parental settings. Create one below." /> : null}
           {profiles.map((p) => (
-            <tr key={p.id}>
-              <Td>
+            <TableRow key={p.id}>
+              <TableCell>
                 <Link href={`/profiles/${p.id}`} className="font-medium">
                   {p.name}
                 </Link>
-              </Td>
-              <Td className="text-muted-foreground">{p.description}</Td>
-              <Td className="text-right tabular-nums">{p.memberCount}</Td>
-              <Td className="text-right tabular-nums">{p.driftCount ? <Badge tone="amber">{p.driftCount}</Badge> : 0}</Td>
-              <Td>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-muted-foreground">none</span>}</Td>
-              <Td>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-muted-foreground">never</span>}</Td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-muted-foreground">{p.description}</TableCell>
+              <TableCell className="text-right tabular-nums">{p.memberCount}</TableCell>
+              <TableCell className="text-right tabular-nums">{p.driftCount ? <StatusBadge tone="warning">{p.driftCount}</StatusBadge> : 0}</TableCell>
+              <TableCell>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-muted-foreground">none</span>}</TableCell>
+              <TableCell>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-muted-foreground">never</span>}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
+        </TableBody>
       </Table>
 
       <Section title="Create a profile">

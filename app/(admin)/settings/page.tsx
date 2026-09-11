@@ -4,8 +4,8 @@ import { getJobStatus, LIFECYCLE_INTERVAL_MS, LIFECYCLE_JOB } from "@/lib/servic
 import { getHealth } from "@/lib/services/system";
 import { getSettingOrDefault } from "@/lib/settings";
 import { Notice } from "@/components/notice";
-import { Time } from "@/components/time";
-import { Alert } from "@/components/ui/alert";
+import { Timestamp } from "@/components/ui/timestamp";
+import { Callout } from "@/components/ui/callout";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { KeyValue } from "@/components/ui/key-value";
@@ -31,14 +31,14 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title="Jellyfin server">
           {!health.jellyfin.reachable ? (
-            <Alert tone="error" title="Unreachable" className="mb-3">
+            <Callout tone="error" title="Unreachable" className="mb-3">
               {health.jellyfin.error}
-            </Alert>
+            </Callout>
           ) : null}
           {health.jellyfin.reachable && !health.jellyfin.compatible ? (
-            <Alert tone="warning" title="Version mismatch" className="mb-3">
+            <Callout tone="warning" title="Version mismatch" className="mb-3">
               The server runs {health.jellyfin.version}; this app is built and tested against {health.jellyfin.targetVersion}. Policy fields may differ.
-            </Alert>
+            </Callout>
           ) : null}
           <KeyValue>
             <KeyValue.Item label="Name">{health.jellyfin.serverName ?? "—"}</KeyValue.Item>
@@ -60,10 +60,10 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
           <KeyValue>
             <KeyValue.Item label="Interval">every {LIFECYCLE_INTERVAL_MS / 60000} minutes</KeyValue.Item>
             <KeyValue.Item label="Last started">
-              <Time date={job?.lastStartedAt ?? null} />
+              <Timestamp date={job?.lastStartedAt ?? null} />
             </KeyValue.Item>
             <KeyValue.Item label="Last finished">
-              <Time date={job?.lastFinishedAt ?? null} />
+              <Timestamp date={job?.lastFinishedAt ?? null} />
             </KeyValue.Item>
             <KeyValue.Item label="Running">{job?.lockUntil && job.lockUntil > new Date() ? "yes" : "no"}</KeyValue.Item>
             <KeyValue.Item label="Last result">

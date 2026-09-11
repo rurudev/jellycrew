@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -37,18 +37,18 @@ export function ResetForm({ token, minPasswordLength }: { token: string; minPass
   }
   if (done) {
     return (
-      <Alert tone="success" title="Password changed">
+      <Callout tone="success" title="Password changed">
         Sign in as <span className="font-medium">{done.userName}</span> at{" "}
         <a href={done.serverUrl} className="underline">
           {done.serverUrl}
         </a>{" "}
         with your new password. Other devices may need to sign in again.
-      </Alert>
+      </Callout>
     );
   }
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {error ? <Alert tone="error">{error}</Alert> : null}
+      {error ? <Callout tone="error">{error}</Callout> : null}
       <FormField id="password" label="New password" help={`At least ${minPasswordLength} characters.`}>
         <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
       </FormField>

@@ -2,15 +2,16 @@ import { getSelfSession } from "@/lib/auth/session";
 import { getSelfOverview } from "@/lib/services/self";
 import { getSettingOrDefault } from "@/lib/settings";
 import { Notice } from "@/components/notice";
-import { Time } from "@/components/time";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Timestamp } from "@/components/ui/timestamp";
+import { Callout } from "@/components/ui/callout";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { KeyValue } from "@/components/ui/key-value";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { changePasswordAction, logoutSelfAction, resendVerificationAction, revokeOwnDeviceAction, setEmailAction } from "./actions";
 import { SelfLoginForm } from "./login-form";
 
@@ -46,15 +47,15 @@ export default async function MePage(props: PageProps<"/me">) {
       </div>
       <Notice params={params} />
       {overview.isDisabled ? (
-        <Alert tone="error" title="This account is disabled">
+        <Callout tone="error" title="This account is disabled">
           {overview.disabledReason ? reasonText[overview.disabledReason] : ""} Contact the administrator.
-        </Alert>
+        </Callout>
       ) : null}
       <Section title="Overview">
         <KeyValue>
           <KeyValue.Item label="Server">{overview.serverName}</KeyValue.Item>
           <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-muted-foreground">none</span>}</KeyValue.Item>
-          <KeyValue.Item label="Access until">{overview.expiresAt ? <Time date={overview.expiresAt} /> : "no expiry"}</KeyValue.Item>
+          <KeyValue.Item label="Access until">{overview.expiresAt ? <Timestamp date={overview.expiresAt} /> : "no expiry"}</KeyValue.Item>
         </KeyValue>
       </Section>
 
@@ -82,7 +83,7 @@ export default async function MePage(props: PageProps<"/me">) {
         <p className="mb-2">
           {overview.email ? (
             <>
-              <span className="font-medium">{overview.email}</span> {overview.emailVerified ? <Badge tone="green">verified</Badge> : <Badge tone="amber">not verified</Badge>}
+              <span className="font-medium">{overview.email}</span> {overview.emailVerified ? <StatusBadge tone="success">verified</StatusBadge> : <StatusBadge tone="warning">not verified</StatusBadge>}
             </>
           ) : (
             <span className="text-muted-foreground">No email address on file.</span>
@@ -113,63 +114,63 @@ export default async function MePage(props: PageProps<"/me">) {
       </Section>
 
       <Section title="Active sessions">
-        <Table>
-          <thead>
-            <tr>
-              <Th>Client</Th>
-              <Th>Device</Th>
-              <Th>Now playing</Th>
-              <Th>Last activity</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {overview.sessions.length === 0 ? <EmptyRow colSpan={4}>No active sessions.</EmptyRow> : null}
+        <Table variant="plain">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Client</TableHead>
+              <TableHead>Device</TableHead>
+              <TableHead>Now playing</TableHead>
+              <TableHead>Last activity</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {overview.sessions.length === 0 ? <EmptyState.Row colSpan={4} title="No active sessions." /> : null}
             {overview.sessions.map((s) => (
-              <tr key={s.id}>
-                <Td>{s.client ?? "—"}</Td>
-                <Td>{s.deviceName ?? "—"}</Td>
-                <Td>{s.nowPlaying ? s.nowPlaying.title : <span className="text-muted-foreground">idle</span>}</Td>
-                <Td>
-                  <Time date={s.lastActivity} />
-                </Td>
-              </tr>
+              <TableRow key={s.id}>
+                <TableCell>{s.client ?? "—"}</TableCell>
+                <TableCell>{s.deviceName ?? "—"}</TableCell>
+                <TableCell>{s.nowPlaying ? s.nowPlaying.title : <span className="text-muted-foreground">idle</span>}</TableCell>
+                <TableCell>
+                  <Timestamp date={s.lastActivity} />
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
         </Table>
       </Section>
 
       <Section title="Devices">
-        <Table>
-          <thead>
-            <tr>
-              <Th>Device</Th>
-              <Th>App</Th>
-              <Th>Last used</Th>
-              <Th className="text-right">Actions</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {overview.devices.length === 0 ? <EmptyRow colSpan={4}>No devices.</EmptyRow> : null}
+        <Table variant="plain">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Device</TableHead>
+              <TableHead>App</TableHead>
+              <TableHead>Last used</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {overview.devices.length === 0 ? <EmptyState.Row colSpan={4} title="No devices." /> : null}
             {overview.devices.map((d) => (
-              <tr key={d.id}>
-                <Td>{d.name}</Td>
-                <Td>
+              <TableRow key={d.id}>
+                <TableCell>{d.name}</TableCell>
+                <TableCell>
                   {d.appName ?? "—"} <span className="text-muted-foreground">{d.appVersion}</span>
-                </Td>
-                <Td>
-                  <Time date={d.lastActivity} />
-                </Td>
-                <Td className="text-right">
+                </TableCell>
+                <TableCell>
+                  <Timestamp date={d.lastActivity} />
+                </TableCell>
+                <TableCell className="text-right">
                   <form action={revokeOwnDeviceAction}>
                     <input type="hidden" name="deviceId" value={d.id} />
                     <SubmitButton size="sm" variant="destructive" pendingLabel="Signing out…">
                       Sign out device
                     </SubmitButton>
                   </form>
-                </Td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
         </Table>
       </Section>
     </div>

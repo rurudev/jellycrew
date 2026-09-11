@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { RateLimitedError, enforceLimits, PUBLIC_LIMITS } from "@/lib/ratelimit";
 import { verifyEmailToken } from "@/lib/services/self";
 import { hashToken } from "@/lib/tokens";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 
 export const metadata = { title: "Verify email" };
 
@@ -32,13 +32,13 @@ export default async function VerifyEmailPage(props: PageProps<"/me/verify/[toke
   return (
     <div className="space-y-4">
       {result.ok ? (
-        <Alert tone="success" title="Email verified">
+        <Callout tone="success" title="Email verified">
           {result.email} is now verified and can be used to reset your password.
-        </Alert>
+        </Callout>
       ) : (
-        <Alert tone="warning" title="Could not verify">
+        <Callout tone="warning" title="Could not verify">
           {result.reason === "ratelimited" ? "Too many attempts. Try again later." : reasons[result.reason]}
-        </Alert>
+        </Callout>
       )}
       <p className="text-sm">
         <Link href="/me" className="underline">

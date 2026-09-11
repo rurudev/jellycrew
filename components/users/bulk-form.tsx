@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState, type ReactNode } from "react";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -28,15 +28,15 @@ export function BulkForm({
   const param = BULK_PARAM[kind];
   return (
     <form action={formAction} className="space-y-3">
-      {state.stage === "error" ? <Alert tone="error">{state.error}</Alert> : null}
+      {state.stage === "error" ? <Callout tone="error">{state.error}</Callout> : null}
 
       {state.stage === "preview" && state.preview ? (
-        <Alert tone="info" title={`Preview: ${BULK_LABELS[state.kind!]} for ${state.preview.length} user(s)`}>
+        <Callout tone="info" title={`Preview: ${BULK_LABELS[state.kind!]} for ${state.preview.length} user(s)`}>
           <ul className="space-y-2">
             {state.preview.map((p) => (
               <li key={p.userId} className="border-t border-border pt-2 first:border-0 first:pt-0">
                 <div className="font-medium">
-                  {p.name} {p.skip ? <Badge tone="amber">skip: {p.skip}</Badge> : <span className="text-xs font-normal text-muted-foreground">{p.summary}</span>}
+                  {p.name} {p.skip ? <StatusBadge tone="warning">skip: {p.skip}</StatusBadge> : <span className="text-xs font-normal text-muted-foreground">{p.summary}</span>}
                 </div>
                 {p.changes.length ? <DiffTable changes={p.changes} /> : null}
               </li>
@@ -54,19 +54,19 @@ export function BulkForm({
             </Button>
             <span className="self-center text-xs text-muted-foreground">Runs one user at a time; every user gets a result.</span>
           </div>
-        </Alert>
+        </Callout>
       ) : null}
 
       {state.stage === "done" && state.results ? (
-        <Alert tone={state.results.some((r) => !r.ok) ? "warning" : "success"} title={`${BULK_LABELS[state.kind!]}: ${state.results.filter((r) => r.ok).length} ok, ${state.results.filter((r) => !r.ok).length} failed`}>
+        <Callout tone={state.results.some((r) => !r.ok) ? "warning" : "success"} title={`${BULK_LABELS[state.kind!]}: ${state.results.filter((r) => r.ok).length} ok, ${state.results.filter((r) => !r.ok).length} failed`}>
           <ul className="space-y-1">
             {state.results.map((r) => (
               <li key={r.userId}>
-                <Badge tone={r.ok ? (r.message.startsWith("Skipped") ? "neutral" : "green") : "red"}>{r.ok ? "ok" : "failed"}</Badge> {r.name}: {r.message}
+                <StatusBadge tone={r.ok ? (r.message.startsWith("Skipped") ? "neutral" : "success") : "destructive"}>{r.ok ? "ok" : "failed"}</StatusBadge> {r.name}: {r.message}
               </li>
             ))}
           </ul>
-        </Alert>
+        </Callout>
       ) : null}
 
       {state.stage !== "preview" ? (

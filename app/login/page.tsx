@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/session";
 import { getServerStatus } from "@/lib/services/system";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getTheme } from "@/lib/theme-server";
 import { LoginForm } from "./login-form";
@@ -33,7 +33,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
             .
           </p>
         </div>
-        {!status.reachable ? <Alert tone="error" title="Jellyfin is unreachable">{status.error}</Alert> : null}
+        {!status.reachable ? <Callout tone="error" title="Jellyfin is unreachable">{status.error}</Callout> : null}
         <LoginForm next={next} />
       </div>
     </main>

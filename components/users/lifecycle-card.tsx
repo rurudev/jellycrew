@@ -1,6 +1,6 @@
 import { ConfirmForm } from "@/components/confirm-form";
-import { Time } from "@/components/time";
-import { Badge } from "@/components/ui/badge";
+import { Timestamp } from "@/components/ui/timestamp";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +22,7 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
       <form action={updateMetaAction} className="space-y-3">
         <input type="hidden" name="userId" value={id} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="email" label="Email" help={row.meta.email ? row.meta.emailVerifiedAt ? <Badge tone="green">verified</Badge> : <Badge tone="amber">unverified</Badge> : "Used for password resets once verified."}>
+          <FormField id="email" label="Email" help={row.meta.email ? row.meta.emailVerifiedAt ? <StatusBadge tone="success">verified</StatusBadge> : <StatusBadge tone="warning">unverified</StatusBadge> : "Used for password resets once verified."}>
             <Input name="email" type="email" defaultValue={row.meta.email ?? ""} />
           </FormField>
           <FormField id="labels" label="Labels" help="Comma-separated. Used for filtering and bulk actions.">
@@ -50,22 +50,22 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
       <KeyValue className="mt-4">
         {row.meta.disabledByAppAt ? (
           <KeyValue.Item label="Disabled by app">
-            <Time date={row.meta.disabledByAppAt} /> ({row.meta.disabledReason})
+            <Timestamp date={row.meta.disabledByAppAt} /> ({row.meta.disabledReason})
           </KeyValue.Item>
         ) : null}
         <KeyValue.Item label="Last login">
-          <Time date={row.lastLogin} />
+          <Timestamp date={row.lastLogin} />
         </KeyValue.Item>
         <KeyValue.Item label="Last activity">
-          <Time date={row.lastActivity} />
+          <Timestamp date={row.lastActivity} />
         </KeyValue.Item>
         <KeyValue.Item label="First seen by app">
-          <Time date={row.meta.firstSeenAt} />
+          <Timestamp date={row.meta.firstSeenAt} />
         </KeyValue.Item>
         <KeyValue.Item label="Deletion">
           {row.meta.deleteAfter ? (
             <>
-              scheduled <Time date={row.meta.deleteAfter} />
+              scheduled <Timestamp date={row.meta.deleteAfter} />
             </>
           ) : (
             <span className="text-muted-foreground">not scheduled</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -12,7 +12,7 @@ export function LoginForm({ next }: { next?: string }) {
   return (
     <form action={action} className="space-y-4">
       {next ? <input type="hidden" name="next" value={next} /> : null}
-      {state.error ? <Alert tone="error">{state.error}</Alert> : null}
+      {state.error ? <Callout tone="error">{state.error}</Callout> : null}
       <FormField id="username" label="Jellyfin username">
         <Input name="username" autoComplete="username" required autoFocus />
       </FormField>

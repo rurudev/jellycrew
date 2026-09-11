@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { resetTokenStatus } from "@/lib/services/reset";
 import { getSettingOrDefault } from "@/lib/settings";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { ResetForm } from "./reset-form";
 
 export const metadata = { title: "Choose a new password" };
@@ -18,7 +18,7 @@ export default async function ResetTokenPage(props: PageProps<"/reset/[token]">)
   if (!status.ok) {
     return (
       <div className="space-y-4">
-        <Alert tone="warning" title="Link not usable">{reasons[status.reason]}</Alert>
+        <Callout tone="warning" title="Link not usable">{reasons[status.reason]}</Callout>
         <p className="text-sm">
           <Link href="/reset" className="underline">
             Request a new link

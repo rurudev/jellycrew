@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -39,9 +39,9 @@ function IdCheckboxes({ field, value, options }: { field: PolicyFieldDef; value:
         <label key={id} className="flex items-center gap-2">
           <input type="checkbox" name={field.key} value={id} defaultChecked />
           <code className="text-xs">{id}</code>
-          <Badge tone="amber" title="This id no longer exists on the server; untick to remove it">
+          <StatusBadge tone="warning" title="This id no longer exists on the server; untick to remove it">
             missing
-          </Badge>
+          </StatusBadge>
         </label>
       ))}
     </div>
@@ -156,19 +156,19 @@ export function PolicyEditor({
       <input type="hidden" name="base" value={JSON.stringify(base)} />
       <input type="hidden" name="mode" value={mode} />
 
-      {state.status === "error" ? <Alert tone="error">{state.error}</Alert> : null}
-      {state.status === "saved" ? <Alert tone="success">Saved {state.changes?.length ?? 0} change(s).</Alert> : null}
-      {state.status === "no_changes" ? <Alert tone="info">No changes to save.</Alert> : null}
+      {state.status === "error" ? <Callout tone="error">{state.error}</Callout> : null}
+      {state.status === "saved" ? <Callout tone="success">Saved {state.changes?.length ?? 0} change(s).</Callout> : null}
+      {state.status === "no_changes" ? <Callout tone="info">No changes to save.</Callout> : null}
       {state.status === "stale" ? (
-        <Alert tone="warning" title="The policy changed while you were editing">
+        <Callout tone="warning" title="The policy changed while you were editing">
           <p>Your edits were not saved. This is what changed on the server in the meantime; the form below now starts from the current policy with your edits reapplied. Review and preview again.</p>
           <div className="mt-2">
             <DiffTable changes={state.changedSince ?? []} beforeLabel="When you opened the editor" afterLabel="Now on the server" empty="Nothing visible changed (a field outside the catalog may have)." />
           </div>
-        </Alert>
+        </Callout>
       ) : null}
       {state.status === "preview" ? (
-        <Alert tone="info" title="Review changes before saving">
+        <Callout tone="info" title="Review changes before saving">
           <DiffTable changes={state.changes ?? []} />
           <div className="mt-3 flex gap-2">
             <Button type="submit" name="confirm" value="1" disabled={pending}>
@@ -176,7 +176,7 @@ export function PolicyEditor({
             </Button>
             <span className="self-center text-xs text-muted-foreground">or keep editing below and preview again</span>
           </div>
-        </Alert>
+        </Callout>
       ) : null}
 
       <div className="flex items-center gap-2 border-b border-border pb-2 text-sm">

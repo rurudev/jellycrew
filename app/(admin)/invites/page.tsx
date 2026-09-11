@@ -2,11 +2,11 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { inviteLink, listInvites, INVITE_DEFAULT_EXPIRY_DAYS } from "@/lib/services/invites";
 import { listProfiles } from "@/lib/services/profiles";
-import { CopyButton } from "@/components/invites/copy-button";
+import { CopyButton, CopyField } from "@/components/ui/copy-field";
 import { Notice } from "@/components/notice";
-import { Time } from "@/components/time";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Timestamp } from "@/components/ui/timestamp";
+import { Callout } from "@/components/ui/callout";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -14,12 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { createInviteAction, revokeInviteAction } from "./actions";
 
 export const metadata = { title: "Invites" };
 
-const tone = { active: "green", expired: "neutral", exhausted: "neutral", revoked: "red" } as const;
+const tone = { active: "success", expired: "neutral", exhausted: "neutral", revoked: "destructive" } as const;
 
 export default async function InvitesPage(props: PageProps<"/invites">) {
   await requireAdmin();
@@ -35,48 +36,45 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
       <PageHeader title="Invites" count={invites.length} />
       <Notice params={params} />
       {created && createdLink ? (
-        <Alert tone="success" title="Invite created">
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="break-all text-xs">{createdLink}</code>
-            <CopyButton value={createdLink} />
-          </div>
-        </Alert>
+        <Callout tone="success" title="Invite created">
+          <CopyField value={createdLink} label="Copy link" className="mt-1" />
+        </Callout>
       ) : null}
       <Table>
-        <thead>
-          <tr>
-            <Th>Label</Th>
-            <Th>Status</Th>
-            <Th>Profile</Th>
-            <Th>Uses</Th>
-            <Th>Link expires</Th>
-            <Th>Account expiry</Th>
-            <Th>Signed up</Th>
-            <Th className="text-right">Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {invites.length === 0 ? <EmptyRow colSpan={8}>No invites yet.</EmptyRow> : null}
+        <TableHeader>
+          <TableRow>
+            <TableHead>Label</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Profile</TableHead>
+            <TableHead>Uses</TableHead>
+            <TableHead>Link expires</TableHead>
+            <TableHead>Account expiry</TableHead>
+            <TableHead>Signed up</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {invites.length === 0 ? <EmptyState.Row colSpan={8} title="No invites yet" description="An invite is a link that lets someone create their own account with the profile you choose. Create one below." /> : null}
           {invites.map((inv) => (
-            <tr key={inv.id}>
-              <Td>
+            <TableRow key={inv.id}>
+              <TableCell>
                 {inv.label ?? <span className="text-muted-foreground">untitled</span>}
                 <div className="text-xs text-muted-foreground">
-                  created <Time date={inv.createdAt} />
+                  created <Timestamp date={inv.createdAt} />
                   {inv.requireEmail ? " · email required" : ""}
                 </div>
-              </Td>
-              <Td>
-                <Badge tone={tone[inv.status]}>{inv.status}</Badge>
-              </Td>
-              <Td>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-muted-foreground">none</span>}</Td>
-              <Td className="tabular-nums">
+              </TableCell>
+              <TableCell>
+                <StatusBadge tone={tone[inv.status]}>{inv.status}</StatusBadge>
+              </TableCell>
+              <TableCell>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-muted-foreground">none</span>}</TableCell>
+              <TableCell className="tabular-nums">
                 {inv.uses}
                 {inv.maxUses !== null ? ` / ${inv.maxUses}` : " / ∞"}
-              </Td>
-              <Td>{inv.expiresAt ? <Time date={inv.expiresAt} /> : <span className="text-muted-foreground">never</span>}</Td>
-              <Td>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-muted-foreground">profile default</span>}</Td>
-              <Td>
+              </TableCell>
+              <TableCell>{inv.expiresAt ? <Timestamp date={inv.expiresAt} /> : <span className="text-muted-foreground">never</span>}</TableCell>
+              <TableCell>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-muted-foreground">profile default</span>}</TableCell>
+              <TableCell>
                 {inv.usedBy.length === 0 ? (
                   <span className="text-muted-foreground">nobody yet</span>
                 ) : (
@@ -85,16 +83,16 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
                       <li key={u.id}>
                         <Link href={`/users/${u.jellyfinUserId}`}>{u.userName ?? u.jellyfinUserId.slice(0, 8)}</Link>{" "}
                         <span className="text-muted-foreground">
-                          <Time date={u.createdAt} />
+                          <Timestamp date={u.createdAt} />
                         </span>
                       </li>
                     ))}
                   </ul>
                 )}
-              </Td>
-              <Td className="text-right">
+              </TableCell>
+              <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  {inv.status === "active" && links.get(inv.id) ? <CopyButton value={links.get(inv.id)!} /> : null}
+                  {inv.status === "active" && links.get(inv.id) ? <CopyButton value={links.get(inv.id)!} label="Copy link" /> : null}
                   {inv.status === "active" ? (
                     <form action={revokeInviteAction}>
                       <input type="hidden" name="inviteId" value={inv.id} />
@@ -104,10 +102,10 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
                     </form>
                   ) : null}
                 </div>
-              </Td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
+        </TableBody>
       </Table>
 
       <Section title="Create an invite">

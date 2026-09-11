@@ -1,61 +1,66 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
-import { Time } from "@/components/time";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Timestamp } from "@/components/ui/timestamp";
 import { formatBitrate, ticksToDuration } from "@/lib/format";
 import type { SessionView } from "@/lib/sessions/view";
 import { sendMessageAction, stopPlaybackAction } from "@/app/(admin)/sessions/actions";
 
-const methodTone = { direct: "green", remux: "blue", transcode: "amber" } as const;
+const methodTone = { direct: "success", remux: "primary", transcode: "warning" } as const;
 
 export function PlayMethodBadge({ s }: { s: SessionView }) {
   if (!s.playMethod) return null;
   const title = s.playMethod === "transcode" ? s.transcodeReasons.join(", ") || "transcoding" : undefined;
   return (
-    <Badge tone={methodTone[s.playMethod]} title={title}>
+    <StatusBadge tone={methodTone[s.playMethod]} title={title}>
       {s.playMethod}
-    </Badge>
+    </StatusBadge>
   );
 }
 
 export function SessionsTable({ sessions, showUser = true, returnTo }: { sessions: SessionView[]; showUser?: boolean; returnTo: string }) {
   const cols = showUser ? 7 : 6;
   return (
-    <Table>
-      <thead>
-        <tr>
-          {showUser ? <Th>User</Th> : null}
-          <Th>Client</Th>
-          <Th>Device</Th>
-          <Th>Now playing</Th>
-          <Th>Method</Th>
-          <Th>Last activity</Th>
-          <Th className="text-right">Actions</Th>
-        </tr>
-      </thead>
-      <tbody>
-        {sessions.length === 0 ? <EmptyRow colSpan={cols}>No active sessions.</EmptyRow> : null}
+    <Table variant={showUser ? "card" : "plain"}>
+      <TableHeader>
+        <TableRow>
+          {showUser ? <TableHead>User</TableHead> : null}
+          <TableHead>Client</TableHead>
+          <TableHead>Device</TableHead>
+          <TableHead>Now playing</TableHead>
+          <TableHead>Method</TableHead>
+          <TableHead>Last activity</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sessions.length === 0 ? <EmptyState.Row colSpan={cols} title="No active sessions" description="Sessions appear here while a Jellyfin client is connected." /> : null}
         {sessions.map((s) => (
-          <tr key={s.id}>
+          <TableRow key={s.id}>
             {showUser ? (
-              <Td>{s.userId ? <Link href={`/users/${s.userId}`}>{s.userName ?? s.userId}</Link> : <span className="text-muted-foreground">—</span>}</Td>
+              <TableCell>{s.userId ? <Link href={`/users/${s.userId}`}>{s.userName ?? s.userId}</Link> : <span className="text-muted-foreground">—</span>}</TableCell>
             ) : null}
-            <Td>
+            <TableCell>
               {s.client ?? "—"}
               {s.appVersion ? <div className="text-xs text-muted-foreground">{s.appVersion}</div> : null}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
               {s.deviceName ?? "—"}
               {s.remoteEndPoint ? <div className="text-xs text-muted-foreground">{s.remoteEndPoint}</div> : null}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
               {s.nowPlaying ? (
                 <div>
                   <div className="font-medium">
                     {s.nowPlaying.title}
-                    {s.nowPlaying.isPaused ? <Badge className="ml-1">paused</Badge> : null}
+                    {s.nowPlaying.isPaused ? (
+                      <StatusBadge tone="neutral" dot={false} className="ml-1">
+                        paused
+                      </StatusBadge>
+                    ) : null}
                   </div>
                   {s.nowPlaying.subtitle ? <div className="text-xs text-muted-foreground">{s.nowPlaying.subtitle}</div> : null}
                   <div className="text-xs text-muted-foreground">
@@ -66,8 +71,8 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
               ) : (
                 <span className="text-muted-foreground">idle</span>
               )}
-            </Td>
-            <Td>
+            </TableCell>
+            <TableCell>
               <PlayMethodBadge s={s} />
               {s.playMethod === "transcode" ? (
                 <div className="text-xs text-muted-foreground">
@@ -75,11 +80,11 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
                   {s.transcodeReasons.length ? <div>{s.transcodeReasons.join(", ")}</div> : null}
                 </div>
               ) : null}
-            </Td>
-            <Td>
-              <Time date={s.lastActivity} />
-            </Td>
-            <Td className="text-right">
+            </TableCell>
+            <TableCell>
+              <Timestamp date={s.lastActivity} />
+            </TableCell>
+            <TableCell className="text-right">
               <div className="flex flex-col items-end gap-1">
                 {s.nowPlaying ? (
                   <form action={stopPlaybackAction}>
@@ -100,10 +105,10 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
                   </form>
                 </details>
               </div>
-            </Td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
+      </TableBody>
     </Table>
   );
 }

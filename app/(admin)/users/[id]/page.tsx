@@ -10,9 +10,11 @@ import { DiffTable } from "@/components/policy/diff-table";
 import { PolicyView } from "@/components/policy/policy-view";
 import { DevicesTable } from "@/components/sessions/devices-table";
 import { SessionsTable } from "@/components/sessions/sessions-table";
-import { Time } from "@/components/time";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Timestamp } from "@/components/ui/timestamp";
+import { Callout } from "@/components/ui/callout";
+import { Tag } from "@/components/ui/chip";
+import { CopyField } from "@/components/ui/copy-field";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -20,12 +22,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Table, Td, Th, EmptyRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/users/avatar";
 import { LifecycleCard } from "@/components/users/lifecycle-card";
-import { StatusBadge } from "@/components/users/status-badge";
+import { UserStatusBadge } from "@/components/users/user-status";
 import { getSettingOrDefault } from "@/lib/settings";
-import { CopyButton } from "@/components/invites/copy-button";
 import { isMailConfigured } from "@/lib/mail";
 import { adoptIntoProfileAction, applyProfileAction, assignProfileAction, copyPolicyAction, renameUserAction, setEnabledAction, setPasswordAction } from "./actions";
 import { createResetLinkAction, emailResetLinkAction, sendVerificationAction } from "./reset-actions";
@@ -60,10 +62,14 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
         }
         description={
           <span className="flex flex-wrap items-center gap-1.5">
-            {row.isAdmin ? <Badge tone="purple">admin</Badge> : null}
-            {row.isHidden ? <Badge>hidden</Badge> : null}
-            {isSelf ? <Badge tone="blue">you</Badge> : null}
-            <StatusBadge status={row.status} />
+            {row.isAdmin ? <Tag>admin</Tag> : null}
+            {row.isHidden ? <Tag>hidden</Tag> : null}
+            {isSelf ? (
+              <StatusBadge tone="primary" dot={false}>
+                you
+              </StatusBadge>
+            ) : null}
+            <UserStatusBadge status={row.status} />
             <code className="text-xs text-muted-foreground">{row.id}</code>
           </span>
         }
@@ -93,12 +99,9 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
       />
       <Notice params={params} />
       {resetLink ? (
-        <Alert tone="success" title="Reset link created (valid 60 minutes, single use)">
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="break-all text-xs">{resetLink}</code>
-            <CopyButton value={resetLink} />
-          </div>
-        </Alert>
+        <Callout tone="success" title="Reset link created (valid 60 minutes, single use)">
+          <CopyField value={resetLink} label="Copy link" className="mt-1" />
+        </Callout>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -250,7 +253,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
           </form>
         </div>
         {copyFrom && copyPreview ? (
-          <Alert tone="info" title={`Copying from ${allUsers.find((u) => u.id === copyFrom)?.name ?? copyFrom}`} className="mt-4">
+          <Callout tone="info" title={`Copying from ${allUsers.find((u) => u.id === copyFrom)?.name ?? copyFrom}`} className="mt-4">
             <DiffTable changes={copyPreview} empty="Nothing to copy: the managed fields already match." />
             {copyPreview.length ? (
               <form action={copyPolicyAction} className="mt-2">
@@ -260,40 +263,40 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 <SubmitButton pendingLabel="Copying…">Confirm copy</SubmitButton>
               </form>
             ) : null}
-          </Alert>
+          </Callout>
         ) : null}
       </Section>
 
       <Section title="History">
-        <Table>
-          <thead>
-            <tr>
-              <Th>When</Th>
-              <Th>Actor</Th>
-              <Th>Action</Th>
-              <Th>Detail</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.length === 0 ? <EmptyRow colSpan={4}>No history yet.</EmptyRow> : null}
+        <Table variant="plain">
+          <TableHeader>
+            <TableRow>
+              <TableHead>When</TableHead>
+              <TableHead>Actor</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Detail</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {history.length === 0 ? <EmptyState.Row colSpan={4} title="No history yet." /> : null}
             {history.map((h) => (
-              <tr key={h.id}>
-                <Td>
-                  <Time date={h.ts} />
-                </Td>
-                <Td>
+              <TableRow key={h.id}>
+                <TableCell>
+                  <Timestamp date={h.ts} />
+                </TableCell>
+                <TableCell>
                   {h.actorType}
                   {h.actorId ? <span className="text-muted-foreground"> {h.actorId.slice(0, 8)}</span> : null}
-                </Td>
-                <Td>
+                </TableCell>
+                <TableCell>
                   <code className="text-xs">{h.action}</code>
-                </Td>
-                <Td className="max-w-md truncate text-xs text-muted-foreground" title={h.detail ? JSON.stringify(h.detail) : ""}>
+                </TableCell>
+                <TableCell className="max-w-md truncate text-xs text-muted-foreground" title={h.detail ? JSON.stringify(h.detail) : ""}>
                   {h.detail ? JSON.stringify(h.detail) : ""}
-                </Td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
         </Table>
       </Section>
     </div>

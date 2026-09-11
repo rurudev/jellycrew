@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ export function ResetRequestForm() {
   }
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {message ? <Alert tone={message.tone}>{message.text}</Alert> : null}
+      {message ? <Callout tone={message.tone}>{message.text}</Callout> : null}
       <FormField id="identifier" label="Username or email address">
         <Input name="identifier" size="lg" required maxLength={200} autoComplete="username" autoFocus />
       </FormField>

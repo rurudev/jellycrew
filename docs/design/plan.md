@@ -8,7 +8,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 |---|---------|--------|-------|
 | 1 | Foundation: tokens, theme, type scale | `design/foundation` | done, merged 2026-09-11 |
 | 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done, merged 2026-09-11 (rebased onto shadcn) |
-| 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | planned |
+| 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done (2026-09-11, on branch) |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | planned |
 | 5 | Console shell (header, nav, status) | `design/shell` | planned |
 | 6 | Users list | `design/users-list` | planned |
@@ -79,13 +79,13 @@ Update the State column (planned → in progress → done, with the merge commit
 
 ### 3. Table kit, status badges, chips, empty states — `design/tables-badges-empty`
 
-**Files.** `pnpm dlx shadcn@latest add table badge alert empty tooltip checkbox`; then `components/ui/table.tsx` extended with `Th sort`, `Row href/selected`, `SelectAll`; `badge.tsx` given `success | warning | destructive` tone variants. New `components/ui/status-badge.tsx`, `chip.tsx`, `tag.tsx` (muted mono for admin/hidden), `empty-state.tsx` (over Empty), `timestamp.tsx` (over Tooltip), `copy-field.tsx`. Delete the hand-written `badge.tsx`/`alert.tsx`/`table.tsx` bodies, `EmptyRow`, `components/time.tsx`, `components/invites/copy-button.tsx`, `components/users/status-badge.tsx`. Change `lib/users/status.ts` (`tone` becomes `ok | warn | danger | neutral`) and `lib/users/status.test.ts`. Call sites: `components/users/users-table.tsx`, `components/users/avatar.tsx`, `components/sessions/sessions-table.tsx`, `devices-table.tsx`, `components/policy/policy-view.tsx`, `diff-table.tsx`, `policy-editor.tsx`, `components/users/bulk-form.tsx`, `app/(admin)/invites/page.tsx`, `profiles/page.tsx`, `profiles/[id]/page.tsx`, `audit/page.tsx`, `users/[id]/page.tsx`, `app/(public)/me/page.tsx`.
+**Files.** `pnpm dlx shadcn@latest add table badge alert empty`; then `components/ui/table.tsx` extended with `SortHead` and `LinkRow` (`SelectAll` and the shadcn `checkbox` move to package 6 with the selection bar, so nothing lands unused); `badge.tsx` given `success | warning | destructive` tone variants. New `components/ui/status-badge.tsx`, `chip.tsx`, `tag.tsx` (muted mono for admin/hidden), `empty-state.tsx` (over Empty), `timestamp.tsx` (over Tooltip), `copy-field.tsx`. Delete the hand-written `badge.tsx`/`alert.tsx`/`table.tsx` bodies, `EmptyRow`, `components/time.tsx`, `components/invites/copy-button.tsx`, `components/users/status-badge.tsx`. Change `lib/users/status.ts` (`tone` becomes `ok | warn | danger | neutral`) and `lib/users/status.test.ts`. Call sites: `components/users/users-table.tsx`, `components/users/avatar.tsx`, `components/sessions/sessions-table.tsx`, `devices-table.tsx`, `components/policy/policy-view.tsx`, `diff-table.tsx`, `policy-editor.tsx`, `components/users/bulk-form.tsx`, `app/(admin)/invites/page.tsx`, `profiles/page.tsx`, `profiles/[id]/page.tsx`, `audit/page.tsx`, `users/[id]/page.tsx`, `app/(public)/me/page.tsx`.
 
 **What changes.**
-- Table: 36 px rows, sticky header, hairline separators, hover and selected fills, header cells at `xs` muted 500 with no uppercase; `Th sort={{ key, active, dir, href }}` renders a real link with `aria-sort` and an icon; `Row href` makes the whole row clickable via a stretched first-cell link (keyboard focus lands on the link, no JS).
-- `StatusBadge` (dot + label, tone by meaning), `Chip` (neutral label), `Tag` (mono, muted). `Alert` keeps four tones on soft fills.
+- Table: 36 px rows, header that stays put on wide screens, hairline separators, hover and selected fills, header cells at `xs` muted 500 with no uppercase; `SortHead` renders a real link with `aria-sort` and an icon; `LinkRow` opens the row on a click that lands on nothing interactive while the name stays a real link (a stretched-link overlay was rejected: it would block the tooltips and buttons inside rows).
+- `StatusBadge` (dot + label, tone by meaning), `Chip` (neutral label), `Tag` (mono, muted). `Callout` (over shadcn `Alert`) keeps four tones on soft fills and replaces the old `Alert` at every call site.
 - `EmptyState` (title, one line, one action) with an `EmptyState.Row colSpan` wrapper for tables.
-- `Timestamp` replaces `Time`: relative text, absolute in `title`, and an `absolute` prop to render it visibly on detail pages.
+- `Timestamp` replaces `Time`: relative text, absolute in `title`, and an `absolute` prop to render it visibly on detail pages (no tooltip component: it would make every timestamp a tab stop).
 - `CopyField` replaces the `<code>` + `CopyButton` pairs; the copied state timeout is cleared on unmount.
 - `Avatar` gets `loading="lazy"` and `decoding="async"`.
 - Booleans in `PolicyView` and `DiffTable` render as text ("Yes" / muted "No") instead of green and grey badges.

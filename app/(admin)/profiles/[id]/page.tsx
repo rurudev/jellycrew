@@ -9,15 +9,17 @@ import { ConfirmForm } from "@/components/confirm-form";
 import { Notice } from "@/components/notice";
 import { DiffTable } from "@/components/policy/diff-table";
 import { PolicyEditor } from "@/components/policy/policy-editor";
-import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import { Tag } from "@/components/ui/chip";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { applyToMembersAction, deleteProfileAction, saveProfilePolicyAction, updateProfileAction } from "../actions";
 
 export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
@@ -65,28 +67,28 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
             </>
           }
         >
-          <Table>
-            <thead>
-              <tr>
-                <Th>User</Th>
-                <Th>Drift</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? <EmptyRow colSpan={2}>No members. Assign users from their detail page or with a bulk action.</EmptyRow> : null}
+          <Table variant="plain">
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Drift</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.length === 0 ? <EmptyState.Row colSpan={2} title="No members yet" description="Assign users from their detail page or with a bulk action." /> : null}
               {members.map((m) => (
-                <tr key={m.id}>
-                  <Td>
-                    <Link href={`/users/${m.id}`}>{m.name}</Link> {m.isAdmin ? <Badge tone="purple">admin</Badge> : null} {m.isDisabled ? <Badge tone="red">disabled</Badge> : null}
-                  </Td>
-                  <Td>{m.drift.length ? <Badge tone="amber">{m.drift.length} field(s)</Badge> : <span className="text-muted-foreground">none</span>}</Td>
-                </tr>
+                <TableRow key={m.id}>
+                  <TableCell>
+                    <Link href={`/users/${m.id}`}>{m.name}</Link> {m.isAdmin ? <Tag>admin</Tag> : null} {m.isDisabled ? <StatusBadge tone="destructive">disabled</StatusBadge> : null}
+                  </TableCell>
+                  <TableCell>{m.drift.length ? <StatusBadge tone="warning">{m.drift.length} field(s)</StatusBadge> : <span className="text-muted-foreground">none</span>}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
+            </TableBody>
           </Table>
           <div className="mt-3 space-y-2">
             {applyAll ? (
-              <Alert tone="info" title={`Apply "${profile.name}" to ${members.length} member(s)`}>
+              <Callout tone="info" title={`Apply "${profile.name}" to ${members.length} member(s)`}>
                 {drifting.length === 0 ? <p>Every member already matches. Applying only records the assignment.</p> : null}
                 {drifting.map((m) => (
                   <div key={m.id} className="mt-2">
@@ -102,7 +104,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
                     Cancel
                   </Link>
                 </form>
-              </Alert>
+              </Callout>
             ) : (
               <form action={applyToMembersAction} className="space-y-1">
                 <input type="hidden" name="profileId" value={id} />

@@ -1,7 +1,7 @@
 import { publicInviteInfo } from "@/lib/services/invites";
 import { getServerStatus } from "@/lib/services/system";
 import { getSettingOrDefault } from "@/lib/settings";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { SignupForm } from "./signup-form";
 
 export const metadata = { title: "You're invited" };
@@ -18,19 +18,19 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
   const server = await getServerStatus();
   const serverName = server.serverName ?? "Jellyfin";
   if (!info) {
-    return <Alert tone="error" title="Invalid invite">This invite link is not valid. Check that you copied the whole link.</Alert>;
+    return <Callout tone="error" title="Invalid invite">This invite link is not valid. Check that you copied the whole link.</Callout>;
   }
   if (info.status !== "active") {
-    return <Alert tone="warning" title="Invite closed">{closed[info.status]}</Alert>;
+    return <Callout tone="warning" title="Invite closed">{closed[info.status]}</Callout>;
   }
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Join {serverName}</h1>
-        <p className="mt-1 text-zinc-500">Create your Jellyfin account{info.label ? ` (${info.label})` : ""}.</p>
+        <p className="mt-1 text-muted-foreground">Create your Jellyfin account{info.label ? ` (${info.label})` : ""}.</p>
       </div>
-      {info.note ? <Alert tone="info">{info.note}</Alert> : null}
-      {info.accountExpiryDays ? <p className="text-sm text-zinc-500">Access will be valid for {info.accountExpiryDays} days after signup.</p> : null}
+      {info.note ? <Callout tone="info">{info.note}</Callout> : null}
+      {info.accountExpiryDays ? <p className="text-sm text-muted-foreground">Access will be valid for {info.accountExpiryDays} days after signup.</p> : null}
       <SignupForm token={token} requireEmail={info.requireEmail} minPasswordLength={getSettingOrDefault("minPasswordLength")} />
     </div>
   );

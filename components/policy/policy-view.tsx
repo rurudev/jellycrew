@@ -1,13 +1,13 @@
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { POLICY_GROUPS, fieldsInGroup, type PolicyFieldDef } from "@/lib/policy/fields";
 import type { ReferenceData } from "@/lib/services/reference";
 
 function Bool({ value }: { value: unknown }) {
-  return value === true ? <Badge tone="green">yes</Badge> : <Badge>no</Badge>;
+  return value === true ? <span>Yes</span> : <span className="text-muted-foreground">No</span>;
 }
 
 function IdList({ ids, resolve }: { ids: unknown; resolve: (id: string) => string | undefined }) {
-  if (!Array.isArray(ids) || ids.length === 0) return <span className="text-zinc-400">none</span>;
+  if (!Array.isArray(ids) || ids.length === 0) return <span className="text-muted-foreground">none</span>;
   return (
     <ul className="space-y-0.5">
       {ids.map((id) => {
@@ -16,9 +16,9 @@ function IdList({ ids, resolve }: { ids: unknown; resolve: (id: string) => strin
           <li key={String(id)}>
             {name ?? <code className="text-xs">{String(id)}</code>}
             {name ? null : (
-              <Badge tone="amber" className="ml-1" title="This id no longer exists on the server">
+              <StatusBadge tone="warning" className="ml-1" title="This id no longer exists on the server">
                 missing
-              </Badge>
+              </StatusBadge>
             )}
           </li>
         );
@@ -56,7 +56,7 @@ export function PolicyValue({ field, value, refData }: { field: PolicyFieldDef; 
     case "channelIds":
     case "stringList":
     case "unratedItems":
-      return Array.isArray(value) && value.length ? <span>{value.map(String).join(", ")}</span> : <span className="text-zinc-400">none</span>;
+      return Array.isArray(value) && value.length ? <span>{value.map(String).join(", ")}</span> : <span className="text-muted-foreground">none</span>;
     case "rating":
       return <span>{ratingName(value, refData)}</span>;
     case "schedules":
@@ -67,10 +67,10 @@ export function PolicyValue({ field, value, refData }: { field: PolicyFieldDef; 
           ))}
         </ul>
       ) : (
-        <span className="text-zinc-400">always</span>
+        <span className="text-muted-foreground">always</span>
       );
     default:
-      return value === null || value === undefined || value === "" ? <span className="text-zinc-400">—</span> : <span>{String(value)}</span>;
+      return value === null || value === undefined || value === "" ? <span className="text-muted-foreground">—</span> : <span>{String(value)}</span>;
   }
 }
 
@@ -83,15 +83,15 @@ export function PolicyView({ policy, refData }: { policy: Record<string, unknown
         const fields = fieldsInGroup(g.id);
         fields.forEach((f) => known.add(f.key));
         return (
-          <section key={g.id} className="rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
-            <h3 className="font-semibold">{g.title}</h3>
-            <p className="mb-2 text-xs text-zinc-500">{g.description}</p>
-            <dl className="divide-y divide-zinc-100 dark:divide-zinc-900">
+          <section key={g.id} className="rounded-lg border p-3">
+            <h3 className="font-medium">{g.title}</h3>
+            <p className="mb-2 text-xs text-muted-foreground">{g.description}</p>
+            <dl className="divide-y divide-border">
               {fields.map((f) => (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr] gap-2 py-1.5">
                   <dt>
                     <div>{f.label}</div>
-                    <code className="text-[11px] text-zinc-400">{f.key}</code>
+                    <code className="text-xs text-muted-foreground">{f.key}</code>
                   </dt>
                   <dd className="text-right">
                     <PolicyValue field={f} value={policy[f.key]} refData={refData} />
@@ -103,9 +103,9 @@ export function PolicyView({ policy, refData }: { policy: Record<string, unknown
         );
       })}
       {Object.keys(policy).some((k) => !known.has(k)) ? (
-        <section className="rounded-md border border-amber-300 p-3">
-          <h3 className="font-semibold">Unknown fields</h3>
-          <p className="mb-2 text-xs text-zinc-500">Returned by Jellyfin but not in this app&apos;s catalog. They are preserved on save.</p>
+        <section className="rounded-lg border border-warning/40 p-3">
+          <h3 className="font-medium">Unknown fields</h3>
+          <p className="mb-2 text-xs text-muted-foreground">Returned by Jellyfin but not in this app&apos;s catalog. They are preserved on save.</p>
           <pre className="overflow-x-auto text-xs">{JSON.stringify(Object.fromEntries(Object.entries(policy).filter(([k]) => !known.has(k))), null, 2)}</pre>
         </section>
       ) : null}

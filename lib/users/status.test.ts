@@ -11,7 +11,7 @@ describe("computeUserStatus", () => {
     expect(computeUserStatus(false, null, now).kind).toBe("enabled");
   });
   it("reports manual disable", () => {
-    expect(computeUserStatus(true, base, now)).toMatchObject({ kind: "disabled", tone: "red" });
+    expect(computeUserStatus(true, base, now)).toMatchObject({ kind: "disabled", tone: "destructive" });
   });
   it("reports app-disabled with reason", () => {
     const s = computeUserStatus(true, { ...base, disabledByAppAt: days(-1), disabledReason: "inactive" }, now);

@@ -2,12 +2,13 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { distinctAuditActions, listAudit, type AuditFilters } from "@/lib/services/audit";
 import { listUsers } from "@/lib/services/users";
-import { Time } from "@/components/time";
+import { Timestamp } from "@/components/ui/timestamp";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
-import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata = { title: "Audit" };
 
@@ -117,45 +118,45 @@ export default async function AuditPage(props: PageProps<"/audit">) {
         </Link>
       </form>
       <Table>
-        <thead>
-          <tr>
-            <Th>When</Th>
-            <Th>Actor</Th>
-            <Th>Action</Th>
-            <Th>User</Th>
-            <Th>Before</Th>
-            <Th>After</Th>
-            <Th>Detail</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.length === 0 ? <EmptyRow colSpan={7}>No audit entries match.</EmptyRow> : null}
+        <TableHeader>
+          <TableRow>
+            <TableHead>When</TableHead>
+            <TableHead>Actor</TableHead>
+            <TableHead>Action</TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Before</TableHead>
+            <TableHead>After</TableHead>
+            <TableHead>Detail</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {page.length === 0 ? <EmptyState.Row colSpan={7} title="No audit entries match" description="Every change made through jellycrew is recorded here." /> : null}
           {page.map((r) => (
-            <tr key={r.id}>
-              <Td className="whitespace-nowrap">
-                <Time date={r.ts} />
+            <TableRow key={r.id}>
+              <TableCell className="whitespace-nowrap">
+                <Timestamp date={r.ts} />
                 <div className="text-xs text-muted-foreground">#{r.id}</div>
-              </Td>
-              <Td>
+              </TableCell>
+              <TableCell>
                 {r.actorType}
                 {r.actorId ? <div className="text-xs text-muted-foreground">{nameById.get(r.actorId) ?? r.actorId}</div> : null}
-              </Td>
-              <Td>
+              </TableCell>
+              <TableCell>
                 <code className="text-xs">{r.action}</code>
-              </Td>
-              <Td>{r.targetUserId ? <Link href={`/users/${r.targetUserId}`}>{nameById.get(r.targetUserId) ?? r.targetUserId.slice(0, 8)}</Link> : ""}</Td>
-              <Td className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.before)}>
+              </TableCell>
+              <TableCell>{r.targetUserId ? <Link href={`/users/${r.targetUserId}`}>{nameById.get(r.targetUserId) ?? r.targetUserId.slice(0, 8)}</Link> : ""}</TableCell>
+              <TableCell className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.before)}>
                 {pretty(r.before)}
-              </Td>
-              <Td className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.after)}>
+              </TableCell>
+              <TableCell className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.after)}>
                 {pretty(r.after)}
-              </Td>
-              <Td className="max-w-64 truncate text-xs text-muted-foreground" title={pretty(r.detail)}>
+              </TableCell>
+              <TableCell className="max-w-64 truncate text-xs text-muted-foreground" title={pretty(r.detail)}>
                 {pretty(r.detail)}
-              </Td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
+        </TableBody>
       </Table>
       {hasMore ? (
         <Link href={`/audit?${nextQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>

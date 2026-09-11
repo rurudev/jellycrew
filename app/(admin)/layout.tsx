@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { getServerStatus } from "@/lib/services/system";
-import { Alert } from "@/components/ui/alert";
+import { Callout } from "@/components/ui/callout";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getTheme } from "@/lib/theme-server";
@@ -49,14 +49,14 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 space-y-4 px-4 py-4">
         {status.reachable && !status.compatible ? (
-          <Alert tone="warning" title="Jellyfin version mismatch">
+          <Callout tone="warning" title="Jellyfin version mismatch">
             This server runs Jellyfin {status.version}; jellycrew is tested against {status.targetVersion}. Policy fields may differ.
-          </Alert>
+          </Callout>
         ) : null}
         {!status.reachable ? (
-          <Alert tone="error" title="Jellyfin is unreachable">
+          <Callout tone="error" title="Jellyfin is unreachable">
             {status.error}
-          </Alert>
+          </Callout>
         ) : null}
         {children}
       </main>
