@@ -12,6 +12,8 @@ export const SettingSchemas = {
   graceDays: z.number().int().min(0).max(3650),
   /** Overrides PUBLIC_BASE_URL for links in mails and invites when set. */
   publicBaseUrl: z.url().nullable(),
+  /** Jellyfin URL shown to invitees after signup, when it differs from JELLYFIN_URL. */
+  jellyfinPublicUrl: z.url().nullable(),
   smtpTestResult: z.object({ at: z.string(), ok: z.boolean(), message: z.string() }).nullable(),
 } as const;
 
@@ -19,6 +21,7 @@ export const SETTING_DEFAULTS = {
   minPasswordLength: 8,
   graceDays: 14,
   publicBaseUrl: null as string | null,
+  jellyfinPublicUrl: null as string | null,
   smtpTestResult: null as { at: string; ok: boolean; message: string } | null,
 } as const;
 

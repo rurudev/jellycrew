@@ -183,3 +183,9 @@ export async function setUserPasswordRaw(userId: string, newPassword: string): P
 export async function deleteUser(userId: string): Promise<void> {
   await call("DeleteUser", () => jellyfin().DELETE("/Users/{userId}", { params: { path: { userId } } }));
 }
+
+/** Creates a user with a password. Jellyfin validates the name and returns 400 on conflicts. */
+export async function createUserRaw(name: string, password: string): Promise<ValidatedUser> {
+  const data = await call("CreateUserByName", () => jellyfin().POST("/Users/New", { body: { Name: name, Password: password } }));
+  return UserDtoSchema.parse(data);
+}

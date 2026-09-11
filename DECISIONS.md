@@ -63,3 +63,15 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - Changing a user's email clears `email_verified_at`; labels are trimmed, de-duplicated and sorted on save.
 - The audit page paginates newest-first by id (100 rows, "older entries" link); exports stream the same filters as CSV or JSON from `/audit/export`.
 - Settings stored in the `setting` table: `graceDays` (14), `minPasswordLength` (8), `publicBaseUrl` (optional override of `PUBLIC_BASE_URL` for links), `smtpTestResult`; the settings page also shows server/app health and the scheduler status with a run-now button.
+
+## Stage 5 — Invites
+
+- Invite tokens are 128-bit base64url; the database stores the SHA-256 hash for lookup plus the token sealed with `SESSION_SECRET` (`invite.token_sealed`, an extra column) so "copy link" works later without storing the plain token; a leaked database alone cannot reproduce links.
+- Public endpoints (`/api/public/*`) are Route Handlers rather than server actions so they can be rate-limited by IP and token, return proper 429/410/404 codes, and be exercised directly in integration tests; the public pages are thin client forms that call them.
+- Rate limiting is an in-process sliding window (`lib/ratelimit.ts`): 20 requests per minute per IP and 30 per hour per token on invite endpoints. Single-container deployments need nothing more; a multi-instance setup would need a shared store.
+- Public POSTs check the `Origin` header against the request host, `X-Forwarded-Host` and the public base URL when present; cross-site posts get 403.
+- Signup order: validate → check name is free → create user → apply profile → claim a use with a conditional `UPDATE ... WHERE uses < max_uses` → write metadata → audit. Any failure after creation deletes the user again (`user.delete` audited with the invite actor) and writes `invite.signup_failed`; the exhausted check is re-run atomically at claim time so parallel signups cannot exceed `max_uses`.
+- Account expiry after signup: the invite's `account_expiry_days`, else the profile's `default_expiry_days`, else never. Invitee-provided emails are stored unverified.
+- Jellyfin rejects names it does not like with a bare "Error processing request."; the app pre-checks case-insensitive name clashes itself and otherwise surfaces Jellyfin's message verbatim.
+- The URL shown to invitees after signup is the `jellyfinPublicUrl` setting (new, on the settings page), falling back to `JELLYFIN_URL`, because the internal URL is usually not reachable from outside.
+- Link expiry defaults to 7 days; `0` means the link never expires. `max_uses` blank/0 means unlimited.

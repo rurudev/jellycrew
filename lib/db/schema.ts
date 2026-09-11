@@ -47,6 +47,8 @@ export const invite = sqliteTable(
   {
     id: text("id").primaryKey(),
     tokenHash: text("token_hash").notNull(),
+    /** The token sealed with SESSION_SECRET so admins can copy the link later; useless without the secret. */
+    tokenSealed: text("token_sealed"),
     label: text("label"),
     profileId: text("profile_id").references(() => profile.id, { onDelete: "set null" }),
     expiresAt: ts("expires_at"),

@@ -8,6 +8,7 @@ import { logoutAction } from "./actions";
 const nav: Array<{ href: string; label: string }> = [
   { href: "/users", label: "Users" },
   { href: "/profiles", label: "Profiles" },
+  { href: "/invites", label: "Invites" },
   { href: "/sessions", label: "Sessions" },
   { href: "/audit", label: "Audit" },
   { href: "/settings", label: "Settings" },

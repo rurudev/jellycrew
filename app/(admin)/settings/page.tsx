@@ -105,6 +105,13 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
                 Used in invite and reset links. Blank uses <code>PUBLIC_BASE_URL</code> from the environment ({e.PUBLIC_BASE_URL}).
               </Help>
             </div>
+            <div>
+              <Label htmlFor="jellyfinPublicUrl">Jellyfin URL for users</Label>
+              <Input id="jellyfinPublicUrl" name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} />
+              <Help>
+                Shown to invitees after signup. Blank uses <code>JELLYFIN_URL</code> ({e.JELLYFIN_URL}), which is usually an internal address.
+              </Help>
+            </div>
             <Button type="submit">Save settings</Button>
           </form>
         </Card>

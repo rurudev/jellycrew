@@ -13,6 +13,7 @@ const SettingsForm = z.object({
   graceDays: z.coerce.number().int().min(0).max(3650),
   minPasswordLength: z.coerce.number().int().min(1).max(128),
   publicBaseUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url().nullable()),
+  jellyfinPublicUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url().nullable()),
 });
 
 export async function saveSettingsAction(formData: FormData): Promise<void> {
@@ -21,12 +22,19 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
     graceDays: formData.get("graceDays"),
     minPasswordLength: formData.get("minPasswordLength"),
     publicBaseUrl: formData.get("publicBaseUrl"),
+    jellyfinPublicUrl: formData.get("jellyfinPublicUrl"),
   });
   if (!parsed.success) redirect(withNotice("/settings", { error: parsed.error.issues[0]?.message ?? "Invalid input." }));
-  const before = { graceDays: getSettingOrDefault("graceDays"), minPasswordLength: getSettingOrDefault("minPasswordLength"), publicBaseUrl: getSettingOrDefault("publicBaseUrl") };
+  const before = {
+    graceDays: getSettingOrDefault("graceDays"),
+    minPasswordLength: getSettingOrDefault("minPasswordLength"),
+    publicBaseUrl: getSettingOrDefault("publicBaseUrl"),
+    jellyfinPublicUrl: getSettingOrDefault("jellyfinPublicUrl"),
+  };
   setSetting("graceDays", parsed.data.graceDays);
   setSetting("minPasswordLength", parsed.data.minPasswordLength);
   setSetting("publicBaseUrl", parsed.data.publicBaseUrl);
+  setSetting("jellyfinPublicUrl", parsed.data.jellyfinPublicUrl);
   recordAudit({ actor, action: "settings.update", before, after: parsed.data });
   revalidatePath("/settings");
   redirect(withNotice("/settings", { ok: "Settings saved." }));
