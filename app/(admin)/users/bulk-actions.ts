@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
@@ -61,6 +62,7 @@ export async function bulkAction(_prev: BulkState, formData: FormData): Promise<
     revalidatePath("/users");
     return { stage: "done", kind, userIds, ...params, results };
   } catch (err) {
+    unstable_rethrow(err);
     return { stage: "error", error: errorMessage(err), kind, userIds, ...params };
   }
 }

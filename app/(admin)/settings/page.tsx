@@ -6,10 +6,12 @@ import { getSettingOrDefault } from "@/lib/settings";
 import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Field, Hint } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { KeyValue } from "@/components/ui/key-value";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { runLifecycleNowAction, saveSettingsAction, testSmtpAction } from "./actions";
 
 export const metadata = { title: "Settings" };
@@ -24,124 +26,114 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
   const smtpTest = getSettingOrDefault("smtpTestResult");
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Settings</h1>
+      <PageHeader title="Settings" />
       <Notice params={params} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Jellyfin server</CardTitle>
-          {!health.jellyfin.reachable ? <Alert tone="error" title="Unreachable">{health.jellyfin.error}</Alert> : null}
+        <Section title="Jellyfin server">
+          {!health.jellyfin.reachable ? (
+            <Alert tone="error" title="Unreachable" className="mb-3">
+              {health.jellyfin.error}
+            </Alert>
+          ) : null}
           {health.jellyfin.reachable && !health.jellyfin.compatible ? (
-            <Alert tone="warning" title="Version mismatch" className="mb-2">
+            <Alert tone="warning" title="Version mismatch" className="mb-3">
               The server runs {health.jellyfin.version}; this app is built and tested against {health.jellyfin.targetVersion}. Policy fields may differ.
             </Alert>
           ) : null}
-          <dl className="grid grid-cols-[10rem_1fr] gap-y-1">
-            <dt className="text-zinc-500">Name</dt>
-            <dd>{health.jellyfin.serverName ?? "—"}</dd>
-            <dt className="text-zinc-500">Version</dt>
-            <dd>
-              {health.jellyfin.version ?? "—"} <span className="text-zinc-400">(target {health.jellyfin.targetVersion})</span>
-            </dd>
-            <dt className="text-zinc-500">URL</dt>
-            <dd>
+          <KeyValue>
+            <KeyValue.Item label="Name">{health.jellyfin.serverName ?? "—"}</KeyValue.Item>
+            <KeyValue.Item label="Version">
+              {health.jellyfin.version ?? "—"} <span className="text-fg-subtle">(target {health.jellyfin.targetVersion})</span>
+            </KeyValue.Item>
+            <KeyValue.Item label="URL">
               <code>{e.JELLYFIN_URL}</code>
-            </dd>
-            <dt className="text-zinc-500">App version</dt>
-            <dd>{APP_VERSION}</dd>
-            <dt className="text-zinc-500">Database</dt>
-            <dd>{health.database.ok ? "ok" : health.database.error}</dd>
-            <dt className="text-zinc-500">Health endpoint</dt>
-            <dd>
+            </KeyValue.Item>
+            <KeyValue.Item label="App version">{APP_VERSION}</KeyValue.Item>
+            <KeyValue.Item label="Database">{health.database.ok ? "ok" : health.database.error}</KeyValue.Item>
+            <KeyValue.Item label="Health endpoint">
               <code>/healthz</code> → {health.status}
-            </dd>
-          </dl>
-        </Card>
+            </KeyValue.Item>
+          </KeyValue>
+        </Section>
 
-        <Card>
-          <CardTitle>Scheduler</CardTitle>
-          <dl className="grid grid-cols-[10rem_1fr] gap-y-1">
-            <dt className="text-zinc-500">Interval</dt>
-            <dd>every {LIFECYCLE_INTERVAL_MS / 60000} minutes</dd>
-            <dt className="text-zinc-500">Last started</dt>
-            <dd>
+        <Section title="Scheduler">
+          <KeyValue>
+            <KeyValue.Item label="Interval">every {LIFECYCLE_INTERVAL_MS / 60000} minutes</KeyValue.Item>
+            <KeyValue.Item label="Last started">
               <Time date={job?.lastStartedAt ?? null} />
-            </dd>
-            <dt className="text-zinc-500">Last finished</dt>
-            <dd>
+            </KeyValue.Item>
+            <KeyValue.Item label="Last finished">
               <Time date={job?.lastFinishedAt ?? null} />
-            </dd>
-            <dt className="text-zinc-500">Running</dt>
-            <dd>{job?.lockUntil && job.lockUntil > new Date() ? "yes" : "no"}</dd>
-            <dt className="text-zinc-500">Last result</dt>
-            <dd>
-              <pre className="max-h-40 overflow-auto rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-900">{job?.lastResult ? JSON.stringify(job.lastResult, null, 2) : "never run"}</pre>
-            </dd>
-          </dl>
-          <form action={runLifecycleNowAction} className="mt-3">
-            <Button type="submit" variant="secondary">
+            </KeyValue.Item>
+            <KeyValue.Item label="Running">{job?.lockUntil && job.lockUntil > new Date() ? "yes" : "no"}</KeyValue.Item>
+            <KeyValue.Item label="Last result">
+              <pre className="max-h-40 overflow-auto rounded-md bg-surface-2 p-2 text-xs">{job?.lastResult ? JSON.stringify(job.lastResult, null, 2) : "never run"}</pre>
+            </KeyValue.Item>
+          </KeyValue>
+          <form action={runLifecycleNowAction} className="mt-3 space-y-1">
+            <SubmitButton variant="secondary" pendingLabel="Running…">
               Run lifecycle now
-            </Button>
-            <Help>Disables expired and inactive users and deletes accounts past their grace period. Administrators are never touched.</Help>
+            </SubmitButton>
+            <Hint>Disables expired and inactive users and deletes accounts past their grace period. Administrators are never touched.</Hint>
           </form>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardTitle>App settings</CardTitle>
+        <Section title="App settings">
           <form action={saveSettingsAction} className="space-y-3">
-            <div>
-              <Label htmlFor="graceDays">Deletion grace period (days)</Label>
-              <Input id="graceDays" name="graceDays" type="number" min={0} max={3650} defaultValue={getSettingOrDefault("graceDays")} className="w-40" />
-              <Help>Time between &quot;schedule deletion&quot; (disable now) and the actual delete.</Help>
-            </div>
-            <div>
-              <Label htmlFor="minPasswordLength">Minimum password length</Label>
-              <Input id="minPasswordLength" name="minPasswordLength" type="number" min={1} max={128} defaultValue={getSettingOrDefault("minPasswordLength")} className="w-40" />
-              <Help>Applies to admin-set passwords, invites and self-service.</Help>
-            </div>
-            <div>
-              <Label htmlFor="publicBaseUrl">Public base URL</Label>
-              <Input id="publicBaseUrl" name="publicBaseUrl" type="url" defaultValue={getSettingOrDefault("publicBaseUrl") ?? ""} placeholder={e.PUBLIC_BASE_URL} />
-              <Help>
-                Used in invite and reset links. Blank uses <code>PUBLIC_BASE_URL</code> from the environment ({e.PUBLIC_BASE_URL}).
-              </Help>
-            </div>
-            <div>
-              <Label htmlFor="jellyfinPublicUrl">Jellyfin URL for users</Label>
-              <Input id="jellyfinPublicUrl" name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} />
-              <Help>
-                Shown to invitees after signup. Blank uses <code>JELLYFIN_URL</code> ({e.JELLYFIN_URL}), which is usually an internal address.
-              </Help>
-            </div>
-            <Button type="submit">Save settings</Button>
+            <Field id="graceDays" label="Deletion grace period (days)" help={<>Time between &quot;schedule deletion&quot; (disable now) and the actual delete.</>}>
+              <Input name="graceDays" type="number" min={0} max={3650} defaultValue={getSettingOrDefault("graceDays")} width="auto" className="w-40" />
+            </Field>
+            <Field id="minPasswordLength" label="Minimum password length" help="Applies to admin-set passwords, invites and self-service.">
+              <Input name="minPasswordLength" type="number" min={1} max={128} defaultValue={getSettingOrDefault("minPasswordLength")} width="auto" className="w-40" />
+            </Field>
+            <Field
+              id="publicBaseUrl"
+              label="Public base URL"
+              help={
+                <>
+                  Used in invite and reset links. Blank uses <code>PUBLIC_BASE_URL</code> from the environment ({e.PUBLIC_BASE_URL}).
+                </>
+              }
+            >
+              <Input name="publicBaseUrl" type="url" defaultValue={getSettingOrDefault("publicBaseUrl") ?? ""} placeholder={e.PUBLIC_BASE_URL} />
+            </Field>
+            <Field
+              id="jellyfinPublicUrl"
+              label="Jellyfin URL for users"
+              help={
+                <>
+                  Shown to invitees after signup. Blank uses <code>JELLYFIN_URL</code> ({e.JELLYFIN_URL}), which is usually an internal address.
+                </>
+              }
+            >
+              <Input name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} />
+            </Field>
+            <SubmitButton pendingLabel="Saving…">Save settings</SubmitButton>
           </form>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardTitle>Email (SMTP)</CardTitle>
+        <Section title="Email (SMTP)">
           {smtpConfigured ? (
             <div className="space-y-3">
-              <dl className="grid grid-cols-[10rem_1fr] gap-y-1">
-                <dt className="text-zinc-500">From</dt>
-                <dd>{e.SMTP_FROM}</dd>
-                <dt className="text-zinc-500">Last test</dt>
-                <dd>{smtpTest ? `${smtpTest.ok ? "ok" : "failed"} · ${smtpTest.message} (${smtpTest.at})` : "never"}</dd>
-              </dl>
+              <KeyValue>
+                <KeyValue.Item label="From">{e.SMTP_FROM}</KeyValue.Item>
+                <KeyValue.Item label="Last test">{smtpTest ? `${smtpTest.ok ? "ok" : "failed"} · ${smtpTest.message} (${smtpTest.at})` : "never"}</KeyValue.Item>
+              </KeyValue>
               <form action={testSmtpAction} className="flex flex-wrap items-end gap-2">
-                <div>
-                  <Label htmlFor="to">Send a test mail to (optional)</Label>
-                  <Input id="to" name="to" type="email" placeholder="you@example.com" />
-                </div>
-                <Button type="submit" variant="secondary">
+                <Field id="to" label="Send a test mail to (optional)">
+                  <Input name="to" type="email" placeholder="you@example.com" width="auto" className="w-64" />
+                </Field>
+                <SubmitButton variant="secondary" pendingLabel="Testing…">
                   Test SMTP
-                </Button>
+                </SubmitButton>
               </form>
             </div>
           ) : (
-            <p className="text-zinc-500">
+            <p className="text-fg-muted">
               Not configured. Set <code>SMTP_URL</code> and <code>SMTP_FROM</code> to enable verification and reset mail. Admins can always generate reset links by hand.
             </p>
           )}
-        </Card>
+        </Section>
       </div>
     </div>
   );

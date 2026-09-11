@@ -7,7 +7,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | # | Package | Branch | State |
 |---|---------|--------|-------|
 | 1 | Foundation: tokens, theme, type scale | `design/foundation` | done (2026-09-11, on branch) |
-| 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | planned |
+| 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done (2026-09-11, on branch) |
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | planned |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | planned |
 | 5 | Console shell (header, nav, status) | `design/shell` | planned |
@@ -72,6 +72,8 @@ Update the State column (planned → in progress → done, with the merge commit
 **Verified by.** Lint, typecheck, unit. Playwright: every console page, `/login`, `/me`, `/reset`, an invite page, before and after; forms still submit; focus rings visible on buttons and inputs; one `h1` per page (snapshot).
 
 **Out of scope.** Tables, badges, dialogs, notices, page layouts.
+
+**Also fixed while verifying.** Saving settings with the optional URL fields blank crashed on a NOT NULL constraint (`setSetting(null)` now deletes the row), and six server actions swallowed their own `redirect()` inside `try/catch` and reported "NEXT_REDIRECT" as an error; every action `catch` now starts with `unstable_rethrow`.
 
 ### 3. Table kit, status badges, chips, empty states — `design/tables-badges-empty`
 

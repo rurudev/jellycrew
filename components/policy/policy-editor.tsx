@@ -3,9 +3,9 @@
 import { useActionState, useMemo, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { Help } from "@/components/ui/label";
+import { Hint } from "@/components/ui/field";
 import { DiffTable } from "@/components/policy/diff-table";
 import { POLICY_GROUPS, SYNC_PLAY_ACCESS_VALUES, UNRATED_ITEM_VALUES, fieldsInGroup, type PolicyFieldDef, type PolicyScope } from "@/lib/policy/fields";
 import { mergeEdit } from "@/lib/policy/merge";
@@ -25,7 +25,7 @@ function IdCheckboxes({ field, value, options }: { field: PolicyFieldDef; value:
   const missing = selected.filter((id) => !known.has(id));
   return (
     <div className="space-y-1">
-      {options.length === 0 && missing.length === 0 ? <span className="text-zinc-400">none available</span> : null}
+      {options.length === 0 && missing.length === 0 ? <span className="text-fg-subtle">none available</span> : null}
       {options.map((o) => (
         <label key={o.id} className="flex items-center gap-2">
           <input type="checkbox" name={field.key} value={o.id} defaultChecked={selected.includes(o.id)} />
@@ -51,7 +51,7 @@ function FieldInput({ field, value, refData }: { field: PolicyFieldDef; value: u
     case "boolean":
       return <input id={id} type="checkbox" name={field.key} defaultChecked={value === true} className="h-4 w-4" />;
     case "integer":
-      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} className="w-40" />;
+      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} width="auto" className="w-40" />;
     case "string":
       return <Input id={id} name={field.key} defaultValue={typeof value === "string" ? value : ""} />;
     case "stringList":
@@ -171,21 +171,21 @@ export function PolicyEditor({
             <Button type="submit" name="confirm" value="1" disabled={pending}>
               {pending ? "Saving…" : "Confirm and save"}
             </Button>
-            <span className="self-center text-xs text-zinc-500">or keep editing below and preview again</span>
+            <span className="self-center text-xs text-fg-muted">or keep editing below and preview again</span>
           </div>
         </Alert>
       ) : null}
 
-      <div className="flex items-center gap-2 border-b border-zinc-200 pb-2 text-sm dark:border-zinc-800">
-        <button type="button" onClick={() => setMode("grouped")} className={mode === "grouped" ? "font-semibold" : "text-zinc-500"}>
+      <div className="flex items-center gap-2 border-b border-edge pb-2 text-sm">
+        <button type="button" onClick={() => setMode("grouped")} className={mode === "grouped" ? "font-semibold" : "text-fg-muted"}>
           Grouped editor
         </button>
-        <span className="text-zinc-300">|</span>
-        <button type="button" onClick={() => setMode("raw")} className={mode === "raw" ? "font-semibold" : "text-zinc-500"}>
+        <span className="text-edge-strong">|</span>
+        <button type="button" onClick={() => setMode("raw")} className={mode === "raw" ? "font-semibold" : "text-fg-muted"}>
           Raw JSON
         </button>
         {mode === "grouped" ? (
-          <label className="ml-auto flex items-center gap-1 text-xs text-zinc-500">
+          <label className="ml-auto flex items-center gap-1 text-xs text-fg-muted">
             <input type="checkbox" checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} /> show advanced fields
           </label>
         ) : null}
@@ -193,8 +193,8 @@ export function PolicyEditor({
 
       {mode === "raw" ? (
         <div>
-          <Textarea name="raw" defaultValue={JSON.stringify(current, null, 2)} className="min-h-96 font-mono text-xs" spellCheck={false} />
-          <Help>Keys you omit keep their current value. Unknown keys are preserved as Jellyfin returned them. Values are type-checked against the field catalog before preview.</Help>
+          <Textarea name="raw" defaultValue={JSON.stringify(current, null, 2)} mono className="min-h-96 text-xs" spellCheck={false} />
+          <Hint>Keys you omit keep their current value. Unknown keys are preserved as Jellyfin returned them. Values are type-checked against the field catalog before preview.</Hint>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -202,9 +202,9 @@ export function PolicyEditor({
             const fields = fieldsInGroup(g.id).filter((f) => (scope === "all" || f.scope === scope) && (showAdvanced || !f.advanced));
             const hiddenAdvanced = fieldsInGroup(g.id).filter((f) => (scope === "all" || f.scope === scope) && !showAdvanced && f.advanced);
             return (
-              <section key={g.id} className="rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+              <section key={g.id} className="rounded-md border border-edge p-3">
                 <h3 className="font-semibold">{g.title}</h3>
-                <p className="mb-2 text-xs text-zinc-500">{g.description}</p>
+                <p className="mb-2 text-xs text-fg-muted">{g.description}</p>
                 <div className="space-y-3">
                   {fields.map((f) => (
                     <div key={f.key} className="grid gap-1 sm:grid-cols-[1fr_1fr]">
@@ -213,9 +213,9 @@ export function PolicyEditor({
                           {f.label}
                         </label>
                         <div>
-                          <code className="text-[11px] text-zinc-400">{f.key}</code>
+                          <code className="text-xs text-fg-subtle">{f.key}</code>
                         </div>
-                        <Help>{f.help}</Help>
+                        <Hint>{f.help}</Hint>
                       </div>
                       <div className="sm:pt-0.5">
                         <FieldInput field={f} value={current[f.key]} refData={refData} />
@@ -237,9 +237,9 @@ export function PolicyEditor({
         <Button type="submit" variant="secondary" disabled={pending}>
           {pending ? "Working…" : "Preview changes"}
         </Button>
-        <a href={cancelHref} className="text-zinc-500 hover:underline">
+        <LinkButton href={cancelHref} variant="ghost">
           Cancel
-        </a>
+        </LinkButton>
       </div>
     </form>
   );

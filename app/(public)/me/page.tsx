@@ -5,10 +5,11 @@ import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Field, Hint } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { KeyValue } from "@/components/ui/key-value";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { changePasswordAction, logoutSelfAction, resendVerificationAction, revokeOwnDeviceAction, setEmailAction } from "./actions";
 import { SelfLoginForm } from "./login-form";
@@ -26,7 +27,7 @@ export default async function MePage(props: PageProps<"/me">) {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">My account</h1>
-          <p className="mt-1 text-zinc-500">Sign in with your Jellyfin credentials to manage your password, email and devices.</p>
+          <p className="mt-1 text-fg-muted">Sign in with your Jellyfin credentials to manage your password, email and devices.</p>
         </div>
         <SelfLoginForm />
       </div>
@@ -38,87 +39,80 @@ export default async function MePage(props: PageProps<"/me">) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Hi, {overview.userName}</h1>
         <form action={logoutSelfAction}>
-          <Button type="submit" variant="ghost" size="sm">
+          <SubmitButton variant="ghost" size="sm">
             Sign out
-          </Button>
+          </SubmitButton>
         </form>
       </div>
       <Notice params={params} />
-      {overview.isDisabled ? <Alert tone="error" title="This account is disabled">{overview.disabledReason ? reasonText[overview.disabledReason] : ""} Contact the administrator.</Alert> : null}
-      <Card>
-        <CardTitle>Overview</CardTitle>
-        <dl className="grid grid-cols-[8rem_1fr] gap-y-1">
-          <dt className="text-zinc-500">Server</dt>
-          <dd>{overview.serverName}</dd>
-          <dt className="text-zinc-500">Profile</dt>
-          <dd>{overview.profileName ?? <span className="text-zinc-400">none</span>}</dd>
-          <dt className="text-zinc-500">Access until</dt>
-          <dd>{overview.expiresAt ? <Time date={overview.expiresAt} /> : "no expiry"}</dd>
-        </dl>
-      </Card>
+      {overview.isDisabled ? (
+        <Alert tone="error" title="This account is disabled">
+          {overview.disabledReason ? reasonText[overview.disabledReason] : ""} Contact the administrator.
+        </Alert>
+      ) : null}
+      <Section title="Overview">
+        <KeyValue>
+          <KeyValue.Item label="Server">{overview.serverName}</KeyValue.Item>
+          <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-fg-subtle">none</span>}</KeyValue.Item>
+          <KeyValue.Item label="Access until">{overview.expiresAt ? <Time date={overview.expiresAt} /> : "no expiry"}</KeyValue.Item>
+        </KeyValue>
+      </Section>
 
-      <Card>
-        <CardTitle>Password</CardTitle>
+      <Section title="Password">
         <form action={changePasswordAction} className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <Label htmlFor="currentPassword">Current password</Label>
-            <Input id="currentPassword" name="currentPassword" type="password" required autoComplete="current-password" />
-          </div>
-          <div>
-            <Label htmlFor="newPassword">New password</Label>
-            <Input id="newPassword" name="newPassword" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword">Repeat new password</Label>
-            <Input id="confirmPassword" name="confirmPassword" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-          </div>
-          <div className="sm:col-span-3">
-            <Button type="submit" variant="secondary">
+          <Field id="currentPassword" label="Current password">
+            <Input name="currentPassword" size="lg" type="password" required autoComplete="current-password" />
+          </Field>
+          <Field id="newPassword" label="New password">
+            <Input name="newPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+          </Field>
+          <Field id="confirmPassword" label="Repeat new password">
+            <Input name="confirmPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+          </Field>
+          <div className="space-y-1 sm:col-span-3">
+            <SubmitButton variant="secondary" size="lg" pendingLabel="Changing…">
               Change password
-            </Button>
-            <Help>At least {minPasswordLength} characters. Your current password is checked first.</Help>
+            </SubmitButton>
+            <Hint>At least {minPasswordLength} characters. Your current password is checked first.</Hint>
           </div>
         </form>
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Email</CardTitle>
+      <Section title="Email">
         <p className="mb-2">
           {overview.email ? (
             <>
               <span className="font-medium">{overview.email}</span> {overview.emailVerified ? <Badge tone="green">verified</Badge> : <Badge tone="amber">not verified</Badge>}
             </>
           ) : (
-            <span className="text-zinc-500">No email address on file.</span>
+            <span className="text-fg-muted">No email address on file.</span>
           )}
         </p>
         {overview.mailConfigured ? (
           <div className="space-y-3">
             <form action={setEmailAction} className="flex flex-wrap items-end gap-2">
-              <div className="min-w-64">
-                <Label htmlFor="email">{overview.email ? "Change email address" : "Add email address"}</Label>
-                <Input id="email" name="email" type="email" required autoComplete="email" />
-              </div>
-              <Button type="submit" variant="secondary">
+              <Field id="email" label={overview.email ? "Change email address" : "Add email address"} className="min-w-64">
+                <Input name="email" size="lg" type="email" required autoComplete="email" />
+              </Field>
+              <SubmitButton variant="secondary" size="lg" pendingLabel="Sending…">
                 Send verification link
-              </Button>
+              </SubmitButton>
             </form>
             {overview.email && !overview.emailVerified ? (
               <form action={resendVerificationAction}>
-                <Button type="submit" variant="ghost" size="sm">
+                <SubmitButton variant="ghost" size="sm" pendingLabel="Sending…">
                   Resend verification email
-                </Button>
+                </SubmitButton>
               </form>
             ) : null}
-            <Help>Only a verified address can be used to reset a forgotten password.</Help>
+            <Hint>Only a verified address can be used to reset a forgotten password.</Hint>
           </div>
         ) : (
-          <Help>Email is not set up on this server, so addresses cannot be verified here. Contact the administrator if you need a password reset.</Help>
+          <Hint>Email is not set up on this server, so addresses cannot be verified here. Contact the administrator if you need a password reset.</Hint>
         )}
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Active sessions</CardTitle>
+      <Section title="Active sessions">
         <Table>
           <thead>
             <tr>
@@ -134,7 +128,7 @@ export default async function MePage(props: PageProps<"/me">) {
               <tr key={s.id}>
                 <Td>{s.client ?? "—"}</Td>
                 <Td>{s.deviceName ?? "—"}</Td>
-                <Td>{s.nowPlaying ? s.nowPlaying.title : <span className="text-zinc-400">idle</span>}</Td>
+                <Td>{s.nowPlaying ? s.nowPlaying.title : <span className="text-fg-subtle">idle</span>}</Td>
                 <Td>
                   <Time date={s.lastActivity} />
                 </Td>
@@ -142,10 +136,9 @@ export default async function MePage(props: PageProps<"/me">) {
             ))}
           </tbody>
         </Table>
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Devices</CardTitle>
+      <Section title="Devices">
         <Table>
           <thead>
             <tr>
@@ -161,7 +154,7 @@ export default async function MePage(props: PageProps<"/me">) {
               <tr key={d.id}>
                 <Td>{d.name}</Td>
                 <Td>
-                  {d.appName ?? "—"} <span className="text-zinc-400">{d.appVersion}</span>
+                  {d.appName ?? "—"} <span className="text-fg-subtle">{d.appVersion}</span>
                 </Td>
                 <Td>
                   <Time date={d.lastActivity} />
@@ -169,16 +162,16 @@ export default async function MePage(props: PageProps<"/me">) {
                 <Td className="text-right">
                   <form action={revokeOwnDeviceAction}>
                     <input type="hidden" name="deviceId" value={d.id} />
-                    <Button type="submit" size="sm" variant="danger">
+                    <SubmitButton size="sm" variant="danger" pendingLabel="Signing out…">
                       Sign out device
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </Td>
               </tr>
             ))}
           </tbody>
         </Table>
-      </Card>
+      </Section>
     </div>
   );
 }

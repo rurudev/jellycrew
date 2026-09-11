@@ -12,9 +12,11 @@ import { PolicyEditor } from "@/components/policy/policy-editor";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Field, Hint } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { applyToMembersAction, deleteProfileAction, saveProfilePolicyAction, updateProfileAction } from "../actions";
 
@@ -29,48 +31,40 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
   const applyAll = params.applyAll === "1";
   return (
     <div className="space-y-4">
-      <div className="text-xs text-zinc-500">
-        <Link href="/profiles" className="hover:underline">
-          Profiles
-        </Link>{" "}
-        / {profile.name}
-      </div>
-      <h1 className="text-xl font-semibold">{profile.name}</h1>
+      <PageHeader breadcrumb={[{ label: "Profiles", href: "/profiles" }, { label: profile.name }]} title={profile.name} />
       <Notice params={params} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Details</CardTitle>
+        <Section title="Details">
           <form action={updateProfileAction} className="space-y-3">
             <input type="hidden" name="profileId" value={id} />
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" defaultValue={profile.name} required maxLength={80} />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" name="description" defaultValue={profile.description ?? ""} maxLength={500} className="min-h-16" />
-            </div>
+            <Field id="name" label="Name">
+              <Input name="name" defaultValue={profile.name} required maxLength={80} />
+            </Field>
+            <Field id="description" label="Description">
+              <Textarea name="description" defaultValue={profile.description ?? ""} maxLength={500} className="min-h-16" />
+            </Field>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="defaultExpiryDays">Default expiry (days)</Label>
-                <Input id="defaultExpiryDays" name="defaultExpiryDays" type="number" min={1} max={3650} defaultValue={profile.defaultExpiryDays ?? ""} />
-              </div>
-              <div>
-                <Label htmlFor="inactivityDisableDays">Disable after inactivity (days)</Label>
-                <Input id="inactivityDisableDays" name="inactivityDisableDays" type="number" min={1} max={3650} defaultValue={profile.inactivityDisableDays ?? ""} />
-              </div>
+              <Field id="defaultExpiryDays" label="Default expiry (days)">
+                <Input name="defaultExpiryDays" type="number" min={1} max={3650} defaultValue={profile.defaultExpiryDays ?? ""} />
+              </Field>
+              <Field id="inactivityDisableDays" label="Disable after inactivity (days)">
+                <Input name="inactivityDisableDays" type="number" min={1} max={3650} defaultValue={profile.inactivityDisableDays ?? ""} />
+              </Field>
             </div>
-            <Button type="submit" variant="secondary">
+            <SubmitButton variant="secondary" pendingLabel="Saving…">
               Save details
-            </Button>
+            </SubmitButton>
           </form>
-        </Card>
+        </Section>
 
-        <Card>
-          <CardTitle>
-            Members <span className="text-sm font-normal text-zinc-500">{members.length}</span>
-          </CardTitle>
+        <Section
+          title={
+            <>
+              Members <span className="text-sm font-normal text-fg-muted">{members.length}</span>
+            </>
+          }
+        >
           <Table>
             <thead>
               <tr>
@@ -85,7 +79,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
                   <Td>
                     <Link href={`/users/${m.id}`}>{m.name}</Link> {m.isAdmin ? <Badge tone="purple">admin</Badge> : null} {m.isDisabled ? <Badge tone="red">disabled</Badge> : null}
                   </Td>
-                  <Td>{m.drift.length ? <Badge tone="amber">{m.drift.length} field(s)</Badge> : <span className="text-zinc-400">none</span>}</Td>
+                  <Td>{m.drift.length ? <Badge tone="amber">{m.drift.length} field(s)</Badge> : <span className="text-fg-subtle">none</span>}</Td>
                 </tr>
               ))}
             </tbody>
@@ -100,31 +94,29 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
                     <DiffTable changes={m.drift} beforeLabel="User (live)" afterLabel="Profile" />
                   </div>
                 ))}
-                <form action={applyToMembersAction} className="mt-3 flex gap-2">
+                <form action={applyToMembersAction} className="mt-3 flex items-center gap-2">
                   <input type="hidden" name="profileId" value={id} />
                   <input type="hidden" name="confirm" value="1" />
-                  <Button type="submit">Confirm: apply to all members</Button>
-                  <Link href={`/profiles/${id}`} className="self-center text-zinc-500 hover:underline">
+                  <SubmitButton pendingLabel="Applying…">Confirm: apply to all members</SubmitButton>
+                  <Link href={`/profiles/${id}`} className="text-fg-muted hover:underline">
                     Cancel
                   </Link>
                 </form>
               </Alert>
             ) : (
-              <form action={applyToMembersAction}>
+              <form action={applyToMembersAction} className="space-y-1">
                 <input type="hidden" name="profileId" value={id} />
                 <Button type="submit" variant="secondary" disabled={members.length === 0}>
                   Preview apply to all members
                 </Button>
-                <Help>Shows every member&apos;s diff first; execution is sequential with a per-user result.</Help>
+                <Hint>Shows every member&apos;s diff first; execution is sequential with a per-user result.</Hint>
               </form>
             )}
           </div>
-        </Card>
+        </Section>
       </div>
 
-      <Card>
-        <CardTitle>Policy</CardTitle>
-        <p className="mb-3 text-zinc-500">Only profile-managed fields. Saving changes the profile; members drift until the profile is applied.</p>
+      <Section title="Policy" description="Only profile-managed fields. Saving changes the profile; members drift until the profile is applied.">
         <PolicyEditor
           action={saveProfilePolicyAction}
           policy={profile.policy}
@@ -134,10 +126,9 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
           hidden={{ profileId: id }}
           cancelHref="/profiles"
         />
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Danger zone</CardTitle>
+      <Section title="Danger zone">
         <ConfirmForm
           action={deleteProfileAction}
           phrase={profile.name}
@@ -145,7 +136,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
           hidden={{ profileId: id }}
           description={<>Deleting unassigns {members.length} member(s). Their Jellyfin settings are not changed.</>}
         />
-      </Card>
+      </Section>
     </div>
   );
 }

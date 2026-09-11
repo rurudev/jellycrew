@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -48,6 +48,7 @@ export async function createProfileAction(formData: FormData): Promise<void> {
       id = createBlankProfile(actor, parsed.data).id;
     }
   } catch (err) {
+    unstable_rethrow(err);
     redirect(withNotice("/profiles", { error: errorMessage(err) }));
   }
   revalidatePath("/profiles");
@@ -62,6 +63,7 @@ export async function updateProfileAction(formData: FormData): Promise<void> {
   try {
     updateProfile(actor, id, parsed.data);
   } catch (err) {
+    unstable_rethrow(err);
     redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
   }
   revalidatePath("/profiles");
@@ -76,6 +78,7 @@ export async function deleteProfileAction(formData: FormData): Promise<void> {
   try {
     unassigned = deleteProfile(actor, id).unassigned;
   } catch (err) {
+    unstable_rethrow(err);
     redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
   }
   revalidatePath("/profiles");
@@ -91,6 +94,7 @@ export async function saveProfilePolicyAction(_prev: PolicyEditorState, formData
   try {
     submission = parseEditorSubmission(formData, "profile");
   } catch (err) {
+    unstable_rethrow(err);
     return { status: "error", error: err instanceof PolicyFormError ? err.message : errorMessage(err) };
   }
   try {
@@ -109,6 +113,7 @@ export async function saveProfilePolicyAction(_prev: PolicyEditorState, formData
         return { status: "saved", changes: result.changes, liveHash: result.liveHash, mode: submission.mode };
     }
   } catch (err) {
+    unstable_rethrow(err);
     return { status: "error", error: errorMessage(err), edit: submission.edit, mode: submission.mode };
   }
 }
@@ -129,6 +134,7 @@ export async function applyToMembersAction(formData: FormData): Promise<void> {
       withNotice(`/profiles/${id}`, failed.length ? { error: `Applied to ${results.length - failed.length} member(s); ${failed.length} failed: ${failed.map((f) => `${f.name}: ${f.message}`).join("; ")}` } : { ok: `Applied to ${results.length} member(s).` }),
     );
   } catch (err) {
+    unstable_rethrow(err);
     redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
   }
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/session";
 import { policyHash } from "@/lib/policy/hash";
@@ -6,6 +5,7 @@ import { getReferenceData } from "@/lib/services/reference";
 import { toEditorRefData } from "@/lib/services/reference-serialize";
 import { getUserDetail } from "@/lib/services/users";
 import { PolicyEditor } from "@/components/policy/policy-editor";
+import { PageHeader } from "@/components/ui/page-header";
 import { saveUserPolicyAction } from "./actions";
 
 export const metadata = { title: "Edit access" };
@@ -17,20 +17,11 @@ export default async function UserPolicyPage(props: PageProps<"/users/[id]/polic
   if (!detail) notFound();
   return (
     <div className="space-y-4">
-      <div className="text-xs text-zinc-500">
-        <Link href="/users" className="hover:underline">
-          Users
-        </Link>{" "}
-        /{" "}
-        <Link href={`/users/${id}`} className="hover:underline">
-          {detail.row.name}
-        </Link>{" "}
-        / Edit access
-      </div>
-      <h1 className="text-xl font-semibold">Edit access for {detail.row.name}</h1>
-      <p className="text-zinc-500">
-        Changes are previewed as a diff before they are written. If the policy changes on the server while you edit, the save is refused and you can reapply your edits.
-      </p>
+      <PageHeader
+        breadcrumb={[{ label: "Users", href: "/users" }, { label: detail.row.name, href: `/users/${id}` }, { label: "Edit access" }]}
+        title={`Edit access for ${detail.row.name}`}
+        description="Changes are previewed as a diff before they are written. If the policy changes on the server while you edit, the save is refused and you can reapply your edits."
+      />
       <PolicyEditor
         action={saveUserPolicyAction}
         policy={detail.policy}

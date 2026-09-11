@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
 import { adminCreateResetLink, adminEmailResetLink } from "@/lib/services/reset";
@@ -22,6 +22,7 @@ export async function createResetLinkAction(formData: FormData): Promise<void> {
     target.searchParams.set("resetLink", url);
     redirect(`${target.pathname}${target.search}`);
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
 }
@@ -33,6 +34,7 @@ export async function emailResetLinkAction(formData: FormData): Promise<void> {
     const { email } = await adminEmailResetLink(actor, userId);
     back(userId, { ok: `Reset link emailed to ${email}.` });
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
 }
@@ -43,6 +45,7 @@ export async function sendVerificationAction(formData: FormData): Promise<void> 
   try {
     await adminSendVerification(actor, userId);
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "Verification email sent." });

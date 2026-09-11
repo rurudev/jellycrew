@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
 
 export function ResetForm({ token, minPasswordLength }: { token: string; minPasswordLength: number }) {
   const [error, setError] = useState<string | null>(null);
@@ -49,16 +49,13 @@ export function ResetForm({ token, minPasswordLength }: { token: string; minPass
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
-      <div>
-        <Label htmlFor="password">New password</Label>
-        <Input id="password" name="password" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
-        <Help>At least {minPasswordLength} characters.</Help>
-      </div>
-      <div>
-        <Label htmlFor="passwordConfirm">Repeat new password</Label>
-        <Input id="passwordConfirm" name="passwordConfirm" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-      </div>
-      <Button type="submit" disabled={pending} className="w-full">
+      <Field id="password" label="New password" help={`At least ${minPasswordLength} characters.`}>
+        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
+      </Field>
+      <Field id="passwordConfirm" label="Repeat new password">
+        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </Field>
+      <Button type="submit" size="lg" block disabled={pending}>
         {pending ? "Saving…" : "Set new password"}
       </Button>
     </form>

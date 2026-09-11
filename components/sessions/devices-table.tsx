@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { Time } from "@/components/time";
 import type { DeviceView } from "@/lib/services/devices";
@@ -23,13 +23,13 @@ export function DevicesTable({ devices, showUser = true, returnTo }: { devices: 
           <tr key={d.id}>
             <Td>
               {d.name}
-              <div className="text-[11px] text-zinc-400">
+              <div className="text-xs text-fg-subtle">
                 <code>{d.id}</code>
               </div>
             </Td>
             <Td>
               {d.appName ?? "—"}
-              {d.appVersion ? <span className="text-zinc-400"> {d.appVersion}</span> : null}
+              {d.appVersion ? <span className="text-fg-subtle"> {d.appVersion}</span> : null}
             </Td>
             {showUser ? <Td>{d.lastUserId ? <Link href={`/users/${d.lastUserId}`}>{d.lastUserName ?? d.lastUserId}</Link> : "—"}</Td> : null}
             <Td>
@@ -39,9 +39,9 @@ export function DevicesTable({ devices, showUser = true, returnTo }: { devices: 
               <form action={revokeDeviceAction}>
                 <input type="hidden" name="deviceId" value={d.id} />
                 <input type="hidden" name="returnTo" value={returnTo} />
-                <Button type="submit" size="sm" variant="danger" title="Signs the device out and revokes its tokens">
+                <SubmitButton size="sm" variant="danger" title="Signs the device out and revokes its tokens">
                   Revoke
-                </Button>
+                </SubmitButton>
               </form>
             </Td>
           </tr>

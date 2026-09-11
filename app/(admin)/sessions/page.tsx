@@ -6,6 +6,7 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { SessionsTable } from "@/components/sessions/sessions-table";
 import { DevicesTable } from "@/components/sessions/devices-table";
 
@@ -34,19 +35,16 @@ export default async function SessionsPage(props: PageProps<"/sessions">) {
   const returnTo = `/sessions${search.size ? `?${search}` : ""}`;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">Sessions</h1>
-        <AutoRefresh seconds={10} />
-      </div>
+      <PageHeader
+        title="Sessions"
+        actions={<AutoRefresh seconds={10} />}
+        description={`${summary.streams} active ${summary.streams === 1 ? "stream" : "streams"} · ${summary.transcodes} transcoding · ${summary.users} distinct ${summary.users === 1 ? "user" : "users"} · ${summary.sessions} connected ${summary.sessions === 1 ? "session" : "sessions"}`}
+      />
       <Notice params={params} />
-      <p className="text-zinc-600 dark:text-zinc-300">
-        {summary.streams} active {summary.streams === 1 ? "stream" : "streams"} · {summary.transcodes} transcoding · {summary.users} distinct{" "}
-        {summary.users === 1 ? "user" : "users"} · {summary.sessions} connected {summary.sessions === 1 ? "session" : "sessions"}
-      </p>
       <form method="get" action="/sessions" className="flex flex-wrap items-end gap-2">
-        <Input name="user" placeholder="User" defaultValue={q.user} className="w-40" aria-label="Filter by user" />
-        <Input name="client" placeholder="Client" defaultValue={q.client} className="w-40" aria-label="Filter by client" />
-        <Select name="method" defaultValue={q.method} className="w-auto" aria-label="Filter by play method">
+        <Input name="user" placeholder="User" defaultValue={q.user} width="auto" className="w-40" aria-label="Filter by user" />
+        <Input name="client" placeholder="Client" defaultValue={q.client} width="auto" className="w-40" aria-label="Filter by client" />
+        <Select name="method" defaultValue={q.method} width="auto" aria-label="Filter by play method">
           <option value="">Any method</option>
           <option value="direct">Direct play</option>
           <option value="remux">Remux</option>

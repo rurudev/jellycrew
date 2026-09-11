@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage } from "@/lib/notice";
@@ -17,6 +18,7 @@ export async function saveUserPolicyAction(_prev: PolicyEditorState, formData: F
   try {
     submission = parseEditorSubmission(formData, "all");
   } catch (err) {
+    unstable_rethrow(err);
     return { status: "error", error: err instanceof PolicyFormError ? err.message : errorMessage(err) };
   }
   try {
@@ -34,6 +36,7 @@ export async function saveUserPolicyAction(_prev: PolicyEditorState, formData: F
         return { status: "saved", changes: result.changes, liveHash: result.liveHash, mode: submission.mode };
     }
   } catch (err) {
+    unstable_rethrow(err);
     if (err instanceof ProtectionError) return { status: "error", error: err.message, edit: submission.edit, mode: submission.mode };
     return { status: "error", error: errorMessage(err), edit: submission.edit, mode: submission.mode };
   }

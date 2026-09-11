@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { Time } from "@/components/time";
 import { formatBitrate, ticksToDuration } from "@/lib/format";
@@ -40,15 +40,15 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
         {sessions.map((s) => (
           <tr key={s.id}>
             {showUser ? (
-              <Td>{s.userId ? <Link href={`/users/${s.userId}`}>{s.userName ?? s.userId}</Link> : <span className="text-zinc-400">—</span>}</Td>
+              <Td>{s.userId ? <Link href={`/users/${s.userId}`}>{s.userName ?? s.userId}</Link> : <span className="text-fg-subtle">—</span>}</Td>
             ) : null}
             <Td>
               {s.client ?? "—"}
-              {s.appVersion ? <div className="text-xs text-zinc-400">{s.appVersion}</div> : null}
+              {s.appVersion ? <div className="text-xs text-fg-subtle">{s.appVersion}</div> : null}
             </Td>
             <Td>
               {s.deviceName ?? "—"}
-              {s.remoteEndPoint ? <div className="text-xs text-zinc-400">{s.remoteEndPoint}</div> : null}
+              {s.remoteEndPoint ? <div className="text-xs text-fg-subtle">{s.remoteEndPoint}</div> : null}
             </Td>
             <Td>
               {s.nowPlaying ? (
@@ -57,20 +57,20 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
                     {s.nowPlaying.title}
                     {s.nowPlaying.isPaused ? <Badge className="ml-1">paused</Badge> : null}
                   </div>
-                  {s.nowPlaying.subtitle ? <div className="text-xs text-zinc-500">{s.nowPlaying.subtitle}</div> : null}
-                  <div className="text-xs text-zinc-400">
+                  {s.nowPlaying.subtitle ? <div className="text-xs text-fg-muted">{s.nowPlaying.subtitle}</div> : null}
+                  <div className="text-xs text-fg-subtle">
                     {ticksToDuration(s.nowPlaying.positionTicks)}
                     {s.nowPlaying.runTimeTicks ? ` / ${ticksToDuration(s.nowPlaying.runTimeTicks)}` : ""}
                   </div>
                 </div>
               ) : (
-                <span className="text-zinc-400">idle</span>
+                <span className="text-fg-subtle">idle</span>
               )}
             </Td>
             <Td>
               <PlayMethodBadge s={s} />
               {s.playMethod === "transcode" ? (
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-fg-muted">
                   {[s.videoCodec, s.audioCodec, s.container, s.resolution, formatBitrate(s.bitrate)].filter(Boolean).join(" · ")}
                   {s.transcodeReasons.length ? <div>{s.transcodeReasons.join(", ")}</div> : null}
                 </div>
@@ -85,20 +85,18 @@ export function SessionsTable({ sessions, showUser = true, returnTo }: { session
                   <form action={stopPlaybackAction}>
                     <input type="hidden" name="sessionId" value={s.id} />
                     <input type="hidden" name="returnTo" value={returnTo} />
-                    <Button type="submit" size="sm" variant="secondary">
+                    <SubmitButton size="sm" variant="secondary">
                       Stop
-                    </Button>
+                    </SubmitButton>
                   </form>
                 ) : null}
                 <details className="text-left">
-                  <summary className="cursor-pointer text-xs text-zinc-500 hover:underline">Message</summary>
+                  <summary className="cursor-pointer text-xs text-fg-muted hover:underline">Message</summary>
                   <form action={sendMessageAction} className="mt-1 flex gap-1">
                     <input type="hidden" name="sessionId" value={s.id} />
                     <input type="hidden" name="returnTo" value={returnTo} />
-                    <Input name="text" placeholder="Message text" required maxLength={500} className="w-48" />
-                    <Button type="submit" size="sm">
-                      Send
-                    </Button>
+                    <Input name="text" placeholder="Message text" required maxLength={500} width="auto" className="w-48" aria-label="Message text" />
+                    <SubmitButton size="sm">Send</SubmitButton>
                   </form>
                 </details>
               </div>

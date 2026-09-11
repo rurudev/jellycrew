@@ -29,7 +29,7 @@ export function UsersFilters({
       <div className="min-w-48 flex-1">
         <Input name="q" placeholder="Search name, email, notes, labels" defaultValue={query.q} aria-label="Search" />
       </div>
-      <Select name="status" defaultValue={query.status ?? ""} aria-label="Status" className="w-auto">
+      <Select name="status" defaultValue={query.status ?? ""} aria-label="Status" width="auto">
         <option value="">Any status</option>
         {STATUS_FILTERS.map((s) => (
           <option key={s} value={s}>
@@ -37,7 +37,7 @@ export function UsersFilters({
           </option>
         ))}
       </Select>
-      <Select name="profile" defaultValue={query.profile ?? ""} aria-label="Profile" className="w-auto">
+      <Select name="profile" defaultValue={query.profile ?? ""} aria-label="Profile" width="auto">
         <option value="">Any profile</option>
         <option value="none">No profile</option>
         {profiles.map((p) => (
@@ -46,7 +46,7 @@ export function UsersFilters({
           </option>
         ))}
       </Select>
-      <Select name="label" defaultValue={query.label ?? ""} aria-label="Label" className="w-auto">
+      <Select name="label" defaultValue={query.label ?? ""} aria-label="Label" width="auto">
         <option value="">Any label</option>
         {labels.map((l) => (
           <option key={l} value={l}>
@@ -54,20 +54,20 @@ export function UsersFilters({
           </option>
         ))}
       </Select>
-      <Select name="drift" defaultValue={query.drift ?? ""} aria-label="Drift" className="w-auto">
+      <Select name="drift" defaultValue={query.drift ?? ""} aria-label="Drift" width="auto">
         <option value="">Drift: any</option>
         <option value="yes">Has drift</option>
         <option value="no">No drift</option>
       </Select>
       <div className="flex items-center gap-1">
-        <span className="text-zinc-500">Inactive ≥</span>
-        <Input name="inactive" type="number" min={1} defaultValue={query.inactive ?? ""} className="w-20" aria-label="Inactive for days" />
-        <span className="text-zinc-500">days</span>
+        <span className="text-fg-muted">Inactive ≥</span>
+        <Input name="inactive" type="number" min={1} defaultValue={query.inactive ?? ""} width="auto" className="w-20" aria-label="Inactive for days" />
+        <span className="text-fg-muted">days</span>
       </div>
       <Button type="submit" variant="secondary">
         Apply
       </Button>
-      <Link href="/users" className="px-2 text-zinc-500 hover:underline">
+      <Link href="/users" className="px-2 text-fg-muted hover:underline">
         Reset
       </Link>
     </form>

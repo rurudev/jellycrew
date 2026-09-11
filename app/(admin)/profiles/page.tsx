@@ -4,10 +4,11 @@ import { listProfilesWithCounts } from "@/lib/services/profiles";
 import { listUsers } from "@/lib/services/users";
 import { Notice } from "@/components/notice";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { createProfileAction } from "./actions";
 
@@ -19,7 +20,7 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
   const [profiles, users] = await Promise.all([listProfilesWithCounts(), listUsers()]);
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Profiles</h1>
+      <PageHeader title="Profiles" count={profiles.length} />
       <Notice params={params} />
       <Table>
         <thead>
@@ -41,39 +42,32 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
                   {p.name}
                 </Link>
               </Td>
-              <Td className="text-zinc-500">{p.description}</Td>
+              <Td className="text-fg-muted">{p.description}</Td>
               <Td className="text-right tabular-nums">{p.memberCount}</Td>
               <Td className="text-right tabular-nums">{p.driftCount ? <Badge tone="amber">{p.driftCount}</Badge> : 0}</Td>
-              <Td>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-zinc-400">none</span>}</Td>
-              <Td>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-zinc-400">never</span>}</Td>
+              <Td>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-fg-subtle">none</span>}</Td>
+              <Td>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-fg-subtle">never</span>}</Td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      <Card>
-        <CardTitle>Create a profile</CardTitle>
+      <Section title="Create a profile">
         <form action={createProfileAction} className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" required maxLength={80} />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" name="description" maxLength={500} className="min-h-16" />
-            </div>
+            <Field id="name" label="Name">
+              <Input name="name" required maxLength={80} />
+            </Field>
+            <Field id="description" label="Description">
+              <Textarea name="description" maxLength={500} className="min-h-16" />
+            </Field>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="defaultExpiryDays">Default expiry (days)</Label>
-                <Input id="defaultExpiryDays" name="defaultExpiryDays" type="number" min={1} max={3650} />
-                <Help>Used by invites; blank = never.</Help>
-              </div>
-              <div>
-                <Label htmlFor="inactivityDisableDays">Disable after inactivity (days)</Label>
-                <Input id="inactivityDisableDays" name="inactivityDisableDays" type="number" min={1} max={3650} />
-                <Help>Members inherit this unless overridden; blank = never.</Help>
-              </div>
+              <Field id="defaultExpiryDays" label="Default expiry (days)" help="Used by invites; blank = never.">
+                <Input name="defaultExpiryDays" type="number" min={1} max={3650} />
+              </Field>
+              <Field id="inactivityDisableDays" label="Disable after inactivity (days)" help="Members inherit this unless overridden; blank = never.">
+                <Input name="inactivityDisableDays" type="number" min={1} max={3650} />
+              </Field>
             </div>
           </div>
           <div className="space-y-3">
@@ -105,10 +99,10 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
                 ))}
               </Select>
             </fieldset>
-            <Button type="submit">Create profile</Button>
+            <SubmitButton pendingLabel="Creating…">Create profile</SubmitButton>
           </div>
         </form>
-      </Card>
+      </Section>
     </div>
   );
 }

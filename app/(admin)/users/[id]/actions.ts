@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -28,6 +28,7 @@ export async function setEnabledAction(formData: FormData): Promise<void> {
   try {
     await setUserEnabled(actor, userId, enabled, "manual");
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: enabled ? "User enabled." : "User disabled." });
@@ -40,6 +41,7 @@ export async function assignProfileAction(formData: FormData): Promise<void> {
   try {
     assignProfile(actor, userId, profileId);
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: profileId ? "Profile assigned. Use Apply to push its settings to Jellyfin." : "Profile assignment removed." });
@@ -54,6 +56,7 @@ export async function applyProfileAction(formData: FormData): Promise<void> {
   try {
     changed = (await applyProfileToUser(actor, userId, profileId)).length;
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: changed ? `Profile applied: ${changed} field(s) updated.` : "Profile applied: nothing needed to change." });
@@ -69,6 +72,7 @@ export async function adoptIntoProfileAction(formData: FormData): Promise<void> 
     const drifting = result.otherMembers.filter((m) => m.willDrift).length;
     back(userId, { ok: `Profile updated from this user (${result.changes.length} field(s)). ${drifting} other member(s) now drift.` });
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
 }
@@ -81,6 +85,7 @@ export async function renameUserAction(formData: FormData): Promise<void> {
   try {
     await renameUser(actor, userId, parsed.data);
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "User renamed." });
@@ -95,6 +100,7 @@ export async function setPasswordAction(formData: FormData): Promise<void> {
   try {
     await setUserPassword(actor, userId, password);
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "Password updated." });
@@ -116,6 +122,7 @@ export async function copyPolicyAction(formData: FormData): Promise<void> {
     }
     back(userId, { ok: changes.length ? `Copied ${changes.length} field(s).` : "Nothing to copy: policies already match." });
   } catch (err) {
+    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
 }

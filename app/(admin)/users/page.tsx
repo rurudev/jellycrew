@@ -3,6 +3,7 @@ import { listUsers } from "@/lib/services/users";
 import { applyUsersQuery, parseUsersQuery } from "@/lib/users/query";
 import { listProfiles } from "@/lib/services/profiles";
 import { Notice } from "@/components/notice";
+import { PageHeader } from "@/components/ui/page-header";
 import { BulkForm } from "@/components/users/bulk-form";
 import { UsersFilters } from "@/components/users/users-filters";
 import { UsersTable } from "@/components/users/users-table";
@@ -20,11 +21,7 @@ export default async function UsersPage(props: PageProps<"/users">) {
   const profiles = listProfiles().map((p) => ({ id: p.id, name: p.name }));
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">
-          Users <span className="text-sm font-normal text-zinc-500">{rows.length === all.length ? all.length : `${rows.length} of ${all.length}`}</span>
-        </h1>
-      </div>
+      <PageHeader title="Users" count={rows.length === all.length ? all.length : `${rows.length} of ${all.length}`} />
       <Notice params={params} />
       <UsersFilters query={query} labels={labels} profiles={profiles} />
       <BulkForm action={bulkAction} profiles={profiles}>

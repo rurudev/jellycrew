@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
 
 interface Done {
   userName: string;
@@ -70,25 +70,19 @@ export function SignupForm({ token, requireEmail, minPasswordLength }: { token: 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
-      <div>
-        <Label htmlFor="username">Username</Label>
-        <Input id="username" name="username" required maxLength={64} autoComplete="username" autoFocus />
-      </div>
-      <div>
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-        <Help>At least {minPasswordLength} characters.</Help>
-      </div>
-      <div>
-        <Label htmlFor="passwordConfirm">Repeat password</Label>
-        <Input id="passwordConfirm" name="passwordConfirm" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-      </div>
-      <div>
-        <Label htmlFor="email">Email {requireEmail ? "" : "(optional)"}</Label>
-        <Input id="email" name="email" type="email" required={requireEmail} autoComplete="email" />
-        <Help>Used only for password resets after you verify it.</Help>
-      </div>
-      <Button type="submit" disabled={pending} className="w-full">
+      <Field id="username" label="Username">
+        <Input name="username" size="lg" required maxLength={64} autoComplete="username" autoFocus />
+      </Field>
+      <Field id="password" label="Password" help={`At least ${minPasswordLength} characters.`}>
+        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </Field>
+      <Field id="passwordConfirm" label="Repeat password">
+        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </Field>
+      <Field id="email" label={requireEmail ? "Email" : "Email (optional)"} help="Used only for password resets after you verify it.">
+        <Input name="email" size="lg" type="email" required={requireEmail} autoComplete="email" />
+      </Field>
+      <Button type="submit" size="lg" block disabled={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>

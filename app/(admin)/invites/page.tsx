@@ -7,10 +7,11 @@ import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 import { createInviteAction, revokeInviteAction } from "./actions";
 
@@ -29,7 +30,7 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
   for (const inv of invites) if (inv.status === "active") links.set(inv.id, await inviteLink(inv));
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Invites</h1>
+      <PageHeader title="Invites" count={invites.length} />
       <Notice params={params} />
       {created && createdLink ? (
         <Alert tone="success" title="Invite created">
@@ -57,8 +58,8 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
           {invites.map((inv) => (
             <tr key={inv.id}>
               <Td>
-                {inv.label ?? <span className="text-zinc-400">untitled</span>}
-                <div className="text-xs text-zinc-400">
+                {inv.label ?? <span className="text-fg-subtle">untitled</span>}
+                <div className="text-xs text-fg-subtle">
                   created <Time date={inv.createdAt} />
                   {inv.requireEmail ? " · email required" : ""}
                 </div>
@@ -66,21 +67,22 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
               <Td>
                 <Badge tone={tone[inv.status]}>{inv.status}</Badge>
               </Td>
-              <Td>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-zinc-400">none</span>}</Td>
+              <Td>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-fg-subtle">none</span>}</Td>
               <Td className="tabular-nums">
                 {inv.uses}
                 {inv.maxUses !== null ? ` / ${inv.maxUses}` : " / ∞"}
               </Td>
-              <Td>{inv.expiresAt ? <Time date={inv.expiresAt} /> : <span className="text-zinc-400">never</span>}</Td>
-              <Td>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-zinc-400">profile default</span>}</Td>
+              <Td>{inv.expiresAt ? <Time date={inv.expiresAt} /> : <span className="text-fg-subtle">never</span>}</Td>
+              <Td>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-fg-subtle">profile default</span>}</Td>
               <Td>
                 {inv.usedBy.length === 0 ? (
-                  <span className="text-zinc-400">nobody yet</span>
+                  <span className="text-fg-subtle">nobody yet</span>
                 ) : (
                   <ul className="text-xs">
                     {inv.usedBy.map((u) => (
                       <li key={u.id}>
-                        <Link href={`/users/${u.jellyfinUserId}`}>{u.userName ?? u.jellyfinUserId.slice(0, 8)}</Link> <span className="text-zinc-400">
+                        <Link href={`/users/${u.jellyfinUserId}`}>{u.userName ?? u.jellyfinUserId.slice(0, 8)}</Link>{" "}
+                        <span className="text-fg-subtle">
                           <Time date={u.createdAt} />
                         </span>
                       </li>
@@ -94,9 +96,9 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
                   {inv.status === "active" ? (
                     <form action={revokeInviteAction}>
                       <input type="hidden" name="inviteId" value={inv.id} />
-                      <Button type="submit" size="sm" variant="danger">
+                      <SubmitButton size="sm" variant="danger">
                         Revoke
-                      </Button>
+                      </SubmitButton>
                     </form>
                   ) : null}
                 </div>
@@ -106,17 +108,14 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
         </tbody>
       </Table>
 
-      <Card>
-        <CardTitle>Create an invite</CardTitle>
+      <Section title="Create an invite">
         <form action={createInviteAction} className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
-            <div>
-              <Label htmlFor="label">Label</Label>
-              <Input id="label" name="label" maxLength={100} placeholder="Family, Friends of Alex…" />
-            </div>
-            <div>
-              <Label htmlFor="profileId">Profile</Label>
-              <Select id="profileId" name="profileId" defaultValue="">
+            <Field id="label" label="Label">
+              <Input name="label" maxLength={100} placeholder="Family, Friends of Alex…" />
+            </Field>
+            <Field id="profileId" label="Profile" help="Applied right after the account is created; if that fails the account is removed again.">
+              <Select name="profileId" defaultValue="">
                 <option value="">None (Jellyfin defaults)</option>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -124,38 +123,30 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
                   </option>
                 ))}
               </Select>
-              <Help>Applied right after the account is created; if that fails the account is removed again.</Help>
-            </div>
-            <div>
-              <Label htmlFor="noteForInvitee">Note for the invitee</Label>
-              <Textarea id="noteForInvitee" name="noteForInvitee" maxLength={1000} className="min-h-16" placeholder="Shown on the signup page." />
-            </div>
+            </Field>
+            <Field id="noteForInvitee" label="Note for the invitee">
+              <Textarea name="noteForInvitee" maxLength={1000} className="min-h-16" placeholder="Shown on the signup page." />
+            </Field>
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label htmlFor="linkExpiryDays">Link expires (days)</Label>
-                <Input id="linkExpiryDays" name="linkExpiryDays" type="number" min={0} max={3650} defaultValue={INVITE_DEFAULT_EXPIRY_DAYS} />
-                <Help>0 = never</Help>
-              </div>
-              <div>
-                <Label htmlFor="maxUses">Max uses</Label>
-                <Input id="maxUses" name="maxUses" type="number" min={0} max={100000} defaultValue={1} />
-                <Help>0 = unlimited</Help>
-              </div>
-              <div>
-                <Label htmlFor="accountExpiryDays">Account expiry (days)</Label>
-                <Input id="accountExpiryDays" name="accountExpiryDays" type="number" min={0} max={3650} />
-                <Help>blank = profile default</Help>
-              </div>
+              <Field id="linkExpiryDays" label="Link expires (days)" help="0 = never">
+                <Input name="linkExpiryDays" type="number" min={0} max={3650} defaultValue={INVITE_DEFAULT_EXPIRY_DAYS} />
+              </Field>
+              <Field id="maxUses" label="Max uses" help="0 = unlimited">
+                <Input name="maxUses" type="number" min={0} max={100000} defaultValue={1} />
+              </Field>
+              <Field id="accountExpiryDays" label="Account expiry (days)" help="blank = profile default">
+                <Input name="accountExpiryDays" type="number" min={0} max={3650} />
+              </Field>
             </div>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="requireEmail" /> Require an email address
             </label>
-            <Button type="submit">Create invite</Button>
+            <SubmitButton pendingLabel="Creating…">Create invite</SubmitButton>
           </div>
         </form>
-      </Card>
+      </Section>
     </div>
   );
 }

@@ -41,8 +41,13 @@ export function getSetting<K extends SettingKey>(key: K): SettingValue<K> | unde
 
 export function setSetting<K extends SettingKey>(key: K, value: SettingValue<K>): void {
   const parsed = SettingSchemas[key].parse(value);
-  getDb()
-    .insert(setting)
+  const db = getDb();
+  // `null` means "back to the default": the column is NOT NULL, so the row goes away instead.
+  if (parsed === null) {
+    db.delete(setting).where(eq(setting.key, key)).run();
+    return;
+  }
+  db.insert(setting)
     .values({ key, value: parsed })
     .onConflictDoUpdate({ target: setting.key, set: { value: parsed } })
     .run();

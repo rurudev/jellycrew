@@ -13,10 +13,12 @@ import { SessionsTable } from "@/components/sessions/sessions-table";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
+import { Field, Hint } from "@/components/ui/field";
 import { Input, Select } from "@/components/ui/input";
-import { Help, Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, Td, Th, EmptyRow } from "@/components/ui/table";
 import { Avatar } from "@/components/users/avatar";
 import { LifecycleCard } from "@/components/users/lifecycle-card";
@@ -47,46 +49,47 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-zinc-500">
-        <Link href="/users" className="hover:underline">
-          Users
-        </Link>{" "}
-        / {row.name}
-      </div>
-      <header className="flex flex-wrap items-center gap-3">
-        <Avatar userId={row.id} name={row.name} imageTag={row.imageTag} size={40} />
-        <h1 className="text-xl font-semibold">{row.name}</h1>
-        {row.isAdmin ? <Badge tone="purple">admin</Badge> : null}
-        {row.isHidden ? <Badge>hidden</Badge> : null}
-        {isSelf ? <Badge tone="blue">you</Badge> : null}
-        <StatusBadge status={row.status} />
-        <span className="text-xs text-zinc-400">
-          <code>{row.id}</code>
-        </span>
-        <div className="ml-auto flex flex-wrap gap-2">
-          <Link href={`/users/${id}/policy`}>
-            <Button type="button" variant="secondary">
+      <PageHeader
+        breadcrumb={[{ label: "Users", href: "/users" }, { label: row.name }]}
+        title={
+          <>
+            <Avatar userId={row.id} name={row.name} imageTag={row.imageTag} size={28} />
+            <span>{row.name}</span>
+          </>
+        }
+        description={
+          <span className="flex flex-wrap items-center gap-1.5">
+            {row.isAdmin ? <Badge tone="purple">admin</Badge> : null}
+            {row.isHidden ? <Badge>hidden</Badge> : null}
+            {isSelf ? <Badge tone="blue">you</Badge> : null}
+            <StatusBadge status={row.status} />
+            <code className="text-xs text-fg-subtle">{row.id}</code>
+          </span>
+        }
+        actions={
+          <>
+            <LinkButton href={`/users/${id}/policy`} variant="secondary">
               Edit access
-            </Button>
-          </Link>
-          <form action={setEnabledAction}>
-            <input type="hidden" name="userId" value={id} />
-            <input type="hidden" name="enabled" value={row.isDisabled ? "1" : "0"} />
-            <Button type="submit" variant={row.isDisabled ? "primary" : "danger"} disabled={isSelf && !row.isDisabled} title={isSelf ? "You cannot disable yourself" : undefined}>
-              {row.isDisabled ? "Enable" : "Disable"}
-            </Button>
-          </form>
-          {assigned ? (
-            <form action={applyProfileAction}>
+            </LinkButton>
+            <form action={setEnabledAction}>
               <input type="hidden" name="userId" value={id} />
-              <input type="hidden" name="profileId" value={assigned.id} />
-              <Button type="submit" variant="secondary">
-                Apply profile
-              </Button>
+              <input type="hidden" name="enabled" value={row.isDisabled ? "1" : "0"} />
+              <SubmitButton variant={row.isDisabled ? "primary" : "danger"} disabled={isSelf && !row.isDisabled} title={isSelf ? "You cannot disable yourself" : undefined}>
+                {row.isDisabled ? "Enable" : "Disable"}
+              </SubmitButton>
             </form>
-          ) : null}
-        </div>
-      </header>
+            {assigned ? (
+              <form action={applyProfileAction}>
+                <input type="hidden" name="userId" value={id} />
+                <input type="hidden" name="profileId" value={assigned.id} />
+                <SubmitButton variant="secondary" pendingLabel="Applying…">
+                  Apply profile
+                </SubmitButton>
+              </form>
+            ) : null}
+          </>
+        }
+      />
       <Notice params={params} />
       {resetLink ? (
         <Alert tone="success" title="Reset link created (valid 60 minutes, single use)">
@@ -98,31 +101,34 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Profile</CardTitle>
-          <form action={assignProfileAction} className="flex flex-wrap items-end gap-2">
+        <Section title="Profile">
+          <form action={assignProfileAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <div className="min-w-48">
-              <Label htmlFor="profileId">Assigned profile</Label>
-              <Select id="profileId" name="profileId" defaultValue={assigned?.id ?? ""}>
-                <option value="">No profile</option>
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </Select>
+            <div className="flex flex-wrap items-end gap-2">
+              <Field id="profileId" label="Assigned profile" className="min-w-48">
+                <Select name="profileId" defaultValue={assigned?.id ?? ""}>
+                  <option value="">No profile</option>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <SubmitButton variant="secondary" pendingLabel="Assigning…">
+                Assign
+              </SubmitButton>
             </div>
-            <Button type="submit" variant="secondary">
-              Assign
-            </Button>
-            <Help>Assigning only records the link. Apply pushes the profile&apos;s managed fields to Jellyfin.</Help>
+            <Hint>Assigning only records the link. Apply pushes the profile&apos;s managed fields to Jellyfin.</Hint>
           </form>
           {assigned ? (
             <div className="mt-4 space-y-3">
               <div>
                 <h3 className="font-medium">
-                  Drift from <Link href={`/profiles/${assigned.id}`} className="underline">{assigned.name}</Link>
+                  Drift from{" "}
+                  <Link href={`/profiles/${assigned.id}`} className="underline">
+                    {assigned.name}
+                  </Link>
                 </h3>
                 <DiffTable changes={drift ?? []} beforeLabel="User (live)" afterLabel="Profile" empty="No drift: the user matches the profile." />
               </div>
@@ -130,119 +136,116 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 <form action={applyProfileAction}>
                   <input type="hidden" name="userId" value={id} />
                   <input type="hidden" name="profileId" value={assigned.id} />
-                  <Button type="submit" variant="secondary" disabled={!drift?.length}>
+                  <SubmitButton variant="secondary" disabled={!drift?.length} pendingLabel="Applying…">
                     Apply profile to user
-                  </Button>
+                  </SubmitButton>
                 </form>
                 <form action={adoptIntoProfileAction}>
                   <input type="hidden" name="userId" value={id} />
                   <input type="hidden" name="profileId" value={assigned.id} />
-                  <Button
-                    type="submit"
+                  <SubmitButton
                     variant="secondary"
                     disabled={!drift?.length}
+                    pendingLabel="Adopting…"
                     title={adopt ? `${adopt.otherMembers.filter((m) => m.willDrift).length} of ${adopt.otherMembers.length} other member(s) would drift` : undefined}
                   >
                     Adopt user into profile
-                  </Button>
+                  </SubmitButton>
                 </form>
               </div>
               {adopt && drift?.length ? (
-                <Help>
+                <Hint>
                   Adopting makes the profile match this user&apos;s live settings. {adopt.otherMembers.filter((m) => m.willDrift).length} of {adopt.otherMembers.length} other member(s) would then drift.
-                </Help>
+                </Hint>
               ) : null}
             </div>
           ) : null}
-        </Card>
+        </Section>
 
         <LifecycleCard row={row} assigned={assigned} graceDays={getSettingOrDefault("graceDays")} isSelf={isSelf} />
       </div>
 
-      <Card>
-        <CardTitle
-          actions={
-            <Link href={`/users/${id}/policy`} className="text-sm underline">
-              Edit
-            </Link>
-          }
-        >
-          Access
-        </CardTitle>
+      <Section
+        title="Access"
+        actions={
+          <LinkButton href={`/users/${id}/policy`} variant="secondary" size="sm">
+            Edit
+          </LinkButton>
+        }
+      >
         <PolicyView policy={policy} refData={ref} />
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Sessions</CardTitle>
+      <Section title="Sessions">
         <SessionsTable sessions={sessions} showUser={false} returnTo={returnTo} />
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Devices</CardTitle>
+      <Section title="Devices">
         <DevicesTable devices={devices} showUser={false} returnTo={returnTo} />
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>Actions</CardTitle>
+      <Section title="Actions">
         <div className="mb-6 flex flex-wrap gap-2">
           <form action={createResetLinkAction}>
             <input type="hidden" name="userId" value={id} />
-            <Button type="submit" variant="secondary" title="Works without email; hand the link over yourself">
+            <SubmitButton variant="secondary" title="Works without email; hand the link over yourself" pendingLabel="Generating…">
               Generate reset link
-            </Button>
+            </SubmitButton>
           </form>
           <form action={emailResetLinkAction}>
             <input type="hidden" name="userId" value={id} />
-            <Button type="submit" variant="secondary" disabled={!mailConfigured || !row.meta.email} title={!mailConfigured ? "SMTP is not configured" : !row.meta.email ? "No email on file" : undefined}>
+            <SubmitButton variant="secondary" disabled={!mailConfigured || !row.meta.email} title={!mailConfigured ? "SMTP is not configured" : !row.meta.email ? "No email on file" : undefined} pendingLabel="Sending…">
               Email reset link
-            </Button>
+            </SubmitButton>
           </form>
           {row.meta.email && !row.meta.emailVerifiedAt ? (
             <form action={sendVerificationAction}>
               <input type="hidden" name="userId" value={id} />
-              <Button type="submit" variant="secondary" disabled={!mailConfigured} title={!mailConfigured ? "SMTP is not configured" : undefined}>
+              <SubmitButton variant="secondary" disabled={!mailConfigured} title={!mailConfigured ? "SMTP is not configured" : undefined} pendingLabel="Sending…">
                 Send verification email
-              </Button>
+              </SubmitButton>
             </form>
           ) : null}
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           <form action={renameUserAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Label htmlFor="name">Rename</Label>
-            <Input id="name" name="name" defaultValue={row.name} required maxLength={100} />
-            <Help>Jellyfin validates the name; existing names are rejected.</Help>
-            <Button type="submit" variant="secondary">
+            <Field id="name" label="Rename" help="Jellyfin validates the name; existing names are rejected.">
+              <Input name="name" defaultValue={row.name} required maxLength={100} />
+            </Field>
+            <SubmitButton variant="secondary" pendingLabel="Renaming…">
               Rename
-            </Button>
+            </SubmitButton>
           </form>
           <form action={setPasswordAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Label htmlFor="password">Set password</Label>
-            <Input id="password" name="password" type="password" autoComplete="new-password" required />
-            <Input name="confirm" type="password" autoComplete="new-password" placeholder="Repeat" required />
-            <Help>Sets the password directly; the user is not asked for the current one.</Help>
-            <Button type="submit" variant="secondary">
+            <Field id="password" label="Set password">
+              <Input name="password" type="password" autoComplete="new-password" required />
+            </Field>
+            <Field id="confirm" label="Repeat password" hideLabel help="Sets the password directly; the user is not asked for the current one.">
+              <Input name="confirm" type="password" autoComplete="new-password" placeholder="Repeat" required />
+            </Field>
+            <SubmitButton variant="secondary" pendingLabel="Saving…">
               Set password
-            </Button>
+            </SubmitButton>
           </form>
           <form action={copyPolicyAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Label htmlFor="sourceId">Copy policy from user</Label>
-            <Select id="sourceId" name="sourceId" defaultValue={copyFrom ?? ""} required>
-              <option value="">Choose a user…</option>
-              {allUsers
-                .filter((u) => u.id !== id)
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-            </Select>
-            <Help>Copies profile-managed fields only. Administrator, device and login settings stay as they are.</Help>
-            <Button type="submit" variant="secondary">
+            <Field id="sourceId" label="Copy policy from user" help="Copies profile-managed fields only. Administrator, device and login settings stay as they are.">
+              <Select name="sourceId" defaultValue={copyFrom ?? ""} required>
+                <option value="">Choose a user…</option>
+                {allUsers
+                  .filter((u) => u.id !== id)
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
+            <SubmitButton variant="secondary" pendingLabel="Previewing…">
               Preview copy
-            </Button>
+            </SubmitButton>
           </form>
         </div>
         {copyFrom && copyPreview ? (
@@ -253,15 +256,14 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 <input type="hidden" name="userId" value={id} />
                 <input type="hidden" name="sourceId" value={copyFrom} />
                 <input type="hidden" name="confirm" value="1" />
-                <Button type="submit">Confirm copy</Button>
+                <SubmitButton pendingLabel="Copying…">Confirm copy</SubmitButton>
               </form>
             ) : null}
           </Alert>
         ) : null}
-      </Card>
+      </Section>
 
-      <Card>
-        <CardTitle>History</CardTitle>
+      <Section title="History">
         <Table>
           <thead>
             <tr>
@@ -280,19 +282,19 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 </Td>
                 <Td>
                   {h.actorType}
-                  {h.actorId ? <span className="text-zinc-400"> {h.actorId.slice(0, 8)}</span> : null}
+                  {h.actorId ? <span className="text-fg-subtle"> {h.actorId.slice(0, 8)}</span> : null}
                 </Td>
                 <Td>
                   <code className="text-xs">{h.action}</code>
                 </Td>
-                <Td className="max-w-md truncate text-xs text-zinc-500" title={h.detail ? JSON.stringify(h.detail) : ""}>
+                <Td className="max-w-md truncate text-xs text-fg-muted" title={h.detail ? JSON.stringify(h.detail) : ""}>
                   {h.detail ? JSON.stringify(h.detail) : ""}
                 </Td>
               </tr>
             ))}
           </tbody>
         </Table>
-      </Card>
+      </Section>
     </div>
   );
 }

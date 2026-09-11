@@ -67,7 +67,10 @@ const TEXT: Array<[name: string, min: number]> = [
   ["danger", 4.5],
 ];
 /** Text drawn on a solid token fill. */
-const TEXT_ON_FILL: Array<[fg: string, bg: string]> = [["accent-fg", "accent"]];
+const TEXT_ON_FILL: Array<[fg: string, bg: string]> = [
+  ["accent-fg", "accent"],
+  ["danger-fg", "danger"],
+];
 const TONES = ["accent", "ok", "warn", "danger"] as const;
 
 describe.each(["dark", "light"] as const)("%s theme", (scheme) => {

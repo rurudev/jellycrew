@@ -31,6 +31,7 @@
   --warn: light-dark(#9a4707, #fbbf24);
   --warn-soft: light-dark(rgb(154 71 7 / 0.1), rgb(251 191 36 / 0.14));
   --danger: light-dark(#b91c1c, #f87171);
+  --danger-fg: light-dark(#ffffff, #0c0d10);
   --danger-soft: light-dark(rgb(185 28 28 / 0.1), rgb(248 113 113 / 0.14));
 
   /* Motion: only where it explains a state change. Fades keep a short duration under reduced motion. */
@@ -76,6 +77,7 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
   --color-danger-soft: var(--danger-soft);
 
   --font-sans: var(--font-geist-sans);

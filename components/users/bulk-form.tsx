@@ -33,9 +33,9 @@ export function BulkForm({
         <Alert tone="info" title={`Preview: ${BULK_LABELS[state.kind!]} for ${state.preview.length} user(s)`}>
           <ul className="space-y-2">
             {state.preview.map((p) => (
-              <li key={p.userId} className="border-t border-blue-200 pt-2 first:border-0 first:pt-0 dark:border-blue-900">
+              <li key={p.userId} className="border-t border-edge pt-2 first:border-0 first:pt-0">
                 <div className="font-medium">
-                  {p.name} {p.skip ? <Badge tone="amber">skip: {p.skip}</Badge> : <span className="text-xs font-normal text-zinc-600 dark:text-zinc-300">{p.summary}</span>}
+                  {p.name} {p.skip ? <Badge tone="amber">skip: {p.skip}</Badge> : <span className="text-xs font-normal text-fg-muted">{p.summary}</span>}
                 </div>
                 {p.changes.length ? <DiffTable changes={p.changes} /> : null}
               </li>
@@ -51,7 +51,7 @@ export function BulkForm({
             <Button type="submit" name="confirm" value="1" disabled={pending || state.preview.every((p) => p.skip)}>
               {pending ? "Running…" : "Execute"}
             </Button>
-            <span className="self-center text-xs text-zinc-500">Runs one user at a time; every user gets a result.</span>
+            <span className="self-center text-xs text-fg-muted">Runs one user at a time; every user gets a result.</span>
           </div>
         </Alert>
       ) : null}
@@ -69,9 +69,9 @@ export function BulkForm({
       ) : null}
 
       {state.stage !== "preview" ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
-          <span className="text-zinc-500">With selected:</span>
-          <Select name="kind" value={kind} onChange={(e) => setKind(e.target.value as BulkKind)} className="w-auto" aria-label="Bulk action">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-edge bg-surface p-2">
+          <span className="text-fg-muted">With selected:</span>
+          <Select name="kind" value={kind} onChange={(e) => setKind(e.target.value as BulkKind)} width="auto" aria-label="Bulk action">
             {BULK_KINDS.map((k) => (
               <option key={k} value={k}>
                 {BULK_LABELS[k]}
@@ -79,7 +79,7 @@ export function BulkForm({
             ))}
           </Select>
           {param === "profile" ? (
-            <Select name="profileId" defaultValue={state.profileId ?? ""} className="w-auto" aria-label="Profile for bulk action">
+            <Select name="profileId" defaultValue={state.profileId ?? ""} width="auto" aria-label="Profile for bulk action">
               <option value="">{kind === "apply_profile" ? "Choose a profile…" : "No profile (unassign)"}</option>
               {profiles.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -88,9 +88,9 @@ export function BulkForm({
               ))}
             </Select>
           ) : null}
-          {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} className="w-auto" aria-label="Expiry date" required /> : null}
-          {param === "days" ? <Input type="number" name="days" min={1} defaultValue={state.days ?? 30} className="w-24" aria-label="Days" required /> : null}
-          {param === "label" ? <Input name="label" defaultValue={state.label ?? ""} placeholder="label" className="w-40" aria-label="Label" required maxLength={50} /> : null}
+          {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} width="auto" aria-label="Expiry date" required /> : null}
+          {param === "days" ? <Input type="number" name="days" min={1} defaultValue={state.days ?? 30} width="auto" className="w-24" aria-label="Days" required /> : null}
+          {param === "label" ? <Input name="label" defaultValue={state.label ?? ""} placeholder="label" width="auto" className="w-40" aria-label="Label" required maxLength={50} /> : null}
           <Button type="submit" variant="secondary" disabled={pending}>
             {pending ? "Working…" : "Preview"}
           </Button>

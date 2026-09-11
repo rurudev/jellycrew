@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { clearSelfSession, getSelfSession } from "@/lib/auth/session";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -39,6 +39,7 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
     enforceLimits([{ key: `me-password:${session.userId}`, ...PUBLIC_LIMITS.loginPerIp }]);
     await changeOwnPassword(session.userId, current, next, await currentRequestId());
   } catch (err) {
+    unstable_rethrow(err);
     back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again in a minute." : errorMessage(err) });
   }
   back({ ok: "Password changed." });
@@ -52,6 +53,7 @@ export async function setEmailAction(formData: FormData): Promise<void> {
     enforceLimits([{ key: `me-email:${session.userId}`, max: 5, windowMs: 3_600_000 }]);
     await setOwnEmail(session.userId, parsed.data, await currentRequestId());
   } catch (err) {
+    unstable_rethrow(err);
     back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) });
   }
   back({ ok: "Verification email sent. Open the link in it to confirm the address." });
@@ -63,6 +65,7 @@ export async function resendVerificationAction(): Promise<void> {
     enforceLimits([{ key: `me-email:${session.userId}`, max: 5, windowMs: 3_600_000 }]);
     await resendOwnVerification(session.userId, await currentRequestId());
   } catch (err) {
+    unstable_rethrow(err);
     back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) });
   }
   back({ ok: "Verification email sent again." });
@@ -74,6 +77,7 @@ export async function revokeOwnDeviceAction(formData: FormData): Promise<void> {
   try {
     await revokeOwnDevice(session.userId, deviceId, await currentRequestId());
   } catch (err) {
+    unstable_rethrow(err);
     back({ error: errorMessage(err) });
   }
   back({ ok: "Device signed out." });
