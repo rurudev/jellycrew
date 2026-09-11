@@ -1,25 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
+import { optionalInt } from "@/lib/forms/zod";
+import type { ActionState } from "@/lib/forms/action-state";
 import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import { createInvite, revokeInvite } from "@/lib/services/invites";
-
-const optionalInt = (max: number) => z.preprocess((v) => (v === "" || v === null || v === undefined ? null : Number(v)), z.number().int().min(0).max(max).nullable());
 
 const CreateForm = z.object({
   label: z.string().trim().max(100).optional(),
   profileId: z.string().optional(),
-  linkExpiryDays: optionalInt(3650),
-  maxUses: optionalInt(100000),
-  accountExpiryDays: optionalInt(3650),
+  linkExpiryDays: optionalInt({ max: 3650 }),
+  maxUses: optionalInt({ max: 100000 }),
+  accountExpiryDays: optionalInt({ max: 3650 }),
   requireEmail: z.boolean(),
   noteForInvitee: z.string().trim().max(1000).optional(),
 });
 
-export async function createInviteAction(formData: FormData): Promise<void> {
+/** The link comes back to the dialog that asked for it rather than travelling in the URL. */
+export async function createInviteAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const parsed = CreateForm.safeParse({
     label: formData.get("label") ?? "",
@@ -30,7 +30,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
     requireEmail: formData.get("requireEmail") === "on",
     noteForInvitee: formData.get("noteForInvitee") ?? "",
   });
-  if (!parsed.success) redirectWithNotice("/invites", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   let created;
   try {
     created = await createInvite(actor, {
@@ -43,10 +43,10 @@ export async function createInviteAction(formData: FormData): Promise<void> {
       noteForInvitee: parsed.data.noteForInvitee,
     });
   } catch (err) {
-    redirectWithNotice("/invites", { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
   revalidatePath("/invites");
-  redirect(`/invites?created=${encodeURIComponent(created.invite.id)}`);
+  return { ok: "Invite created.", link: created.url };
 }
 
 export async function revokeInviteAction(formData: FormData): Promise<void> {
@@ -58,5 +58,5 @@ export async function revokeInviteAction(formData: FormData): Promise<void> {
     redirectWithNotice("/invites", { error: errorMessage(err) });
   }
   revalidatePath("/invites");
-  redirectWithNotice("/invites", { ok: "Invite revoked." });
+  redirectWithNotice("/invites", { ok: "Invite revoked. The link stops working straight away." });
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
+import { optionalInt } from "@/lib/forms/zod";
 import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import type { PolicyEditorState } from "@/lib/policy/editor-state";
 import { parseEditorSubmission } from "@/lib/policy/editor-submit";
@@ -11,7 +12,7 @@ import { PolicyFormError } from "@/lib/policy/form";
 import { executeBulk } from "@/lib/services/bulk";
 import { cloneProfile, createBlankProfile, createProfileFromUser, deleteProfile, listProfileMembers, saveProfilePolicy, updateProfile } from "@/lib/services/profiles";
 
-const optionalDays = z.preprocess((v) => (v === "" || v === null || v === undefined ? null : Number(v)), z.number().int().min(1).max(3650).nullable());
+const optionalDays = optionalInt({ min: 1, max: 3650 });
 
 const ProfileForm = z.object({
   name: z.string().trim().min(1, "A name is required.").max(80),

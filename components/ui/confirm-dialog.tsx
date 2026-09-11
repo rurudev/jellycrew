@@ -10,7 +10,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 
 /**
  * The guard for destructive actions: a dialog whose submit button stays disabled until the
- * operator types `phrase`. The form posts to a server action, so it works exactly like the
+ * operator types `phrase`, or a plain confirmation when no phrase is given. The form posts to a server action, so it works exactly like the
  * inline forms it replaced, but nothing destructive is on the page until asked for.
  * The dialog closes when the action reports back (success or error arrive as `?ok=`/`?error=`
  * on the same route, which would otherwise leave it open in front of the toast); in controlled
@@ -35,7 +35,8 @@ export function ConfirmDialog({
   label: string;
   title: string;
   description?: ReactNode;
-  phrase: string;
+  /** Type-to-confirm guard. Leave it out when the action is reversible. */
+  phrase?: string;
   action: (formData: FormData) => void | Promise<void>;
   hidden?: Record<string, string>;
   confirmLabel?: string;
@@ -92,19 +93,21 @@ export function ConfirmDialog({
             <AlertDialogTitle>{title}</AlertDialogTitle>
             {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
           </AlertDialogHeader>
-          <FormField
-            id={id}
-            label={
-              <>
-                Type <span className="font-mono font-medium text-foreground">{phrase}</span> to confirm
-              </>
-            }
-          >
-            <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} />
-          </FormField>
+          {phrase ? (
+            <FormField
+              id={id}
+              label={
+                <>
+                  Type <span className="font-mono font-medium text-foreground">{phrase}</span> to confirm
+                </>
+              }
+            >
+              <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} />
+            </FormField>
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <SubmitButton variant="destructive" disabled={typed !== phrase} pendingLabel="Working…">
+            <SubmitButton variant="destructive" disabled={phrase !== undefined && typed !== phrase} pendingLabel="Working…">
               {confirmLabel ?? label}
             </SubmitButton>
           </AlertDialogFooter>

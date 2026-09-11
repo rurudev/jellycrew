@@ -15,7 +15,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 7 | User detail layout | `design/user-detail-layout` | done, merged 2026-09-11 |
 | 8 | User actions menu and dialogs | `design/user-actions` | done, merged 2026-09-12 |
 | 9 | Policy editor | `design/policy-editor` | done, merged 2026-09-12 |
-| 10 | Invites | `design/invites` | planned |
+| 10 | Invites | `design/invites` | done, merged 2026-09-12 |
 | 11 | Invite acceptance and guest forms | `design/invite-acceptance` | planned |
 | 12 | Settings | `design/settings` | planned |
 | 13 | Profiles | `design/profiles` | planned |
