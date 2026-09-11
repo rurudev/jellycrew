@@ -1,11 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, redirectWithNotice } from "@/lib/notice";
-import { backToUser } from "./shared";
+import { backToUser, refreshUser } from "./shared";
+import type { ActionState } from "./state";
 import { copyPolicyFromUser } from "@/lib/services/policies";
 import { adoptPolicyFromUser, applyProfileToUser, assignProfile } from "@/lib/services/profiles";
 import { renameUser, setUserEnabled, setUserPassword } from "@/lib/services/user-actions";
@@ -16,16 +15,17 @@ function userIdFrom(formData: FormData): string {
   return id;
 }
 
-export async function setEnabledAction(formData: FormData): Promise<void> {
+export async function setEnabledAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
-  const userId = userIdFrom(formData);
+  const userId = String(formData.get("userId") ?? "");
   const enabled = formData.get("enabled") === "1";
   try {
     await setUserEnabled(actor, userId, enabled, "manual");
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  backToUser(userId, { ok: enabled ? "User enabled." : "User disabled." });
+  refreshUser(userId);
+  return { ok: enabled ? "User enabled." : "User disabled. Active sessions are ended." };
 }
 
 export async function assignProfileAction(formData: FormData): Promise<void> {
@@ -69,50 +69,47 @@ export async function adoptIntoProfileAction(formData: FormData): Promise<void> 
   backToUser(userId, { ok: `Profile updated from this user (${result.changes.length} field(s)). ${drifting} other member(s) now drift.` });
 }
 
-export async function renameUserAction(formData: FormData): Promise<void> {
+export async function renameUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
-  const userId = userIdFrom(formData);
+  const userId = String(formData.get("userId") ?? "");
   const parsed = z.string().trim().min(1).max(100).safeParse(formData.get("name"));
-  if (!parsed.success) backToUser(userId, { error: "A name is required." });
+  if (!parsed.success) return { error: "A name is required." };
   try {
     await renameUser(actor, userId, parsed.data);
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  backToUser(userId, { ok: "User renamed." });
+  refreshUser(userId);
+  return { ok: `Renamed to ${parsed.data}.` };
 }
 
-export async function setPasswordAction(formData: FormData): Promise<void> {
+export async function setPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
-  const userId = userIdFrom(formData);
+  const userId = String(formData.get("userId") ?? "");
   const password = String(formData.get("password") ?? "");
-  const confirm = String(formData.get("confirm") ?? "");
-  if (password !== confirm) backToUser(userId, { error: "Passwords do not match." });
+  if (password !== String(formData.get("confirm") ?? "")) return { error: "The two passwords do not match." };
   try {
     await setUserPassword(actor, userId, password);
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  backToUser(userId, { ok: "Password updated." });
+  refreshUser(userId);
+  return { ok: "Password updated." };
 }
 
-export async function copyPolicyAction(formData: FormData): Promise<void> {
+export async function copyPolicyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
-  const userId = userIdFrom(formData);
+  const userId = String(formData.get("userId") ?? "");
   const sourceId = String(formData.get("sourceId") ?? "");
-  if (!sourceId) backToUser(userId, { error: "Choose a user to copy from." });
+  if (!sourceId) return { error: "Choose a user to copy from." };
   const confirm = formData.get("confirm") === "1";
   let changes;
   try {
     changes = await copyPolicyFromUser(actor, userId, sourceId, confirm);
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  if (!confirm) {
-    const url = new URL(`/users/${userId}`, "http://x");
-    url.searchParams.set("copyFrom", sourceId);
-    revalidatePath(`/users/${userId}`);
-    redirect(`${url.pathname}${url.search}`);
-  }
-  backToUser(userId, { ok: changes.length ? `Copied ${changes.length} field(s).` : "Nothing to copy: policies already match." });
+  if (!confirm) return { preview: { sourceId, changes } };
+  refreshUser(userId);
+  return { ok: changes.length === 0 ? "Nothing to copy: the policies already match." : `Copied ${changes.length} ${changes.length === 1 ? "field" : "fields"}.` };
 }

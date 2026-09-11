@@ -1,47 +1,47 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage } from "@/lib/notice";
-import { backToUser } from "./shared";
+import { refreshUser } from "./shared";
+import type { ActionState } from "./state";
 import { adminCreateResetLink, adminEmailResetLink } from "@/lib/services/reset";
 import { adminSendVerification } from "@/lib/services/self";
 
-export async function createResetLinkAction(formData: FormData): Promise<void> {
+/** The link is returned to the dialog that asked for it; it never enters the URL. */
+export async function createResetLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
   let url: string;
   try {
     ({ url } = await adminCreateResetLink(actor, userId));
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  revalidatePath(`/users/${userId}`);
-  const target = new URL(`/users/${userId}`, "http://x");
-  target.searchParams.set("resetLink", url);
-  redirect(`${target.pathname}${target.search}`);
+  refreshUser(userId);
+  return { ok: "Reset link created.", link: url };
 }
 
-export async function emailResetLinkAction(formData: FormData): Promise<void> {
+export async function emailResetLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
   let email: string;
   try {
     ({ email } = await adminEmailResetLink(actor, userId));
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  backToUser(userId, { ok: `Reset link emailed to ${email}.` });
+  refreshUser(userId);
+  return { ok: `Reset link emailed to ${email}.` };
 }
 
-export async function sendVerificationAction(formData: FormData): Promise<void> {
+export async function sendVerificationAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
   try {
     await adminSendVerification(actor, userId);
   } catch (err) {
-    backToUser(userId, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
-  backToUser(userId, { ok: "Verification email sent." });
+  refreshUser(userId);
+  return { ok: "Verification email sent." };
 }

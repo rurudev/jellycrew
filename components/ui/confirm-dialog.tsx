@@ -13,7 +13,8 @@ import { SubmitButton } from "@/components/ui/submit-button";
  * operator types `phrase`. The form posts to a server action, so it works exactly like the
  * inline forms it replaced, but nothing destructive is on the page until asked for.
  * The dialog closes when the action reports back (success or error arrive as `?ok=`/`?error=`
- * on the same route, which would otherwise leave it open in front of the toast).
+ * on the same route, which would otherwise leave it open in front of the toast); in controlled
+ * mode the owner watches for that instead.
  * `disabledReason` renders the trigger disabled with the reason beside it.
  */
 export function ConfirmDialog({
@@ -27,6 +28,8 @@ export function ConfirmDialog({
   disabledReason,
   variant = "destructive",
   size = "default",
+  open: openProp,
+  onOpenChange,
 }: {
   /** Trigger text; also the confirm button unless `confirmLabel` is given. */
   label: string;
@@ -36,12 +39,18 @@ export function ConfirmDialog({
   action: (formData: FormData) => void | Promise<void>;
   hidden?: Record<string, string>;
   confirmLabel?: string;
+  /** Uncontrolled mode only: renders the trigger disabled with the reason beside it. */
   disabledReason?: ReactNode;
   variant?: "destructive" | "outline";
   size?: "default" | "sm";
+  /** Controlled mode (opened from a menu): the caller owns the state and renders no trigger. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlled ? openProp : internalOpen;
   const [typed, setTyped] = useState("");
   const params = useSearchParams();
   const reported = params.has("ok") || params.has("error");
@@ -51,7 +60,8 @@ export function ConfirmDialog({
   if (reported !== lastReported) {
     setLastReported(reported);
     if (reported) {
-      setOpen(false);
+      // In controlled mode the owner closes it: a parent cannot be updated during our render.
+      if (!controlled) setInternalOpen(false);
       setTyped("");
     }
   }
@@ -69,11 +79,12 @@ export function ConfirmDialog({
     <AlertDialog
       open={open}
       onOpenChange={(next) => {
-        setOpen(next);
+        if (!controlled) setInternalOpen(next);
+        onOpenChange?.(next);
         if (!next) setTyped("");
       }}
     >
-      <AlertDialogTrigger render={<Button variant={variant} size={size} />}>{label}</AlertDialogTrigger>
+      {controlled ? null : <AlertDialogTrigger render={<Button variant={variant} size={size} />}>{label}</AlertDialogTrigger>}
       <AlertDialogContent>
         <form action={action} className="grid gap-4">
           {hidden ? Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />) : null}
