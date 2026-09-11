@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { logger } from "@/lib/log";
 import { ensureDeviceId } from "@/lib/settings";
 import { getServerStatus } from "@/lib/services/system";
+import { startScheduler } from "@/lib/services/scheduler";
 
 /** Runs once at server start: validates env, migrates the database, checks Jellyfin. */
 export async function bootstrap(): Promise<void> {
@@ -21,4 +22,5 @@ export async function bootstrap(): Promise<void> {
   } else {
     logger.info({ serverName: status.serverName, version: status.version }, "connected to Jellyfin");
   }
+  if (process.env.JELLYCREW_DISABLE_SCHEDULER !== "1") startScheduler();
 }

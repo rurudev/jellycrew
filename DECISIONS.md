@@ -50,3 +50,16 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - Bulk actions run through one service (`lib/services/bulk.ts`): preview per user, sequential execution, a result row per user, plus one `bulk.<kind>` audit row with counts. Administrators are skipped by bulk disable.
 - Password minimum length is a setting (`minPasswordLength`, default 8) enforced for admin-set passwords and reused by later stages.
 - Route-level constants shared with client components live in pure modules (`lib/bulk/kinds.ts`, `lib/policy/*`) so no client bundle can pull in the database or the Jellyfin client.
+
+## Stage 4 — Lifecycle and audit
+
+- The lifecycle decision is a pure function (`lib/lifecycle/decide.ts`) evaluated per user with an explicit clock: administrators → nothing; deletion past grace → delete; else expiry → disable; else inactivity → disable. Already-disabled users and users inside their grace period are left alone.
+- The effective inactivity rule is the user's own value, else the assigned profile's, else never; `0` also means never.
+- "Schedule deletion" disables the user immediately (reason `manual`) and stamps `delete_after = now + grace`; "Cancel deletion" clears the stamp and re-enables the account. "Delete now" is a separately labelled action with its own typed confirmation (`delete <name>`).
+- Deleting a user removes the `user_meta` row and any tokens; audit rows are kept (the `user.delete` row records name, email, labels and profile). If Jellyfin no longer knows the user, the app still cleans up its own rows.
+- The scheduler is an in-process `setInterval` (15 min, first run 30 s after start) guarded by a `job_run` row lock (`lock_until`, 10 min) taken with a conditional UPDATE, so several instances or an HMR-restarted dev server never run the pass concurrently. `JELLYCREW_DISABLE_SCHEDULER=1` turns it off (used in tests).
+- Every automated change is audited by the underlying action with the `system` actor; a run that changed anything (or errored) also writes one `lifecycle.run` summary row.
+- Bulk expiry actions skip administrators (an expiry would never be enforced); bulk schedule-deletion skips administrators and protected users; set/extend/clear expiry, add/remove label, schedule/cancel deletion reuse the same preview → execute → per-user result flow.
+- Changing a user's email clears `email_verified_at`; labels are trimmed, de-duplicated and sorted on save.
+- The audit page paginates newest-first by id (100 rows, "older entries" link); exports stream the same filters as CSV or JSON from `/audit/export`.
+- Settings stored in the `setting` table: `graceDays` (14), `minPasswordLength` (8), `publicBaseUrl` (optional override of `PUBLIC_BASE_URL` for links), `smtpTestResult`; the settings page also shows server/app health and the scheduler status with a run-now button.

@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { DiffTable } from "@/components/policy/diff-table";
-import { BULK_KINDS, BULK_LABELS } from "@/lib/bulk/kinds";
+import { BULK_KINDS, BULK_LABELS, BULK_PARAM, type BulkKind } from "@/lib/bulk/kinds";
 import type { BulkState } from "@/app/(admin)/users/bulk-actions";
 
 /**
@@ -23,7 +23,8 @@ export function BulkForm({
   children: ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<BulkState, FormData>(action, { stage: "idle" });
-  const needsProfile = (k: string | undefined) => k === "apply_profile" || k === "assign_profile";
+  const [kind, setKind] = useState<BulkKind>(state.kind ?? "assign_profile");
+  const param = BULK_PARAM[kind];
   return (
     <form action={formAction} className="space-y-3">
       {state.stage === "error" ? <Alert tone="error">{state.error}</Alert> : null}
@@ -44,6 +45,9 @@ export function BulkForm({
             {state.userIds?.map((id) => <input key={id} type="hidden" name="userIds" value={id} />)}
             <input type="hidden" name="kind" value={state.kind} />
             {state.profileId ? <input type="hidden" name="profileId" value={state.profileId} /> : null}
+            {state.date ? <input type="hidden" name="date" value={state.date} /> : null}
+            {state.days ? <input type="hidden" name="days" value={String(state.days)} /> : null}
+            {state.label ? <input type="hidden" name="label" value={state.label} /> : null}
             <Button type="submit" name="confirm" value="1" disabled={pending || state.preview.every((p) => p.skip)}>
               {pending ? "Running…" : "Execute"}
             </Button>
@@ -67,21 +71,26 @@ export function BulkForm({
       {state.stage !== "preview" ? (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
           <span className="text-zinc-500">With selected:</span>
-          <Select name="kind" defaultValue={state.kind ?? "assign_profile"} className="w-auto" aria-label="Bulk action">
+          <Select name="kind" value={kind} onChange={(e) => setKind(e.target.value as BulkKind)} className="w-auto" aria-label="Bulk action">
             {BULK_KINDS.map((k) => (
               <option key={k} value={k}>
                 {BULK_LABELS[k]}
               </option>
             ))}
           </Select>
-          <Select name="profileId" defaultValue={state.profileId ?? ""} className="w-auto" aria-label="Profile for bulk action">
-            <option value="">{needsProfile(state.kind) ? "Choose a profile…" : "Profile (for assign/apply)"}</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
+          {param === "profile" ? (
+            <Select name="profileId" defaultValue={state.profileId ?? ""} className="w-auto" aria-label="Profile for bulk action">
+              <option value="">{kind === "apply_profile" ? "Choose a profile…" : "No profile (unassign)"}</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          ) : null}
+          {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} className="w-auto" aria-label="Expiry date" required /> : null}
+          {param === "days" ? <Input type="number" name="days" min={1} defaultValue={state.days ?? 30} className="w-24" aria-label="Days" required /> : null}
+          {param === "label" ? <Input name="label" defaultValue={state.label ?? ""} placeholder="label" className="w-40" aria-label="Label" required maxLength={50} /> : null}
           <Button type="submit" variant="secondary" disabled={pending}>
             {pending ? "Working…" : "Preview"}
           </Button>

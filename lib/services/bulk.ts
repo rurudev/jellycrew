@@ -4,7 +4,10 @@ import { applyProfilePolicy } from "@/lib/policy/merge";
 import { diffPolicies } from "@/lib/policy/diff";
 import { checkProtection } from "@/lib/policy/protection";
 import { recordAudit, type Actor } from "./audit";
+import { addLabel, cancelDeletion, extendExpiry, removeLabel, scheduleDeletion, setExpiry } from "./lifecycle";
 import { applyProfileToUser, assignProfile, getProfile, requireProfile } from "./profiles";
+import { getSettingOrDefault } from "@/lib/settings";
+import { absoluteTime } from "@/lib/format";
 import { toSubject } from "./protection";
 import { setUserEnabled } from "./user-actions";
 import { ensureMetaRows } from "./users";
@@ -15,6 +18,11 @@ export { BULK_KINDS, BULK_LABELS, type BulkKind } from "@/lib/bulk/kinds";
 
 export interface BulkParams {
   profileId?: string | null;
+  /** ISO date for set_expiry. */
+  date?: string | null;
+  /** Days for extend_expiry. */
+  days?: number | null;
+  label?: string | null;
 }
 
 export interface BulkPreviewRow {
@@ -76,6 +84,65 @@ function previewOne(ctx: Ctx, kind: BulkKind, userId: string, params: BulkParams
       if (live.IsDisabled === true) return { userId, name, summary: "", changes: [], skip: "Already disabled." };
       return { userId, name, summary: "Disable account", changes: [{ key: "IsDisabled", before: false, after: true }] };
     }
+    case "set_expiry": {
+      const date = params.date ? new Date(params.date) : null;
+      if (!date || Number.isNaN(date.getTime())) return { userId, name, summary: "", changes: [], skip: "Invalid date." };
+      if (user.Policy?.IsAdministrator) return { userId, name, summary: "", changes: [], skip: "Administrators are excluded from automation; an expiry would never be enforced." };
+      return { userId, name, summary: `Expire ${absoluteTime(date)}`, changes: [{ key: "expiresAt", before: meta?.expiresAt ?? null, after: date }] };
+    }
+    case "extend_expiry": {
+      if (!params.days || params.days <= 0) return { userId, name, summary: "", changes: [], skip: "Invalid number of days." };
+      if (user.Policy?.IsAdministrator) return { userId, name, summary: "", changes: [], skip: "Administrators are excluded from automation." };
+      const now = new Date();
+      const base = meta?.expiresAt && meta.expiresAt > now ? meta.expiresAt : now;
+      const after = new Date(base.getTime() + params.days * 86_400_000);
+      return { userId, name, summary: `Extend expiry by ${params.days} day(s) to ${absoluteTime(after)}`, changes: [{ key: "expiresAt", before: meta?.expiresAt ?? null, after }] };
+    }
+    case "clear_expiry": {
+      if (!meta?.expiresAt) return { userId, name, summary: "", changes: [], skip: "No expiry set." };
+      return { userId, name, summary: "Remove expiry", changes: [{ key: "expiresAt", before: meta.expiresAt, after: null }] };
+    }
+    case "schedule_deletion": {
+      if (user.Policy?.IsAdministrator) return { userId, name, summary: "", changes: [], skip: "Administrators are excluded from bulk delete." };
+      const verdict = checkProtection(ctx.users.map(toSubject), userId, ctx.actorId, "delete");
+      if (!verdict.allowed) return { userId, name, summary: "", changes: [], skip: verdict.reason };
+      if (meta?.deleteAfter) return { userId, name, summary: "", changes: [], skip: "Deletion already scheduled." };
+      const grace = getSettingOrDefault("graceDays");
+      const deleteAfter = new Date(Date.now() + grace * 86_400_000);
+      return {
+        userId,
+        name,
+        summary: `Disable now, delete after ${grace} day(s) (${absoluteTime(deleteAfter)})`,
+        changes: [
+          { key: "IsDisabled", before: live.IsDisabled === true, after: true },
+          { key: "deleteAfter", before: null, after: deleteAfter },
+        ],
+      };
+    }
+    case "cancel_deletion": {
+      if (!meta?.deleteAfter) return { userId, name, summary: "", changes: [], skip: "No deletion scheduled." };
+      return {
+        userId,
+        name,
+        summary: "Cancel deletion and re-enable",
+        changes: [
+          { key: "deleteAfter", before: meta.deleteAfter, after: null },
+          { key: "IsDisabled", before: live.IsDisabled === true, after: false },
+        ],
+      };
+    }
+    case "add_label": {
+      const label = params.label?.trim();
+      if (!label) return { userId, name, summary: "", changes: [], skip: "Empty label." };
+      if (meta?.labels.includes(label)) return { userId, name, summary: "", changes: [], skip: "Already has the label." };
+      return { userId, name, summary: `Add label "${label}"`, changes: [{ key: "labels", before: meta?.labels ?? [], after: [...(meta?.labels ?? []), label] }] };
+    }
+    case "remove_label": {
+      const label = params.label?.trim();
+      if (!label) return { userId, name, summary: "", changes: [], skip: "Empty label." };
+      if (!meta?.labels.includes(label)) return { userId, name, summary: "", changes: [], skip: "Does not have the label." };
+      return { userId, name, summary: `Remove label "${label}"`, changes: [{ key: "labels", before: meta.labels, after: meta.labels.filter((l) => l !== label) }] };
+    }
   }
 }
 
@@ -112,6 +179,34 @@ export async function executeBulk(actor: Actor, kind: BulkKind, userIds: string[
         case "disable":
           await setUserEnabled(actor, row.userId, false, "manual");
           results.push({ userId: row.userId, name: row.name, ok: true, message: "Disabled" });
+          break;
+        case "set_expiry":
+          setExpiry(actor, row.userId, new Date(params.date!));
+          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          break;
+        case "extend_expiry":
+          extendExpiry(actor, row.userId, params.days!);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          break;
+        case "clear_expiry":
+          setExpiry(actor, row.userId, null);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: "Expiry removed" });
+          break;
+        case "schedule_deletion":
+          await scheduleDeletion(actor, row.userId);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          break;
+        case "cancel_deletion":
+          await cancelDeletion(actor, row.userId);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: "Deletion cancelled, account enabled" });
+          break;
+        case "add_label":
+          addLabel(actor, row.userId, params.label!);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          break;
+        case "remove_label":
+          removeLabel(actor, row.userId, params.label!);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
           break;
       }
     } catch (err) {

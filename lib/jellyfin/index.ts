@@ -179,3 +179,7 @@ export async function setUserPasswordRaw(userId: string, newPassword: string): P
     jellyfin().POST("/Users/Password", { params: { query: { userId } }, body: { NewPw: newPassword, ResetPassword: false } }),
   );
 }
+
+export async function deleteUser(userId: string): Promise<void> {
+  await call("DeleteUser", () => jellyfin().DELETE("/Users/{userId}", { params: { path: { userId } } }));
+}

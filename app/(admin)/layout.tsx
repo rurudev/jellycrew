@@ -9,6 +9,8 @@ const nav: Array<{ href: string; label: string }> = [
   { href: "/users", label: "Users" },
   { href: "/profiles", label: "Profiles" },
   { href: "/sessions", label: "Sessions" },
+  { href: "/audit", label: "Audit" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {

@@ -19,7 +19,9 @@ import { Input, Select } from "@/components/ui/input";
 import { Help, Label } from "@/components/ui/label";
 import { Table, Td, Th, EmptyRow } from "@/components/ui/table";
 import { Avatar } from "@/components/users/avatar";
+import { LifecycleCard } from "@/components/users/lifecycle-card";
 import { StatusBadge } from "@/components/users/status-badge";
+import { getSettingOrDefault } from "@/lib/settings";
 import { adoptIntoProfileAction, applyProfileAction, assignProfileAction, copyPolicyAction, renameUserAction, setEnabledAction, setPasswordAction } from "./actions";
 
 export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
@@ -141,52 +143,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
           ) : null}
         </Card>
 
-        <Card>
-          <CardTitle>Lifecycle</CardTitle>
-          <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-[10rem_1fr]">
-            <dt className="text-zinc-500">Email</dt>
-            <dd>
-              {row.meta.email ?? <span className="text-zinc-400">none</span>}{" "}
-              {row.meta.email ? row.meta.emailVerifiedAt ? <Badge tone="green">verified</Badge> : <Badge tone="amber">unverified</Badge> : null}
-            </dd>
-            <dt className="text-zinc-500">Labels</dt>
-            <dd>{row.labels.length ? row.labels.map((l) => <Badge key={l} tone="blue" className="mr-1">{l}</Badge>) : <span className="text-zinc-400">none</span>}</dd>
-            <dt className="text-zinc-500">Notes</dt>
-            <dd className="whitespace-pre-wrap">{row.meta.notes ?? <span className="text-zinc-400">none</span>}</dd>
-            <dt className="text-zinc-500">Expires</dt>
-            <dd>{row.expiresAt ? <Time date={row.expiresAt} /> : <span className="text-zinc-400">never</span>}</dd>
-            <dt className="text-zinc-500">Inactivity rule</dt>
-            <dd>
-              {row.meta.inactivityDisableDays
-                ? `disable after ${row.meta.inactivityDisableDays} days`
-                : assigned?.inactivityDisableDays
-                  ? `inherit: disable after ${assigned.inactivityDisableDays} days (${assigned.name})`
-                  : <span className="text-zinc-400">never</span>}
-            </dd>
-            <dt className="text-zinc-500">Deletion</dt>
-            <dd>{row.meta.deleteAfter ? <>scheduled <Time date={row.meta.deleteAfter} /></> : <span className="text-zinc-400">not scheduled</span>}</dd>
-            {row.meta.disabledByAppAt ? (
-              <>
-                <dt className="text-zinc-500">Disabled by app</dt>
-                <dd>
-                  <Time date={row.meta.disabledByAppAt} /> ({row.meta.disabledReason})
-                </dd>
-              </>
-            ) : null}
-            <dt className="text-zinc-500">Last login</dt>
-            <dd>
-              <Time date={row.lastLogin} />
-            </dd>
-            <dt className="text-zinc-500">Last activity</dt>
-            <dd>
-              <Time date={row.lastActivity} />
-            </dd>
-            <dt className="text-zinc-500">First seen by app</dt>
-            <dd>
-              <Time date={row.meta.firstSeenAt} />
-            </dd>
-          </dl>
-        </Card>
+        <LifecycleCard row={row} assigned={assigned} graceDays={getSettingOrDefault("graceDays")} isSelf={isSelf} />
       </div>
 
       <Card>
