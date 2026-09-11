@@ -11,7 +11,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done, merged 2026-09-11 |
 | 5 | Console shell (header, nav, status) | `design/shell` | done, merged 2026-09-11 |
-| 6 | Users list | `design/users-list` | planned |
+| 6 | Users list | `design/users-list` | done (2026-09-11, on branch) |
 | 7 | User detail layout | `design/user-detail-layout` | planned |
 | 8 | User actions menu and dialogs | `design/user-actions` | planned |
 | 9 | Policy editor | `design/policy-editor` | planned |
@@ -124,7 +124,7 @@ Update the State column (planned → in progress → done, with the merge commit
 
 **What changes.**
 - `PageHeader` with count and an **Invite** primary action linking to `/invites?new=1`.
-- Toolbar built on `next/form`: search submits on Enter, selects submit on change, no Apply button; active filters as removable chips; Reset.
+- Toolbar built on a client `FilterForm` (a GET form that navigates client-side and drops empty fields; `next/form` was passed over because it submits empty fields into the URL): search submits on Enter, selects submit on change, no Apply button; active filters as removable chips; Clear all. Inactivity is a preset select.
 - Seven columns per direction: User (avatar, name, `Tag`s) · Status · Profile with a warn dot for drift · Last seen (activity; login in the tooltip) · Expiry · Labels · Sessions (rendered only when > 0). Devices column removed. Rows are links; sticky header.
 - Selection: `SelectAll` in the header; a sticky bottom bar appears with the count, the action select, its parameter and **Preview**; preview and per-user results open in a `Dialog` reusing the existing `bulkAction` state machine. `selectable` prop removed; the table receives the checkbox column as a slot.
 - `EmptyState` with a "Clear filters" action; skeleton shaped like the table.
