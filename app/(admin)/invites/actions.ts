@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import { createInvite, revokeInvite } from "@/lib/services/invites";
 
 const optionalInt = (max: number) => z.preprocess((v) => (v === "" || v === null || v === undefined ? null : Number(v)), z.number().int().min(0).max(max).nullable());
@@ -30,7 +30,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
     requireEmail: formData.get("requireEmail") === "on",
     noteForInvitee: formData.get("noteForInvitee") ?? "",
   });
-  if (!parsed.success) redirect(withNotice("/invites", { error: parsed.error.issues[0]?.message ?? "Invalid input." }));
+  if (!parsed.success) redirectWithNotice("/invites", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
   let created;
   try {
     created = await createInvite(actor, {
@@ -43,7 +43,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
       noteForInvitee: parsed.data.noteForInvitee,
     });
   } catch (err) {
-    redirect(withNotice("/invites", { error: errorMessage(err) }));
+    redirectWithNotice("/invites", { error: errorMessage(err) });
   }
   revalidatePath("/invites");
   redirect(`/invites?created=${encodeURIComponent(created.invite.id)}`);
@@ -55,8 +55,8 @@ export async function revokeInviteAction(formData: FormData): Promise<void> {
   try {
     revokeInvite(actor, id);
   } catch (err) {
-    redirect(withNotice("/invites", { error: errorMessage(err) }));
+    redirectWithNotice("/invites", { error: errorMessage(err) });
   }
   revalidatePath("/invites");
-  redirect(withNotice("/invites", { ok: "Invite revoked." }));
+  redirectWithNotice("/invites", { ok: "Invite revoked." });
 }

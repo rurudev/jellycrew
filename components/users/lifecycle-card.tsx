@@ -1,6 +1,6 @@
-import { ConfirmForm } from "@/components/confirm-form";
 import { Timestamp } from "@/components/ui/timestamp";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,35 +75,35 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
 
       <div className="mt-4 space-y-3 border-t border-border pt-3">
         <h3 className="font-medium">Deletion</h3>
-        {row.meta.deleteAfter ? (
-          <form action={cancelDeletionAction}>
-            <input type="hidden" name="userId" value={id} />
-            <SubmitButton variant="outline" pendingLabel="Cancelling…">
-              Cancel scheduled deletion and re-enable
-            </SubmitButton>
-          </form>
-        ) : (
-          <ConfirmForm
-            action={scheduleDeletionAction}
-            phrase={row.name}
-            label="Schedule deletion"
+        <div className="flex flex-wrap items-start gap-2">
+          {row.meta.deleteAfter ? (
+            <form action={cancelDeletionAction}>
+              <input type="hidden" name="userId" value={id} />
+              <SubmitButton variant="outline" pendingLabel="Cancelling…">
+                Cancel scheduled deletion and re-enable
+              </SubmitButton>
+            </form>
+          ) : (
+            <ConfirmDialog
+              label="Schedule deletion"
+              title={`Schedule deletion of ${row.name}?`}
+              description={`Disables the account now and deletes it after the ${graceDays}-day grace period. You can cancel until then.`}
+              phrase={row.name}
+              action={scheduleDeletionAction}
+              hidden={{ userId: id }}
+              disabledReason={isSelf ? "You cannot delete your own account." : row.isAdmin ? "Administrators cannot be scheduled for deletion. Remove administrator rights first." : undefined}
+            />
+          )}
+          <ConfirmDialog
+            label="Delete now"
+            title={`Delete ${row.name} permanently?`}
+            description="Immediately and permanently deletes the Jellyfin account, its watch history and app metadata. There is no grace period. Audit history is kept."
+            phrase={`delete ${row.name}`}
+            action={deleteNowAction}
             hidden={{ userId: id }}
-            description={
-              isSelf || row.isAdmin ? (
-                <span className="text-muted-foreground">{isSelf ? "You cannot delete your own account." : "Administrators cannot be scheduled for deletion. Remove administrator rights first."}</span>
-              ) : (
-                <>Disables the account now and deletes it after the {graceDays}-day grace period. Can be cancelled until then.</>
-              )
-            }
+            disabledReason={isSelf ? "You cannot delete your own account." : undefined}
           />
-        )}
-        <ConfirmForm
-          action={deleteNowAction}
-          phrase={`delete ${row.name}`}
-          label="Delete now (no grace period)"
-          hidden={{ userId: id }}
-          description={isSelf ? <span className="text-muted-foreground">You cannot delete your own account.</span> : <>Immediately and permanently deletes the Jellyfin account, its watch history and app metadata. Audit history is kept.</>}
-        />
+        </div>
       </div>
     </Section>
   );

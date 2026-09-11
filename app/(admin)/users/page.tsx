@@ -2,7 +2,6 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listUsers } from "@/lib/services/users";
 import { applyUsersQuery, parseUsersQuery } from "@/lib/users/query";
 import { listProfiles } from "@/lib/services/profiles";
-import { Notice } from "@/components/notice";
 import { PageHeader } from "@/components/ui/page-header";
 import { BulkForm } from "@/components/users/bulk-form";
 import { UsersFilters } from "@/components/users/users-filters";
@@ -22,7 +21,6 @@ export default async function UsersPage(props: PageProps<"/users">) {
   return (
     <div className="space-y-4">
       <PageHeader title="Users" count={rows.length === all.length ? all.length : `${rows.length} of ${all.length}`} />
-      <Notice params={params} />
       <UsersFilters query={query} labels={labels} profiles={profiles} />
       <BulkForm action={bulkAction} profiles={profiles}>
         <UsersTable rows={rows} query={query} selectable />

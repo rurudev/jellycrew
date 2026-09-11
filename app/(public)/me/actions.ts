@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clearSelfSession, getSelfSession } from "@/lib/auth/session";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import { PUBLIC_LIMITS, RateLimitedError, enforceLimits } from "@/lib/ratelimit";
 import { currentRequestId } from "@/lib/request-context";
 import { recordAudit } from "@/lib/services/audit";
@@ -12,7 +12,7 @@ import { changeOwnPassword, resendOwnVerification, revokeOwnDevice, setOwnEmail 
 
 function back(notice: { ok?: string; error?: string }): never {
   revalidatePath("/me");
-  redirect(withNotice("/me", notice));
+  redirectWithNotice("/me", notice);
 }
 
 async function requireSelf() {

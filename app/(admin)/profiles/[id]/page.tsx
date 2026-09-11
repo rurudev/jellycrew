@@ -5,12 +5,11 @@ import { policyHash } from "@/lib/policy/hash";
 import { getProfile, listProfileMembers } from "@/lib/services/profiles";
 import { getReferenceData } from "@/lib/services/reference";
 import { toEditorRefData } from "@/lib/services/reference-serialize";
-import { ConfirmForm } from "@/components/confirm-form";
-import { Notice } from "@/components/notice";
 import { DiffTable } from "@/components/policy/diff-table";
 import { PolicyEditor } from "@/components/policy/policy-editor";
 import { Callout } from "@/components/ui/callout";
 import { Tag } from "@/components/ui/chip";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -34,7 +33,6 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
   return (
     <div className="space-y-4">
       <PageHeader breadcrumb={[{ label: "Profiles", href: "/profiles" }, { label: profile.name }]} title={profile.name} />
-      <Notice params={params} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title="Details">
@@ -131,12 +129,13 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
       </Section>
 
       <Section title="Danger zone">
-        <ConfirmForm
-          action={deleteProfileAction}
-          phrase={profile.name}
+        <ConfirmDialog
           label="Delete profile"
+          title={`Delete the profile ${profile.name}?`}
+          description={`Deleting unassigns ${members.length} member(s). Their Jellyfin settings are not changed.`}
+          phrase={profile.name}
+          action={deleteProfileAction}
           hidden={{ profileId: id }}
-          description={<>Deleting unassigns {members.length} member(s). Their Jellyfin settings are not changed.</>}
         />
       </Section>
     </div>

@@ -3,7 +3,6 @@ import { APP_VERSION, env } from "@/lib/env";
 import { getJobStatus, LIFECYCLE_INTERVAL_MS, LIFECYCLE_JOB } from "@/lib/services/scheduler";
 import { getHealth } from "@/lib/services/system";
 import { getSettingOrDefault } from "@/lib/settings";
-import { Notice } from "@/components/notice";
 import { Timestamp } from "@/components/ui/timestamp";
 import { Callout } from "@/components/ui/callout";
 import { FormField, Hint } from "@/components/ui/form-field";
@@ -16,9 +15,8 @@ import { runLifecycleNowAction, saveSettingsAction, testSmtpAction } from "./act
 
 export const metadata = { title: "Settings" };
 
-export default async function SettingsPage(props: PageProps<"/settings">) {
+export default async function SettingsPage() {
   await requireAdmin();
-  const params = await props.searchParams;
   const health = await getHealth();
   const job = getJobStatus(LIFECYCLE_JOB);
   const e = env();
@@ -27,7 +25,6 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
   return (
     <div className="space-y-4">
       <PageHeader title="Settings" />
-      <Notice params={params} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title="Jellyfin server">
           {!health.jellyfin.reachable ? (

@@ -5,7 +5,6 @@ import { copyPolicyFromUser } from "@/lib/services/policies";
 import { listProfiles, previewAdopt, userDrift } from "@/lib/services/profiles";
 import { getReferenceData } from "@/lib/services/reference";
 import { getUserDetail, listUsers } from "@/lib/services/users";
-import { Notice } from "@/components/notice";
 import { DiffTable } from "@/components/policy/diff-table";
 import { PolicyView } from "@/components/policy/policy-view";
 import { DevicesTable } from "@/components/sessions/devices-table";
@@ -97,7 +96,6 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
           </>
         }
       />
-      <Notice params={params} />
       {resetLink ? (
         <Callout tone="success" title="Reset link created (valid 60 minutes, single use)">
           <CopyField value={resetLink} label="Copy link" className="mt-1" />

@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import { recordAudit } from "@/lib/services/audit";
 import { runLifecycleJob } from "@/lib/services/scheduler";
 import { getSettingOrDefault, setSetting } from "@/lib/settings";
@@ -26,7 +25,7 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
     publicBaseUrl: formData.get("publicBaseUrl"),
     jellyfinPublicUrl: formData.get("jellyfinPublicUrl"),
   });
-  if (!parsed.success) redirect(withNotice("/settings", { error: parsed.error.issues[0]?.message ?? "Invalid input." }));
+  if (!parsed.success) redirectWithNotice("/settings", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
   const before = {
     graceDays: getSettingOrDefault("graceDays"),
     minPasswordLength: getSettingOrDefault("minPasswordLength"),
@@ -39,7 +38,7 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
   setSetting("jellyfinPublicUrl", parsed.data.jellyfinPublicUrl);
   recordAudit({ actor, action: "settings.update", before, after: parsed.data });
   revalidatePath("/settings");
-  redirect(withNotice("/settings", { ok: "Settings saved." }));
+  redirectWithNotice("/settings", { ok: "Settings saved." });
 }
 
 export async function runLifecycleNowAction(): Promise<void> {
@@ -48,13 +47,11 @@ export async function runLifecycleNowAction(): Promise<void> {
   try {
     result = await runLifecycleJob();
   } catch (err) {
-    redirect(withNotice("/settings", { error: errorMessage(err) }));
+    redirectWithNotice("/settings", { error: errorMessage(err) });
   }
   recordAudit({ actor, action: "lifecycle.run_now", detail: result ?? { skipped: "lock held" } });
   revalidatePath("/settings");
-  redirect(
-    withNotice("/settings", result ? { ok: `Lifecycle run finished: ${result.disabled.length} disabled, ${result.deleted.length} deleted, ${result.errors.length} error(s).` } : { error: "A lifecycle run is already in progress." }),
-  );
+  redirectWithNotice("/settings", result ? { ok: `Lifecycle run finished: ${result.disabled.length} disabled, ${result.deleted.length} deleted, ${result.errors.length} error(s).` } : { error: "A lifecycle run is already in progress." });
 }
 
 export async function testSmtpAction(formData: FormData): Promise<void> {
@@ -72,5 +69,5 @@ export async function testSmtpAction(formData: FormData): Promise<void> {
   setSetting("smtpTestResult", { at: new Date().toISOString(), ...result });
   recordAudit({ actor, action: "settings.smtp_test", detail: { ...result, to: to || null } });
   revalidatePath("/settings");
-  redirect(withNotice("/settings", result.ok ? { ok: result.message } : { error: result.message }));
+  redirectWithNotice("/settings", result.ok ? { ok: result.message } : { error: result.message });
 }

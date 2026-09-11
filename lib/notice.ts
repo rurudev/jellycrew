@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 /** Flash messages travel in the URL so plain server-action forms can report results after redirect. */
 export function withNotice(path: string, notice: { ok?: string; error?: string }): string {
   const url = new URL(path, "http://x");
@@ -6,6 +8,11 @@ export function withNotice(path: string, notice: { ok?: string; error?: string }
   if (notice.ok) url.searchParams.set("ok", notice.ok);
   if (notice.error) url.searchParams.set("error", notice.error);
   return `${url.pathname}${url.search}`;
+}
+
+/** Redirects with a flash message; the toast reader in the root layout shows it and cleans the URL. */
+export function redirectWithNotice(path: string, notice: { ok?: string; error?: string }): never {
+  redirect(withNotice(path, notice));
 }
 
 export function safeReturnTo(value: FormDataEntryValue | null | undefined, fallback: string): string {

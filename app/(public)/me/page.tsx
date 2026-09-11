@@ -1,7 +1,6 @@
 import { getSelfSession } from "@/lib/auth/session";
 import { getSelfOverview } from "@/lib/services/self";
 import { getSettingOrDefault } from "@/lib/settings";
-import { Notice } from "@/components/notice";
 import { Timestamp } from "@/components/ui/timestamp";
 import { Callout } from "@/components/ui/callout";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -19,8 +18,7 @@ export const metadata = { title: "My account" };
 
 const reasonText = { expired: "Your access has expired.", inactive: "Your account was disabled after a period of inactivity.", manual: "Your account was disabled by an administrator." } as const;
 
-export default async function MePage(props: PageProps<"/me">) {
-  const params = await props.searchParams;
+export default async function MePage() {
   const session = await getSelfSession();
   const overview = session ? await getSelfOverview(session.userId) : null;
   if (!session || !overview) {
@@ -45,7 +43,6 @@ export default async function MePage(props: PageProps<"/me">) {
           </SubmitButton>
         </form>
       </div>
-      <Notice params={params} />
       {overview.isDisabled ? (
         <Callout tone="error" title="This account is disabled">
           {overview.disabledReason ? reasonText[overview.disabledReason] : ""} Contact the administrator.

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { listProfilesWithCounts } from "@/lib/services/profiles";
 import { listUsers } from "@/lib/services/users";
-import { Notice } from "@/components/notice";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -17,14 +16,12 @@ import { createProfileAction } from "./actions";
 
 export const metadata = { title: "Profiles" };
 
-export default async function ProfilesPage(props: PageProps<"/profiles">) {
+export default async function ProfilesPage() {
   await requireAdmin();
-  const params = await props.searchParams;
   const [profiles, users] = await Promise.all([listProfilesWithCounts(), listUsers()]);
   return (
     <div className="space-y-4">
       <PageHeader title="Profiles" count={profiles.length} />
-      <Notice params={params} />
       <Table>
         <TableHeader>
           <TableRow>

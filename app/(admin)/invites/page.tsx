@@ -3,7 +3,6 @@ import { requireAdmin } from "@/lib/auth/session";
 import { inviteLink, listInvites, INVITE_DEFAULT_EXPIRY_DAYS } from "@/lib/services/invites";
 import { listProfiles } from "@/lib/services/profiles";
 import { CopyButton, CopyField } from "@/components/ui/copy-field";
-import { Notice } from "@/components/notice";
 import { Timestamp } from "@/components/ui/timestamp";
 import { Callout } from "@/components/ui/callout";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -34,7 +33,6 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
   return (
     <div className="space-y-4">
       <PageHeader title="Invites" count={invites.length} />
-      <Notice params={params} />
       {created && createdLink ? (
         <Callout tone="success" title="Invite created">
           <CopyField value={createdLink} label="Copy link" className="mt-1" />

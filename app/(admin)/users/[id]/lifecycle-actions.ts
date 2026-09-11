@@ -1,17 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage, redirectWithNotice } from "@/lib/notice";
+import { backToUser } from "./shared";
 import { cancelDeletion, deleteUserNow, scheduleDeletion, updateUserMeta } from "@/lib/services/lifecycle";
-
-function back(userId: string, notice: { ok?: string; error?: string }): never {
-  revalidatePath(`/users/${userId}`);
-  revalidatePath("/users");
-  redirect(withNotice(`/users/${userId}`, notice));
-}
 
 const MetaForm = z.object({
   email: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : v), z.email("Enter a valid email address.").nullable()),
@@ -31,11 +25,11 @@ export async function updateMetaAction(formData: FormData): Promise<void> {
     expiresAt: formData.get("expiresAt"),
     inactivityDisableDays: formData.get("inactivityDisableDays"),
   });
-  if (!parsed.success) back(userId, { error: parsed.error.issues[0]?.message ?? "Invalid input." });
+  if (!parsed.success) backToUser(userId, { error: parsed.error.issues[0]?.message ?? "Invalid input." });
   let expiresAt: Date | null = null;
   if (parsed.data.expiresAt) {
     expiresAt = new Date(parsed.data.expiresAt);
-    if (Number.isNaN(expiresAt.getTime())) back(userId, { error: "Invalid expiry date." });
+    if (Number.isNaN(expiresAt.getTime())) backToUser(userId, { error: "Invalid expiry date." });
   }
   try {
     updateUserMeta(actor, userId, {
@@ -46,9 +40,9 @@ export async function updateMetaAction(formData: FormData): Promise<void> {
       inactivityDisableDays: parsed.data.inactivityDisableDays,
     });
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
-  back(userId, { ok: "Lifecycle settings saved." });
+  backToUser(userId, { ok: "Lifecycle settings saved." });
 }
 
 export async function scheduleDeletionAction(formData: FormData): Promise<void> {
@@ -58,9 +52,9 @@ export async function scheduleDeletionAction(formData: FormData): Promise<void> 
   try {
     m = await scheduleDeletion(actor, userId);
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
-  back(userId, { ok: `Disabled now; will be deleted after ${m.deleteAfter?.toISOString().slice(0, 10)}.` });
+  backToUser(userId, { ok: `Disabled now; will be deleted after ${m.deleteAfter?.toISOString().slice(0, 10)}.` });
 }
 
 export async function cancelDeletionAction(formData: FormData): Promise<void> {
@@ -69,9 +63,9 @@ export async function cancelDeletionAction(formData: FormData): Promise<void> {
   try {
     await cancelDeletion(actor, userId);
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
-  back(userId, { ok: "Deletion cancelled and account enabled." });
+  backToUser(userId, { ok: "Deletion cancelled and account enabled." });
 }
 
 export async function deleteNowAction(formData: FormData): Promise<void> {
@@ -80,8 +74,8 @@ export async function deleteNowAction(formData: FormData): Promise<void> {
   try {
     await deleteUserNow(actor, userId);
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
   revalidatePath("/users");
-  redirect(withNotice("/users", { ok: "User deleted." }));
+  redirectWithNotice("/users", { ok: "User deleted." });
 }

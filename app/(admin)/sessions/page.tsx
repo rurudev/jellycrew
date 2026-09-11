@@ -3,7 +3,6 @@ import { listSessions } from "@/lib/services/sessions";
 import { listDevices } from "@/lib/services/devices";
 import { summarizeSessions } from "@/lib/sessions/view";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -41,7 +40,6 @@ export default async function SessionsPage(props: PageProps<"/sessions">) {
         actions={<AutoRefresh seconds={10} />}
         description={`${summary.streams} active ${summary.streams === 1 ? "stream" : "streams"} · ${summary.transcodes} transcoding · ${summary.users} distinct ${summary.users === 1 ? "user" : "users"} · ${summary.sessions} connected ${summary.sessions === 1 ? "session" : "sessions"}`}
       />
-      <Notice params={params} />
       <form method="get" action="/sessions" className="flex flex-wrap items-end gap-2">
         <Input name="user" placeholder="User" defaultValue={q.user} className="w-40" aria-label="Filter by user" />
         <Input name="client" placeholder="Client" defaultValue={q.client} className="w-40" aria-label="Filter by client" />

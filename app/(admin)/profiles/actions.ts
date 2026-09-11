@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import type { PolicyEditorState } from "@/lib/policy/editor-state";
 import { parseEditorSubmission } from "@/lib/policy/editor-submit";
 import { PolicyFormError } from "@/lib/policy/form";
@@ -32,35 +32,35 @@ function parseProfileForm(formData: FormData) {
 export async function createProfileAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
   const parsed = parseProfileForm(formData);
-  if (!parsed.success) redirect(withNotice("/profiles", { error: parsed.error.issues[0]?.message ?? "Invalid input." }));
+  if (!parsed.success) redirectWithNotice("/profiles", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
   const source = String(formData.get("source") ?? "blank");
   const userId = String(formData.get("userId") ?? "");
   const sourceId = String(formData.get("sourceProfileId") ?? "");
-  if (source === "user" && !userId) redirect(withNotice("/profiles", { error: "Choose a user to snapshot." }));
-  if (source === "clone" && !sourceId) redirect(withNotice("/profiles", { error: "Choose a profile to clone." }));
+  if (source === "user" && !userId) redirectWithNotice("/profiles", { error: "Choose a user to snapshot." });
+  if (source === "clone" && !sourceId) redirectWithNotice("/profiles", { error: "Choose a profile to clone." });
   let id: string;
   try {
     id = source === "user" ? (await createProfileFromUser(actor, userId, parsed.data)).id : source === "clone" ? cloneProfile(actor, sourceId, parsed.data).id : createBlankProfile(actor, parsed.data).id;
   } catch (err) {
-    redirect(withNotice("/profiles", { error: errorMessage(err) }));
+    redirectWithNotice("/profiles", { error: errorMessage(err) });
   }
   revalidatePath("/profiles");
-  redirect(withNotice(`/profiles/${id}`, { ok: "Profile created." }));
+  redirectWithNotice(`/profiles/${id}`, { ok: "Profile created." });
 }
 
 export async function updateProfileAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
   const id = String(formData.get("profileId") ?? "");
   const parsed = parseProfileForm(formData);
-  if (!parsed.success) redirect(withNotice(`/profiles/${id}`, { error: parsed.error.issues[0]?.message ?? "Invalid input." }));
+  if (!parsed.success) redirectWithNotice(`/profiles/${id}`, { error: parsed.error.issues[0]?.message ?? "Invalid input." });
   try {
     updateProfile(actor, id, parsed.data);
   } catch (err) {
-    redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
+    redirectWithNotice(`/profiles/${id}`, { error: errorMessage(err) });
   }
   revalidatePath("/profiles");
   revalidatePath(`/profiles/${id}`);
-  redirect(withNotice(`/profiles/${id}`, { ok: "Profile saved." }));
+  redirectWithNotice(`/profiles/${id}`, { ok: "Profile saved." });
 }
 
 export async function deleteProfileAction(formData: FormData): Promise<void> {
@@ -70,11 +70,11 @@ export async function deleteProfileAction(formData: FormData): Promise<void> {
   try {
     unassigned = deleteProfile(actor, id).unassigned;
   } catch (err) {
-    redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
+    redirectWithNotice(`/profiles/${id}`, { error: errorMessage(err) });
   }
   revalidatePath("/profiles");
   revalidatePath("/users");
-  redirect(withNotice("/profiles", { ok: `Profile deleted; ${unassigned} member(s) unassigned. Nothing changed in Jellyfin.` }));
+  redirectWithNotice("/profiles", { ok: `Profile deleted; ${unassigned} member(s) unassigned. Nothing changed in Jellyfin.` });
 }
 
 export async function saveProfilePolicyAction(_prev: PolicyEditorState, formData: FormData): Promise<PolicyEditorState> {
@@ -118,12 +118,10 @@ export async function applyToMembersAction(formData: FormData): Promise<void> {
     const members = await listProfileMembers(id);
     results = await executeBulk(actor, "apply_profile", members.map((m) => m.id), { profileId: id });
   } catch (err) {
-    redirect(withNotice(`/profiles/${id}`, { error: errorMessage(err) }));
+    redirectWithNotice(`/profiles/${id}`, { error: errorMessage(err) });
   }
   const failed = results.filter((r) => !r.ok);
   revalidatePath(`/profiles/${id}`);
   revalidatePath("/users");
-  redirect(
-    withNotice(`/profiles/${id}`, failed.length ? { error: `Applied to ${results.length - failed.length} member(s); ${failed.length} failed: ${failed.map((f) => `${f.name}: ${f.message}`).join("; ")}` } : { ok: `Applied to ${results.length} member(s).` }),
-  );
+  redirectWithNotice(`/profiles/${id}`, failed.length ? { error: `Applied to ${results.length - failed.length} member(s); ${failed.length} failed: ${failed.map((f) => `${f.name}: ${f.message}`).join("; ")}` } : { ok: `Applied to ${results.length} member(s).` });
 }

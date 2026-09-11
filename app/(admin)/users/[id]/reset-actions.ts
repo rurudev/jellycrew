@@ -3,14 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminActor } from "@/lib/auth/actor";
-import { errorMessage, withNotice } from "@/lib/notice";
+import { errorMessage } from "@/lib/notice";
+import { backToUser } from "./shared";
 import { adminCreateResetLink, adminEmailResetLink } from "@/lib/services/reset";
 import { adminSendVerification } from "@/lib/services/self";
-
-function back(userId: string, notice: { ok?: string; error?: string }): never {
-  revalidatePath(`/users/${userId}`);
-  redirect(withNotice(`/users/${userId}`, notice));
-}
 
 export async function createResetLinkAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
@@ -19,7 +15,7 @@ export async function createResetLinkAction(formData: FormData): Promise<void> {
   try {
     ({ url } = await adminCreateResetLink(actor, userId));
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
   revalidatePath(`/users/${userId}`);
   const target = new URL(`/users/${userId}`, "http://x");
@@ -34,9 +30,9 @@ export async function emailResetLinkAction(formData: FormData): Promise<void> {
   try {
     ({ email } = await adminEmailResetLink(actor, userId));
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
-  back(userId, { ok: `Reset link emailed to ${email}.` });
+  backToUser(userId, { ok: `Reset link emailed to ${email}.` });
 }
 
 export async function sendVerificationAction(formData: FormData): Promise<void> {
@@ -45,7 +41,7 @@ export async function sendVerificationAction(formData: FormData): Promise<void> 
   try {
     await adminSendVerification(actor, userId);
   } catch (err) {
-    back(userId, { error: errorMessage(err) });
+    backToUser(userId, { error: errorMessage(err) });
   }
-  back(userId, { ok: "Verification email sent." });
+  backToUser(userId, { ok: "Verification email sent." });
 }
