@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -43,7 +43,6 @@ export async function createInviteAction(formData: FormData): Promise<void> {
       noteForInvitee: parsed.data.noteForInvitee,
     });
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice("/invites", { error: errorMessage(err) }));
   }
   revalidatePath("/invites");
@@ -56,7 +55,6 @@ export async function revokeInviteAction(formData: FormData): Promise<void> {
   try {
     revokeInvite(actor, id);
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice("/invites", { error: errorMessage(err) }));
   }
   revalidatePath("/invites");

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { getServerStatus } from "@/lib/services/system";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getTheme } from "@/lib/theme-server";
 import { logoutAction } from "./actions";
@@ -40,9 +40,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
             <span>{session.userName}</span>
             <ThemeToggle theme={theme} />
             <form action={logoutAction}>
-              <Button type="submit" variant="ghost" size="sm">
+              <SubmitButton variant="ghost" size="sm">
                 Sign out
-              </Button>
+              </SubmitButton>
             </form>
           </div>
         </div>

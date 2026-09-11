@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 
 interface Done {
@@ -70,19 +70,19 @@ export function SignupForm({ token, requireEmail, minPasswordLength }: { token: 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
-      <Field id="username" label="Username">
-        <Input name="username" size="lg" required maxLength={64} autoComplete="username" autoFocus />
-      </Field>
-      <Field id="password" label="Password" help={`At least ${minPasswordLength} characters.`}>
-        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-      </Field>
-      <Field id="passwordConfirm" label="Repeat password">
-        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-      </Field>
-      <Field id="email" label={requireEmail ? "Email" : "Email (optional)"} help="Used only for password resets after you verify it.">
-        <Input name="email" size="lg" type="email" required={requireEmail} autoComplete="email" />
-      </Field>
-      <Button type="submit" size="lg" block disabled={pending}>
+      <FormField id="username" label="Username">
+        <Input name="username" className="h-11 text-lg" required maxLength={64} autoComplete="username" autoFocus />
+      </FormField>
+      <FormField id="password" label="Password" help={`At least ${minPasswordLength} characters.`}>
+        <Input name="password" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </FormField>
+      <FormField id="passwordConfirm" label="Repeat password">
+        <Input name="passwordConfirm" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </FormField>
+      <FormField id="email" label={requireEmail ? "Email" : "Email (optional)"} help="Used only for password resets after you verify it.">
+        <Input name="email" className="h-11 text-lg" type="email" required={requireEmail} autoComplete="email" />
+      </FormField>
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>

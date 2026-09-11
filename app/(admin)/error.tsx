@@ -10,7 +10,7 @@ export default function AdminError({ error, reset }: { error: Error & { digest?:
         {error.message}
         {error.digest ? <div className="text-xs opacity-70">ref {error.digest}</div> : null}
       </Alert>
-      <Button variant="secondary" onClick={() => reset()}>
+      <Button variant="outline" onClick={() => reset()}>
         Try again
       </Button>
     </div>

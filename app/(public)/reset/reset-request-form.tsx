@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 
 export function ResetRequestForm() {
@@ -27,10 +27,10 @@ export function ResetRequestForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {message ? <Alert tone={message.tone}>{message.text}</Alert> : null}
-      <Field id="identifier" label="Username or email address">
-        <Input name="identifier" size="lg" required maxLength={200} autoComplete="username" autoFocus />
-      </Field>
-      <Button type="submit" size="lg" block disabled={pending}>
+      <FormField id="identifier" label="Username or email address">
+        <Input name="identifier" className="h-11 text-lg" required maxLength={200} autoComplete="username" autoFocus />
+      </FormField>
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Sending…" : "Send reset link"}
       </Button>
     </form>

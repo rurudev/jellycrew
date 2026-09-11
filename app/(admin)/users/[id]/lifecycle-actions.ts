@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -46,7 +46,6 @@ export async function updateMetaAction(formData: FormData): Promise<void> {
       inactivityDisableDays: parsed.data.inactivityDisableDays,
     });
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "Lifecycle settings saved." });
@@ -55,13 +54,13 @@ export async function updateMetaAction(formData: FormData): Promise<void> {
 export async function scheduleDeletionAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  let m;
   try {
-    const m = await scheduleDeletion(actor, userId);
-    back(userId, { ok: `Disabled now; will be deleted after ${m.deleteAfter?.toISOString().slice(0, 10)}.` });
+    m = await scheduleDeletion(actor, userId);
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
+  back(userId, { ok: `Disabled now; will be deleted after ${m.deleteAfter?.toISOString().slice(0, 10)}.` });
 }
 
 export async function cancelDeletionAction(formData: FormData): Promise<void> {
@@ -70,7 +69,6 @@ export async function cancelDeletionAction(formData: FormData): Promise<void> {
   try {
     await cancelDeletion(actor, userId);
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "Deletion cancelled and account enabled." });
@@ -82,7 +80,6 @@ export async function deleteNowAction(formData: FormData): Promise<void> {
   try {
     await deleteUserNow(actor, userId);
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   revalidatePath("/users");

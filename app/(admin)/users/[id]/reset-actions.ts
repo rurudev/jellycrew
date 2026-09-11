@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
 import { adminCreateResetLink, adminEmailResetLink } from "@/lib/services/reset";
@@ -15,28 +15,28 @@ function back(userId: string, notice: { ok?: string; error?: string }): never {
 export async function createResetLinkAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  let url: string;
   try {
-    const { url } = await adminCreateResetLink(actor, userId);
-    revalidatePath(`/users/${userId}`);
-    const target = new URL(`/users/${userId}`, "http://x");
-    target.searchParams.set("resetLink", url);
-    redirect(`${target.pathname}${target.search}`);
+    ({ url } = await adminCreateResetLink(actor, userId));
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
+  revalidatePath(`/users/${userId}`);
+  const target = new URL(`/users/${userId}`, "http://x");
+  target.searchParams.set("resetLink", url);
+  redirect(`${target.pathname}${target.search}`);
 }
 
 export async function emailResetLinkAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  let email: string;
   try {
-    const { email } = await adminEmailResetLink(actor, userId);
-    back(userId, { ok: `Reset link emailed to ${email}.` });
+    ({ email } = await adminEmailResetLink(actor, userId));
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
+  back(userId, { ok: `Reset link emailed to ${email}.` });
 }
 
 export async function sendVerificationAction(formData: FormData): Promise<void> {
@@ -45,7 +45,6 @@ export async function sendVerificationAction(formData: FormData): Promise<void> 
   try {
     await adminSendVerification(actor, userId);
   } catch (err) {
-    unstable_rethrow(err);
     back(userId, { error: errorMessage(err) });
   }
   back(userId, { ok: "Verification email sent." });

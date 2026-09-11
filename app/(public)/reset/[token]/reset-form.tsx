@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 
 export function ResetForm({ token, minPasswordLength }: { token: string; minPasswordLength: number }) {
@@ -49,13 +49,13 @@ export function ResetForm({ token, minPasswordLength }: { token: string; minPass
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error ? <Alert tone="error">{error}</Alert> : null}
-      <Field id="password" label="New password" help={`At least ${minPasswordLength} characters.`}>
-        <Input name="password" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
-      </Field>
-      <Field id="passwordConfirm" label="Repeat new password">
-        <Input name="passwordConfirm" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-      </Field>
-      <Button type="submit" size="lg" block disabled={pending}>
+      <FormField id="password" label="New password" help={`At least ${minPasswordLength} characters.`}>
+        <Input name="password" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" autoFocus />
+      </FormField>
+      <FormField id="passwordConfirm" label="Repeat new password">
+        <Input name="passwordConfirm" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+      </FormField>
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? "Saving…" : "Set new password"}
       </Button>
     </form>

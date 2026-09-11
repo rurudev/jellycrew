@@ -13,9 +13,10 @@ import { SessionsTable } from "@/components/sessions/sessions-table";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { LinkButton } from "@/components/ui/button";
-import { Field, Hint } from "@/components/ui/field";
-import { Input, Select } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { FormField, Hint } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -63,18 +64,18 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
             {row.isHidden ? <Badge>hidden</Badge> : null}
             {isSelf ? <Badge tone="blue">you</Badge> : null}
             <StatusBadge status={row.status} />
-            <code className="text-xs text-fg-subtle">{row.id}</code>
+            <code className="text-xs text-muted-foreground">{row.id}</code>
           </span>
         }
         actions={
           <>
-            <LinkButton href={`/users/${id}/policy`} variant="secondary">
+            <Button variant="outline" nativeButton={false} render={<Link href={`/users/${id}/policy`} />}>
               Edit access
-            </LinkButton>
+            </Button>
             <form action={setEnabledAction}>
               <input type="hidden" name="userId" value={id} />
               <input type="hidden" name="enabled" value={row.isDisabled ? "1" : "0"} />
-              <SubmitButton variant={row.isDisabled ? "primary" : "danger"} disabled={isSelf && !row.isDisabled} title={isSelf ? "You cannot disable yourself" : undefined}>
+              <SubmitButton variant={row.isDisabled ? "default" : "destructive"} disabled={isSelf && !row.isDisabled} title={isSelf ? "You cannot disable yourself" : undefined}>
                 {row.isDisabled ? "Enable" : "Disable"}
               </SubmitButton>
             </form>
@@ -82,7 +83,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
               <form action={applyProfileAction}>
                 <input type="hidden" name="userId" value={id} />
                 <input type="hidden" name="profileId" value={assigned.id} />
-                <SubmitButton variant="secondary" pendingLabel="Applying…">
+                <SubmitButton variant="outline" pendingLabel="Applying…">
                   Apply profile
                 </SubmitButton>
               </form>
@@ -105,17 +106,17 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
           <form action={assignProfileAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
             <div className="flex flex-wrap items-end gap-2">
-              <Field id="profileId" label="Assigned profile" className="min-w-48">
-                <Select name="profileId" defaultValue={assigned?.id ?? ""}>
+              <FormField id="profileId" label="Assigned profile" className="min-w-48">
+                <NativeSelect name="profileId" defaultValue={assigned?.id ?? ""} className="w-full">
                   <option value="">No profile</option>
                   {profiles.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
                   ))}
-                </Select>
-              </Field>
-              <SubmitButton variant="secondary" pendingLabel="Assigning…">
+                </NativeSelect>
+              </FormField>
+              <SubmitButton variant="outline" pendingLabel="Assigning…">
                 Assign
               </SubmitButton>
             </div>
@@ -136,7 +137,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 <form action={applyProfileAction}>
                   <input type="hidden" name="userId" value={id} />
                   <input type="hidden" name="profileId" value={assigned.id} />
-                  <SubmitButton variant="secondary" disabled={!drift?.length} pendingLabel="Applying…">
+                  <SubmitButton variant="outline" disabled={!drift?.length} pendingLabel="Applying…">
                     Apply profile to user
                   </SubmitButton>
                 </form>
@@ -144,7 +145,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                   <input type="hidden" name="userId" value={id} />
                   <input type="hidden" name="profileId" value={assigned.id} />
                   <SubmitButton
-                    variant="secondary"
+                    variant="outline"
                     disabled={!drift?.length}
                     pendingLabel="Adopting…"
                     title={adopt ? `${adopt.otherMembers.filter((m) => m.willDrift).length} of ${adopt.otherMembers.length} other member(s) would drift` : undefined}
@@ -168,9 +169,9 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
       <Section
         title="Access"
         actions={
-          <LinkButton href={`/users/${id}/policy`} variant="secondary" size="sm">
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/users/${id}/policy`} />}>
             Edit
-          </LinkButton>
+          </Button>
         }
       >
         <PolicyView policy={policy} refData={ref} />
@@ -188,20 +189,20 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
         <div className="mb-6 flex flex-wrap gap-2">
           <form action={createResetLinkAction}>
             <input type="hidden" name="userId" value={id} />
-            <SubmitButton variant="secondary" title="Works without email; hand the link over yourself" pendingLabel="Generating…">
+            <SubmitButton variant="outline" title="Works without email; hand the link over yourself" pendingLabel="Generating…">
               Generate reset link
             </SubmitButton>
           </form>
           <form action={emailResetLinkAction}>
             <input type="hidden" name="userId" value={id} />
-            <SubmitButton variant="secondary" disabled={!mailConfigured || !row.meta.email} title={!mailConfigured ? "SMTP is not configured" : !row.meta.email ? "No email on file" : undefined} pendingLabel="Sending…">
+            <SubmitButton variant="outline" disabled={!mailConfigured || !row.meta.email} title={!mailConfigured ? "SMTP is not configured" : !row.meta.email ? "No email on file" : undefined} pendingLabel="Sending…">
               Email reset link
             </SubmitButton>
           </form>
           {row.meta.email && !row.meta.emailVerifiedAt ? (
             <form action={sendVerificationAction}>
               <input type="hidden" name="userId" value={id} />
-              <SubmitButton variant="secondary" disabled={!mailConfigured} title={!mailConfigured ? "SMTP is not configured" : undefined} pendingLabel="Sending…">
+              <SubmitButton variant="outline" disabled={!mailConfigured} title={!mailConfigured ? "SMTP is not configured" : undefined} pendingLabel="Sending…">
                 Send verification email
               </SubmitButton>
             </form>
@@ -210,29 +211,29 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
         <div className="grid gap-6 md:grid-cols-3">
           <form action={renameUserAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Field id="name" label="Rename" help="Jellyfin validates the name; existing names are rejected.">
+            <FormField id="name" label="Rename" help="Jellyfin validates the name; existing names are rejected.">
               <Input name="name" defaultValue={row.name} required maxLength={100} />
-            </Field>
-            <SubmitButton variant="secondary" pendingLabel="Renaming…">
+            </FormField>
+            <SubmitButton variant="outline" pendingLabel="Renaming…">
               Rename
             </SubmitButton>
           </form>
           <form action={setPasswordAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Field id="password" label="Set password">
+            <FormField id="password" label="Set password">
               <Input name="password" type="password" autoComplete="new-password" required />
-            </Field>
-            <Field id="confirm" label="Repeat password" hideLabel help="Sets the password directly; the user is not asked for the current one.">
+            </FormField>
+            <FormField id="confirm" label="Repeat password" hideLabel help="Sets the password directly; the user is not asked for the current one.">
               <Input name="confirm" type="password" autoComplete="new-password" placeholder="Repeat" required />
-            </Field>
-            <SubmitButton variant="secondary" pendingLabel="Saving…">
+            </FormField>
+            <SubmitButton variant="outline" pendingLabel="Saving…">
               Set password
             </SubmitButton>
           </form>
           <form action={copyPolicyAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />
-            <Field id="sourceId" label="Copy policy from user" help="Copies profile-managed fields only. Administrator, device and login settings stay as they are.">
-              <Select name="sourceId" defaultValue={copyFrom ?? ""} required>
+            <FormField id="sourceId" label="Copy policy from user" help="Copies profile-managed fields only. Administrator, device and login settings stay as they are.">
+              <NativeSelect name="sourceId" defaultValue={copyFrom ?? ""} required className="w-full">
                 <option value="">Choose a user…</option>
                 {allUsers
                   .filter((u) => u.id !== id)
@@ -241,9 +242,9 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                       {u.name}
                     </option>
                   ))}
-              </Select>
-            </Field>
-            <SubmitButton variant="secondary" pendingLabel="Previewing…">
+              </NativeSelect>
+            </FormField>
+            <SubmitButton variant="outline" pendingLabel="Previewing…">
               Preview copy
             </SubmitButton>
           </form>
@@ -282,12 +283,12 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                 </Td>
                 <Td>
                   {h.actorType}
-                  {h.actorId ? <span className="text-fg-subtle"> {h.actorId.slice(0, 8)}</span> : null}
+                  {h.actorId ? <span className="text-muted-foreground"> {h.actorId.slice(0, 8)}</span> : null}
                 </Td>
                 <Td>
                   <code className="text-xs">{h.action}</code>
                 </Td>
-                <Td className="max-w-md truncate text-xs text-fg-muted" title={h.detail ? JSON.stringify(h.detail) : ""}>
+                <Td className="max-w-md truncate text-xs text-muted-foreground" title={h.detail ? JSON.stringify(h.detail) : ""}>
                   {h.detail ? JSON.stringify(h.detail) : ""}
                 </Td>
               </tr>

@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, LinkButton } from "@/components/ui/button";
-import { Input, Select, Textarea } from "@/components/ui/input";
-import { Hint } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Hint } from "@/components/ui/form-field";
 import { DiffTable } from "@/components/policy/diff-table";
 import { POLICY_GROUPS, SYNC_PLAY_ACCESS_VALUES, UNRATED_ITEM_VALUES, fieldsInGroup, type PolicyFieldDef, type PolicyScope } from "@/lib/policy/fields";
 import { mergeEdit } from "@/lib/policy/merge";
@@ -25,7 +28,7 @@ function IdCheckboxes({ field, value, options }: { field: PolicyFieldDef; value:
   const missing = selected.filter((id) => !known.has(id));
   return (
     <div className="space-y-1">
-      {options.length === 0 && missing.length === 0 ? <span className="text-fg-subtle">none available</span> : null}
+      {options.length === 0 && missing.length === 0 ? <span className="text-muted-foreground">none available</span> : null}
       {options.map((o) => (
         <label key={o.id} className="flex items-center gap-2">
           <input type="checkbox" name={field.key} value={o.id} defaultChecked={selected.includes(o.id)} />
@@ -51,7 +54,7 @@ function FieldInput({ field, value, refData }: { field: PolicyFieldDef; value: u
     case "boolean":
       return <input id={id} type="checkbox" name={field.key} defaultChecked={value === true} className="h-4 w-4" />;
     case "integer":
-      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} width="auto" className="w-40" />;
+      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} className="w-40" />;
     case "string":
       return <Input id={id} name={field.key} defaultValue={typeof value === "string" ? value : ""} />;
     case "stringList":
@@ -64,7 +67,7 @@ function FieldInput({ field, value, refData }: { field: PolicyFieldDef; value: u
     case "rating": {
       const values = [...new Map(refData.ratings.filter((r) => r.value !== null).map((r) => [r.value, r])).values()].sort((a, b) => (a.value ?? 0) - (b.value ?? 0));
       return (
-        <Select id={id} name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)}>
+        <NativeSelect id={id} name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} className="w-full">
           <option value="">No limit</option>
           {values.map((r) => (
             <option key={r.value} value={String(r.value)}>
@@ -75,7 +78,7 @@ function FieldInput({ field, value, refData }: { field: PolicyFieldDef; value: u
               ({r.value})
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       );
     }
     case "unratedItems": {
@@ -92,13 +95,13 @@ function FieldInput({ field, value, refData }: { field: PolicyFieldDef; value: u
     }
     case "syncPlayAccess":
       return (
-        <Select id={id} name={field.key} defaultValue={typeof value === "string" ? value : "CreateAndJoinGroups"}>
+        <NativeSelect id={id} name={field.key} defaultValue={typeof value === "string" ? value : "CreateAndJoinGroups"} className="w-full">
           {SYNC_PLAY_ACCESS_VALUES.map((v) => (
             <option key={v} value={v}>
               {v}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       );
     case "schedules":
       return (
@@ -171,29 +174,29 @@ export function PolicyEditor({
             <Button type="submit" name="confirm" value="1" disabled={pending}>
               {pending ? "Saving…" : "Confirm and save"}
             </Button>
-            <span className="self-center text-xs text-fg-muted">or keep editing below and preview again</span>
+            <span className="self-center text-xs text-muted-foreground">or keep editing below and preview again</span>
           </div>
         </Alert>
       ) : null}
 
-      <div className="flex items-center gap-2 border-b border-edge pb-2 text-sm">
-        <button type="button" onClick={() => setMode("grouped")} className={mode === "grouped" ? "font-semibold" : "text-fg-muted"}>
+      <div className="flex items-center gap-2 border-b border-border pb-2 text-sm">
+        <button type="button" onClick={() => setMode("grouped")} className={mode === "grouped" ? "font-semibold" : "text-muted-foreground"}>
           Grouped editor
         </button>
-        <span className="text-edge-strong">|</span>
-        <button type="button" onClick={() => setMode("raw")} className={mode === "raw" ? "font-semibold" : "text-fg-muted"}>
+        <span className="text-input">|</span>
+        <button type="button" onClick={() => setMode("raw")} className={mode === "raw" ? "font-semibold" : "text-muted-foreground"}>
           Raw JSON
         </button>
         {mode === "grouped" ? (
-          <label className="ml-auto flex items-center gap-1 text-xs text-fg-muted">
+          <label className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
             <input type="checkbox" checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} /> show advanced fields
           </label>
         ) : null}
       </div>
 
       {mode === "raw" ? (
-        <div>
-          <Textarea name="raw" defaultValue={JSON.stringify(current, null, 2)} mono className="min-h-96 text-xs" spellCheck={false} />
+        <div className="space-y-1">
+          <Textarea name="raw" defaultValue={JSON.stringify(current, null, 2)} className="font-mono min-h-96 text-xs" spellCheck={false} />
           <Hint>Keys you omit keep their current value. Unknown keys are preserved as Jellyfin returned them. Values are type-checked against the field catalog before preview.</Hint>
         </div>
       ) : (
@@ -202,18 +205,18 @@ export function PolicyEditor({
             const fields = fieldsInGroup(g.id).filter((f) => (scope === "all" || f.scope === scope) && (showAdvanced || !f.advanced));
             const hiddenAdvanced = fieldsInGroup(g.id).filter((f) => (scope === "all" || f.scope === scope) && !showAdvanced && f.advanced);
             return (
-              <section key={g.id} className="rounded-md border border-edge p-3">
+              <section key={g.id} className="rounded-md border border-border p-3">
                 <h3 className="font-semibold">{g.title}</h3>
-                <p className="mb-2 text-xs text-fg-muted">{g.description}</p>
+                <p className="mb-2 text-xs text-muted-foreground">{g.description}</p>
                 <div className="space-y-3">
                   {fields.map((f) => (
                     <div key={f.key} className="grid gap-1 sm:grid-cols-[1fr_1fr]">
-                      <div>
+                      <div className="space-y-1">
                         <label htmlFor={`f-${f.key}`} className="font-medium">
                           {f.label}
                         </label>
                         <div>
-                          <code className="text-xs text-fg-subtle">{f.key}</code>
+                          <code className="text-xs text-muted-foreground">{f.key}</code>
                         </div>
                         <Hint>{f.help}</Hint>
                       </div>
@@ -234,12 +237,12 @@ export function PolicyEditor({
       )}
 
       <div className="flex items-center gap-2">
-        <Button type="submit" variant="secondary" disabled={pending}>
+        <Button type="submit" variant="outline" disabled={pending}>
           {pending ? "Working…" : "Preview changes"}
         </Button>
-        <LinkButton href={cancelHref} variant="ghost">
+        <Button nativeButton={false} render={<Link href={cancelHref} />} variant="ghost">
           Cancel
-        </LinkButton>
+        </Button>
       </div>
     </form>
   );

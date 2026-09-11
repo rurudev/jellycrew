@@ -6,7 +6,7 @@ import { getSettingOrDefault } from "@/lib/settings";
 import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
-import { Field, Hint } from "@/components/ui/field";
+import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { KeyValue } from "@/components/ui/key-value";
 import { PageHeader } from "@/components/ui/page-header";
@@ -43,7 +43,7 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
           <KeyValue>
             <KeyValue.Item label="Name">{health.jellyfin.serverName ?? "—"}</KeyValue.Item>
             <KeyValue.Item label="Version">
-              {health.jellyfin.version ?? "—"} <span className="text-fg-subtle">(target {health.jellyfin.targetVersion})</span>
+              {health.jellyfin.version ?? "—"} <span className="text-muted-foreground">(target {health.jellyfin.targetVersion})</span>
             </KeyValue.Item>
             <KeyValue.Item label="URL">
               <code>{e.JELLYFIN_URL}</code>
@@ -67,11 +67,11 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
             </KeyValue.Item>
             <KeyValue.Item label="Running">{job?.lockUntil && job.lockUntil > new Date() ? "yes" : "no"}</KeyValue.Item>
             <KeyValue.Item label="Last result">
-              <pre className="max-h-40 overflow-auto rounded-md bg-surface-2 p-2 text-xs">{job?.lastResult ? JSON.stringify(job.lastResult, null, 2) : "never run"}</pre>
+              <pre className="max-h-40 overflow-auto rounded-md bg-muted p-2 text-xs">{job?.lastResult ? JSON.stringify(job.lastResult, null, 2) : "never run"}</pre>
             </KeyValue.Item>
           </KeyValue>
           <form action={runLifecycleNowAction} className="mt-3 space-y-1">
-            <SubmitButton variant="secondary" pendingLabel="Running…">
+            <SubmitButton variant="outline" pendingLabel="Running…">
               Run lifecycle now
             </SubmitButton>
             <Hint>Disables expired and inactive users and deletes accounts past their grace period. Administrators are never touched.</Hint>
@@ -80,13 +80,13 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
 
         <Section title="App settings">
           <form action={saveSettingsAction} className="space-y-3">
-            <Field id="graceDays" label="Deletion grace period (days)" help={<>Time between &quot;schedule deletion&quot; (disable now) and the actual delete.</>}>
-              <Input name="graceDays" type="number" min={0} max={3650} defaultValue={getSettingOrDefault("graceDays")} width="auto" className="w-40" />
-            </Field>
-            <Field id="minPasswordLength" label="Minimum password length" help="Applies to admin-set passwords, invites and self-service.">
-              <Input name="minPasswordLength" type="number" min={1} max={128} defaultValue={getSettingOrDefault("minPasswordLength")} width="auto" className="w-40" />
-            </Field>
-            <Field
+            <FormField id="graceDays" label="Deletion grace period (days)" help={<>Time between &quot;schedule deletion&quot; (disable now) and the actual delete.</>}>
+              <Input name="graceDays" type="number" min={0} max={3650} defaultValue={getSettingOrDefault("graceDays")} className="w-40" />
+            </FormField>
+            <FormField id="minPasswordLength" label="Minimum password length" help="Applies to admin-set passwords, invites and self-service.">
+              <Input name="minPasswordLength" type="number" min={1} max={128} defaultValue={getSettingOrDefault("minPasswordLength")} className="w-40" />
+            </FormField>
+            <FormField
               id="publicBaseUrl"
               label="Public base URL"
               help={
@@ -96,8 +96,8 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
               }
             >
               <Input name="publicBaseUrl" type="url" defaultValue={getSettingOrDefault("publicBaseUrl") ?? ""} placeholder={e.PUBLIC_BASE_URL} />
-            </Field>
-            <Field
+            </FormField>
+            <FormField
               id="jellyfinPublicUrl"
               label="Jellyfin URL for users"
               help={
@@ -107,7 +107,7 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
               }
             >
               <Input name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} />
-            </Field>
+            </FormField>
             <SubmitButton pendingLabel="Saving…">Save settings</SubmitButton>
           </form>
         </Section>
@@ -120,16 +120,16 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
                 <KeyValue.Item label="Last test">{smtpTest ? `${smtpTest.ok ? "ok" : "failed"} · ${smtpTest.message} (${smtpTest.at})` : "never"}</KeyValue.Item>
               </KeyValue>
               <form action={testSmtpAction} className="flex flex-wrap items-end gap-2">
-                <Field id="to" label="Send a test mail to (optional)">
-                  <Input name="to" type="email" placeholder="you@example.com" width="auto" className="w-64" />
-                </Field>
-                <SubmitButton variant="secondary" pendingLabel="Testing…">
+                <FormField id="to" label="Send a test mail to (optional)">
+                  <Input name="to" type="email" placeholder="you@example.com" className="w-64" />
+                </FormField>
+                <SubmitButton variant="outline" pendingLabel="Testing…">
                   Test SMTP
                 </SubmitButton>
               </form>
             </div>
           ) : (
-            <p className="text-fg-muted">
+            <p className="text-muted-foreground">
               Not configured. Set <code>SMTP_URL</code> and <code>SMTP_FROM</code> to enable verification and reset mail. Admins can always generate reset links by hand.
             </p>
           )}

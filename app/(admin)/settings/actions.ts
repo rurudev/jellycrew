@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, withNotice } from "@/lib/notice";
@@ -44,17 +44,17 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
 
 export async function runLifecycleNowAction(): Promise<void> {
   const actor = await adminActor();
+  let result;
   try {
-    const result = await runLifecycleJob();
-    recordAudit({ actor, action: "lifecycle.run_now", detail: result ?? { skipped: "lock held" } });
-    revalidatePath("/settings");
-    redirect(
-      withNotice("/settings", result ? { ok: `Lifecycle run finished: ${result.disabled.length} disabled, ${result.deleted.length} deleted, ${result.errors.length} error(s).` } : { error: "A lifecycle run is already in progress." }),
-    );
+    result = await runLifecycleJob();
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice("/settings", { error: errorMessage(err) }));
   }
+  recordAudit({ actor, action: "lifecycle.run_now", detail: result ?? { skipped: "lock held" } });
+  revalidatePath("/settings");
+  redirect(
+    withNotice("/settings", result ? { ok: `Lifecycle run finished: ${result.disabled.length} disabled, ${result.deleted.length} deleted, ${result.errors.length} error(s).` } : { error: "A lifecycle run is already in progress." }),
+  );
 }
 
 export async function testSmtpAction(formData: FormData): Promise<void> {
@@ -66,7 +66,6 @@ export async function testSmtpAction(formData: FormData): Promise<void> {
       await sendMail({ to, subject: "jellycrew SMTP test", text: `This is a test message from jellycrew (${env().PUBLIC_BASE_URL}). SMTP works.` });
       result = { ok: true, message: `Connection verified and test mail sent to ${to}` };
     } catch (err) {
-      unstable_rethrow(err);
       result = { ok: false, message: `Connection verified but sending failed: ${errorMessage(err)}` };
     }
   }

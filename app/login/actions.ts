@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { setAdminSession } from "@/lib/auth/session";
 import { currentRequestId } from "@/lib/request-context";
@@ -28,7 +28,6 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     const identity = await loginAdmin(username, password, await currentRequestId());
     await setAdminSession({ userId: identity.userId, userName: identity.userName });
   } catch (err) {
-    unstable_rethrow(err);
     if (err instanceof LoginError) return { error: err.message };
     throw err;
   }

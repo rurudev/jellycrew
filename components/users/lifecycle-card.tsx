@@ -1,8 +1,9 @@
 import { ConfirmForm } from "@/components/confirm-form";
 import { Time } from "@/components/time";
 import { Badge } from "@/components/ui/badge";
-import { Field } from "@/components/ui/field";
-import { Input, Textarea } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { KeyValue } from "@/components/ui/key-value";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -21,27 +22,27 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
       <form action={updateMetaAction} className="space-y-3">
         <input type="hidden" name="userId" value={id} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field id="email" label="Email" help={row.meta.email ? row.meta.emailVerifiedAt ? <Badge tone="green">verified</Badge> : <Badge tone="amber">unverified</Badge> : "Used for password resets once verified."}>
+          <FormField id="email" label="Email" help={row.meta.email ? row.meta.emailVerifiedAt ? <Badge tone="green">verified</Badge> : <Badge tone="amber">unverified</Badge> : "Used for password resets once verified."}>
             <Input name="email" type="email" defaultValue={row.meta.email ?? ""} />
-          </Field>
-          <Field id="labels" label="Labels" help="Comma-separated. Used for filtering and bulk actions.">
+          </FormField>
+          <FormField id="labels" label="Labels" help="Comma-separated. Used for filtering and bulk actions.">
             <Input name="labels" defaultValue={row.labels.join(", ")} placeholder="family, trial" />
-          </Field>
-          <Field id="expiresAt" label="Expires on" help={row.isAdmin ? "Administrators are excluded from automation." : "Blank = never. The scheduler disables the account at 00:00 UTC on this date."}>
+          </FormField>
+          <FormField id="expiresAt" label="Expires on" help={row.isAdmin ? "Administrators are excluded from automation." : "Blank = never. The scheduler disables the account at 00:00 UTC on this date."}>
             <Input name="expiresAt" type="date" defaultValue={toDateInput(row.expiresAt)} disabled={row.isAdmin} />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             id="inactivityDisableDays"
             label="Disable after inactivity (days)"
             help={<>Blank = inherit from profile{assigned ? ` (${assigned.name}: ${assigned.inactivityDisableDays ? `${assigned.inactivityDisableDays} days` : "never"})` : " (none assigned: never)"}.</>}
           >
             <Input name="inactivityDisableDays" type="number" min={1} max={3650} defaultValue={row.meta.inactivityDisableDays ?? ""} disabled={row.isAdmin} />
-          </Field>
-          <Field id="notes" label="Notes" className="sm:col-span-2">
+          </FormField>
+          <FormField id="notes" label="Notes" className="sm:col-span-2">
             <Textarea name="notes" defaultValue={row.meta.notes ?? ""} maxLength={5000} />
-          </Field>
+          </FormField>
         </div>
-        <SubmitButton variant="secondary" pendingLabel="Saving…">
+        <SubmitButton variant="outline" pendingLabel="Saving…">
           Save lifecycle
         </SubmitButton>
       </form>
@@ -67,17 +68,17 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
               scheduled <Time date={row.meta.deleteAfter} />
             </>
           ) : (
-            <span className="text-fg-subtle">not scheduled</span>
+            <span className="text-muted-foreground">not scheduled</span>
           )}
         </KeyValue.Item>
       </KeyValue>
 
-      <div className="mt-4 space-y-3 border-t border-edge pt-3">
+      <div className="mt-4 space-y-3 border-t border-border pt-3">
         <h3 className="font-medium">Deletion</h3>
         {row.meta.deleteAfter ? (
           <form action={cancelDeletionAction}>
             <input type="hidden" name="userId" value={id} />
-            <SubmitButton variant="secondary" pendingLabel="Cancelling…">
+            <SubmitButton variant="outline" pendingLabel="Cancelling…">
               Cancel scheduled deletion and re-enable
             </SubmitButton>
           </form>
@@ -89,7 +90,7 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
             hidden={{ userId: id }}
             description={
               isSelf || row.isAdmin ? (
-                <span className="text-fg-subtle">{isSelf ? "You cannot delete your own account." : "Administrators cannot be scheduled for deletion. Remove administrator rights first."}</span>
+                <span className="text-muted-foreground">{isSelf ? "You cannot delete your own account." : "Administrators cannot be scheduled for deletion. Remove administrator rights first."}</span>
               ) : (
                 <>Disables the account now and deletes it after the {graceDays}-day grace period. Can be cancelled until then.</>
               )
@@ -101,7 +102,7 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
           phrase={`delete ${row.name}`}
           label="Delete now (no grace period)"
           hidden={{ userId: id }}
-          description={isSelf ? <span className="text-fg-subtle">You cannot delete your own account.</span> : <>Immediately and permanently deletes the Jellyfin account, its watch history and app metadata. Audit history is kept.</>}
+          description={isSelf ? <span className="text-muted-foreground">You cannot delete your own account.</span> : <>Immediately and permanently deletes the Jellyfin account, its watch history and app metadata. Audit history is kept.</>}
         />
       </div>
     </Section>

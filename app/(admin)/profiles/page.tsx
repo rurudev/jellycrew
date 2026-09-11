@@ -4,8 +4,10 @@ import { listProfilesWithCounts } from "@/lib/services/profiles";
 import { listUsers } from "@/lib/services/users";
 import { Notice } from "@/components/notice";
 import { Badge } from "@/components/ui/badge";
-import { Field } from "@/components/ui/field";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -42,11 +44,11 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
                   {p.name}
                 </Link>
               </Td>
-              <Td className="text-fg-muted">{p.description}</Td>
+              <Td className="text-muted-foreground">{p.description}</Td>
               <Td className="text-right tabular-nums">{p.memberCount}</Td>
               <Td className="text-right tabular-nums">{p.driftCount ? <Badge tone="amber">{p.driftCount}</Badge> : 0}</Td>
-              <Td>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-fg-subtle">none</span>}</Td>
-              <Td>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-fg-subtle">never</span>}</Td>
+              <Td>{p.defaultExpiryDays ? `${p.defaultExpiryDays} days` : <span className="text-muted-foreground">none</span>}</Td>
+              <Td>{p.inactivityDisableDays ? `disable after ${p.inactivityDisableDays} days` : <span className="text-muted-foreground">never</span>}</Td>
             </tr>
           ))}
         </tbody>
@@ -55,19 +57,19 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
       <Section title="Create a profile">
         <form action={createProfileAction} className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
-            <Field id="name" label="Name">
+            <FormField id="name" label="Name">
               <Input name="name" required maxLength={80} />
-            </Field>
-            <Field id="description" label="Description">
+            </FormField>
+            <FormField id="description" label="Description">
               <Textarea name="description" maxLength={500} className="min-h-16" />
-            </Field>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <Field id="defaultExpiryDays" label="Default expiry (days)" help="Used by invites; blank = never.">
+              <FormField id="defaultExpiryDays" label="Default expiry (days)" help="Used by invites; blank = never.">
                 <Input name="defaultExpiryDays" type="number" min={1} max={3650} />
-              </Field>
-              <Field id="inactivityDisableDays" label="Disable after inactivity (days)" help="Members inherit this unless overridden; blank = never.">
+              </FormField>
+              <FormField id="inactivityDisableDays" label="Disable after inactivity (days)" help="Members inherit this unless overridden; blank = never.">
                 <Input name="inactivityDisableDays" type="number" min={1} max={3650} />
-              </Field>
+              </FormField>
             </div>
           </div>
           <div className="space-y-3">
@@ -79,25 +81,25 @@ export default async function ProfilesPage(props: PageProps<"/profiles">) {
               <label className="flex items-center gap-2">
                 <input type="radio" name="source" value="user" /> Snapshot of a user&apos;s current settings
               </label>
-              <Select name="userId" defaultValue="" aria-label="User to snapshot">
+              <NativeSelect name="userId" defaultValue="" aria-label="User to snapshot" className="w-full">
                 <option value="">Choose a user…</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name}
                   </option>
                 ))}
-              </Select>
+              </NativeSelect>
               <label className="flex items-center gap-2">
                 <input type="radio" name="source" value="clone" /> Clone of an existing profile
               </label>
-              <Select name="sourceProfileId" defaultValue="" aria-label="Profile to clone">
+              <NativeSelect name="sourceProfileId" defaultValue="" aria-label="Profile to clone" className="w-full">
                 <option value="">Choose a profile…</option>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </Select>
+              </NativeSelect>
             </fieldset>
             <SubmitButton pendingLabel="Creating…">Create profile</SubmitButton>
           </div>

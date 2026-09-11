@@ -1,39 +1,19 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { Input as InputPrimitive } from "@base-ui/react/input"
+import { cn } from "cn"
 
-export type ControlSize = "md" | "lg";
-
-export interface ControlStyleProps {
-  /** `md` is the 32 px console size, `lg` the 44 px guest size. */
-  size?: ControlSize;
-  /** `full` stretches to the container; `auto` adds no width so a className such as `w-40` can size it. */
-  width?: "full" | "auto";
-  invalid?: boolean;
-  mono?: boolean;
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <InputPrimitive
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-const base =
-  "rounded-md border border-edge-strong bg-surface text-fg transition-colors duration-(--duration-fast) ease-(--ease-standard) placeholder:text-fg-subtle aria-invalid:border-danger disabled:bg-surface-2 disabled:text-fg-muted";
-
-const sizes: Record<ControlSize, string> = {
-  md: "h-8 px-2.5 text-sm",
-  lg: "h-11 px-3 text-base",
-};
-
-function controlClasses({ size = "md", width = "full", invalid, mono }: ControlStyleProps, className?: string, multiline = false): string {
-  return cn(base, multiline ? (size === "lg" ? "min-h-24 px-3 py-2 text-base" : "min-h-20 px-2.5 py-1.5 text-sm") : sizes[size], width === "full" && "w-full", mono && "font-mono", invalid && "border-danger", className);
-}
-
-type Omitted = "size" | "width";
-
-export function Input({ className, size, width, invalid, mono, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, Omitted> & ControlStyleProps) {
-  return <input className={controlClasses({ size, width, invalid, mono }, className)} aria-invalid={invalid || props["aria-invalid"]} {...props} />;
-}
-
-export function Textarea({ className, size, width, invalid, mono, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, Omitted> & ControlStyleProps) {
-  return <textarea className={controlClasses({ size, width, invalid, mono }, className, true)} aria-invalid={invalid || props["aria-invalid"]} {...props} />;
-}
-
-export function Select({ className, size, width, invalid, mono, ...props }: Omit<SelectHTMLAttributes<HTMLSelectElement>, Omitted> & ControlStyleProps) {
-  return <select className={controlClasses({ size, width, invalid, mono }, cn("pr-8", className))} aria-invalid={invalid || props["aria-invalid"]} {...props} />;
-}
+export { Input }

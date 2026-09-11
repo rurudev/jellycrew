@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { STATUS_FILTERS, type UsersQuery } from "@/lib/users/query";
 
 const statusLabels: Record<(typeof STATUS_FILTERS)[number], string> = {
@@ -29,15 +30,15 @@ export function UsersFilters({
       <div className="min-w-48 flex-1">
         <Input name="q" placeholder="Search name, email, notes, labels" defaultValue={query.q} aria-label="Search" />
       </div>
-      <Select name="status" defaultValue={query.status ?? ""} aria-label="Status" width="auto">
+      <NativeSelect name="status" defaultValue={query.status ?? ""} aria-label="Status">
         <option value="">Any status</option>
         {STATUS_FILTERS.map((s) => (
           <option key={s} value={s}>
             {statusLabels[s]}
           </option>
         ))}
-      </Select>
-      <Select name="profile" defaultValue={query.profile ?? ""} aria-label="Profile" width="auto">
+      </NativeSelect>
+      <NativeSelect name="profile" defaultValue={query.profile ?? ""} aria-label="Profile">
         <option value="">Any profile</option>
         <option value="none">No profile</option>
         {profiles.map((p) => (
@@ -45,29 +46,29 @@ export function UsersFilters({
             {p.name}
           </option>
         ))}
-      </Select>
-      <Select name="label" defaultValue={query.label ?? ""} aria-label="Label" width="auto">
+      </NativeSelect>
+      <NativeSelect name="label" defaultValue={query.label ?? ""} aria-label="Label">
         <option value="">Any label</option>
         {labels.map((l) => (
           <option key={l} value={l}>
             {l}
           </option>
         ))}
-      </Select>
-      <Select name="drift" defaultValue={query.drift ?? ""} aria-label="Drift" width="auto">
+      </NativeSelect>
+      <NativeSelect name="drift" defaultValue={query.drift ?? ""} aria-label="Drift">
         <option value="">Drift: any</option>
         <option value="yes">Has drift</option>
         <option value="no">No drift</option>
-      </Select>
+      </NativeSelect>
       <div className="flex items-center gap-1">
-        <span className="text-fg-muted">Inactive ≥</span>
-        <Input name="inactive" type="number" min={1} defaultValue={query.inactive ?? ""} width="auto" className="w-20" aria-label="Inactive for days" />
-        <span className="text-fg-muted">days</span>
+        <span className="text-muted-foreground">Inactive ≥</span>
+        <Input name="inactive" type="number" min={1} defaultValue={query.inactive ?? ""} className="w-20" aria-label="Inactive for days" />
+        <span className="text-muted-foreground">days</span>
       </div>
-      <Button type="submit" variant="secondary">
+      <Button type="submit" variant="outline">
         Apply
       </Button>
-      <Link href="/users" className="px-2 text-fg-muted hover:underline">
+      <Link href="/users" className="px-2 text-muted-foreground hover:underline">
         Reset
       </Link>
     </form>

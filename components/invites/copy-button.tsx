@@ -9,7 +9,7 @@ export function CopyButton({ value, label = "Copy link" }: { value: string; labe
     <Button
       type="button"
       size="sm"
-      variant="secondary"
+      variant="outline"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);

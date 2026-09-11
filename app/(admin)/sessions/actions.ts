@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { errorMessage, safeReturnTo, withNotice } from "@/lib/notice";
@@ -20,7 +20,6 @@ export async function stopPlaybackAction(formData: FormData): Promise<void> {
   try {
     await stopPlayback(actor, parsed.data.sessionId);
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice(returnTo, { error: errorMessage(err) }));
   }
   revalidatePath(returnTo);
@@ -39,7 +38,6 @@ export async function sendMessageAction(formData: FormData): Promise<void> {
   try {
     await sendSessionMessage(actor, parsed.data.sessionId, { text: parsed.data.text, header: parsed.data.header ?? "Message from the server", timeoutMs: 10_000 });
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice(returnTo, { error: errorMessage(err) }));
   }
   redirect(withNotice(returnTo, { ok: "Message sent." }));
@@ -53,7 +51,6 @@ export async function revokeDeviceAction(formData: FormData): Promise<void> {
   try {
     await revokeDevice(actor, parsed.data.deviceId);
   } catch (err) {
-    unstable_rethrow(err);
     redirect(withNotice(returnTo, { error: errorMessage(err) }));
   }
   revalidatePath(returnTo);

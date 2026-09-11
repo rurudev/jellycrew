@@ -5,7 +5,7 @@ import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Field, Hint } from "@/components/ui/field";
+import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { KeyValue } from "@/components/ui/key-value";
 import { Section } from "@/components/ui/section";
@@ -27,7 +27,7 @@ export default async function MePage(props: PageProps<"/me">) {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">My account</h1>
-          <p className="mt-1 text-fg-muted">Sign in with your Jellyfin credentials to manage your password, email and devices.</p>
+          <p className="mt-1 text-muted-foreground">Sign in with your Jellyfin credentials to manage your password, email and devices.</p>
         </div>
         <SelfLoginForm />
       </div>
@@ -53,24 +53,24 @@ export default async function MePage(props: PageProps<"/me">) {
       <Section title="Overview">
         <KeyValue>
           <KeyValue.Item label="Server">{overview.serverName}</KeyValue.Item>
-          <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-fg-subtle">none</span>}</KeyValue.Item>
+          <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-muted-foreground">none</span>}</KeyValue.Item>
           <KeyValue.Item label="Access until">{overview.expiresAt ? <Time date={overview.expiresAt} /> : "no expiry"}</KeyValue.Item>
         </KeyValue>
       </Section>
 
       <Section title="Password">
         <form action={changePasswordAction} className="grid gap-3 sm:grid-cols-3">
-          <Field id="currentPassword" label="Current password">
-            <Input name="currentPassword" size="lg" type="password" required autoComplete="current-password" />
-          </Field>
-          <Field id="newPassword" label="New password">
-            <Input name="newPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-          </Field>
-          <Field id="confirmPassword" label="Repeat new password">
-            <Input name="confirmPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
-          </Field>
+          <FormField id="currentPassword" label="Current password">
+            <Input name="currentPassword" className="h-11 text-lg" type="password" required autoComplete="current-password" />
+          </FormField>
+          <FormField id="newPassword" label="New password">
+            <Input name="newPassword" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+          </FormField>
+          <FormField id="confirmPassword" label="Repeat new password">
+            <Input name="confirmPassword" className="h-11 text-lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+          </FormField>
           <div className="space-y-1 sm:col-span-3">
-            <SubmitButton variant="secondary" size="lg" pendingLabel="Changing…">
+            <SubmitButton variant="outline" size="lg" pendingLabel="Changing…">
               Change password
             </SubmitButton>
             <Hint>At least {minPasswordLength} characters. Your current password is checked first.</Hint>
@@ -85,16 +85,16 @@ export default async function MePage(props: PageProps<"/me">) {
               <span className="font-medium">{overview.email}</span> {overview.emailVerified ? <Badge tone="green">verified</Badge> : <Badge tone="amber">not verified</Badge>}
             </>
           ) : (
-            <span className="text-fg-muted">No email address on file.</span>
+            <span className="text-muted-foreground">No email address on file.</span>
           )}
         </p>
         {overview.mailConfigured ? (
           <div className="space-y-3">
             <form action={setEmailAction} className="flex flex-wrap items-end gap-2">
-              <Field id="email" label={overview.email ? "Change email address" : "Add email address"} className="min-w-64">
-                <Input name="email" size="lg" type="email" required autoComplete="email" />
-              </Field>
-              <SubmitButton variant="secondary" size="lg" pendingLabel="Sending…">
+              <FormField id="email" label={overview.email ? "Change email address" : "Add email address"} className="min-w-64">
+                <Input name="email" className="h-11 text-lg" type="email" required autoComplete="email" />
+              </FormField>
+              <SubmitButton variant="outline" size="lg" pendingLabel="Sending…">
                 Send verification link
               </SubmitButton>
             </form>
@@ -128,7 +128,7 @@ export default async function MePage(props: PageProps<"/me">) {
               <tr key={s.id}>
                 <Td>{s.client ?? "—"}</Td>
                 <Td>{s.deviceName ?? "—"}</Td>
-                <Td>{s.nowPlaying ? s.nowPlaying.title : <span className="text-fg-subtle">idle</span>}</Td>
+                <Td>{s.nowPlaying ? s.nowPlaying.title : <span className="text-muted-foreground">idle</span>}</Td>
                 <Td>
                   <Time date={s.lastActivity} />
                 </Td>
@@ -154,7 +154,7 @@ export default async function MePage(props: PageProps<"/me">) {
               <tr key={d.id}>
                 <Td>{d.name}</Td>
                 <Td>
-                  {d.appName ?? "—"} <span className="text-fg-subtle">{d.appVersion}</span>
+                  {d.appName ?? "—"} <span className="text-muted-foreground">{d.appVersion}</span>
                 </Td>
                 <Td>
                   <Time date={d.lastActivity} />
@@ -162,7 +162,7 @@ export default async function MePage(props: PageProps<"/me">) {
                 <Td className="text-right">
                   <form action={revokeOwnDeviceAction}>
                     <input type="hidden" name="deviceId" value={d.id} />
-                    <SubmitButton size="sm" variant="danger" pendingLabel="Signing out…">
+                    <SubmitButton size="sm" variant="destructive" pendingLabel="Signing out…">
                       Sign out device
                     </SubmitButton>
                   </form>

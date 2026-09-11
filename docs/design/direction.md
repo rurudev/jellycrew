@@ -15,25 +15,25 @@ Both use the same tokens and primitives; the guest surface changes scale and den
 
 ### 2.1 Colour
 
-Neutral ramp with a faint cool cast, one accent, four semantic tones. Everything is a CSS variable in `globals.css`, exposed to Tailwind through `@theme inline` so classes read as meaning (`bg-surface`, `text-fg-muted`, `border-edge`) and never as palette (`zinc-800`).
+Neutral ramp with a faint cool cast, one accent, four semantic tones. Everything is a CSS variable in `globals.css`, exposed to Tailwind through `@theme inline` so classes read as meaning (`bg-card`, `text-muted-foreground`, `border-border`) and never as palette (`zinc-800`).
 
 | Token | Dark (default) | Light | Use |
 |---|---|---|---|
-| `--bg` | `#0c0d10` | `#f6f6f8` | page |
-| `--surface` | `#14161a` | `#ffffff` | tables, sections, dialogs |
-| `--surface-2` | `#1b1e24` | `#f1f2f5` | inputs, hover rows, alternate fills |
-| `--edge` | `#272b33` | `#e2e4e9` | hairlines |
-| `--edge-strong` | `#626977` | `#868d98` | control borders and dividers that must be seen (≥ 3:1 on canvas and surface) |
-| `--fg` | `#e8eaed` | `#15171c` | primary text |
-| `--fg-muted` | `#9aa2ad` | `#4f5663` | secondary text, labels (≥ 5.5:1 on every surface) |
-| `--fg-subtle` | `#7e8794` | `#5d6572` | tertiary text, only where it is still information (≥ 4.5:1 on every surface) |
-| `--accent` | `#9d97ff` | `#5b4fe0` | links, primary buttons, focus ring, selected, active nav |
-| `--accent-fg` | `#0c0d10` | `#ffffff` | text on accent |
-| `--accent-soft` | `rgb(157 151 255 / .14)` | `rgb(91 79 224 / .10)` | selected rows, info chips |
-| `--ok`, `--warn`, `--danger` | `#4ade80`, `#fbbf24`, `#f87171` | `#11703a`, `#9a4707`, `#b91c1c` | status text and dots |
-| `--ok-soft`, `--warn-soft`, `--danger-soft` | 14 % alpha of the above | 10 % alpha | badge and alert fills |
+| `--background` | `#0c0d10` | `#f6f6f8` | page |
+| `--card` (= `--popover`) | `#14161a` | `#ffffff` | tables, sections, dialogs |
+| `--muted` (= `--secondary`, `--accent`) | `#1b1e24` | `#f1f2f5` | inputs, hover rows, alternate fills |
+| `--border` | `#272b33` | `#e2e4e9` | hairlines |
+| `--input` | `#626977` | `#868d98` | control borders and dividers that must be seen (≥ 3:1 on background and card) |
+| `--foreground` | `#e8eaed` | `#15171c` | primary text |
+| `--muted-foreground` | `#9aa2ad` | `#4f5663` | secondary text, labels (≥ 5.5:1 on every surface) |
+| `--primary` (= `--ring`) | `#9d97ff` | `#5b4fe0` | links, primary buttons, focus ring, selected, active nav |
+| `--primary-foreground` | `#0c0d10` | `#ffffff` | text on primary |
+| `--success`, `--warning`, `--destructive` | `#4ade80`, `#fbbf24`, `#f87171` | `#11703a`, `#9a4707`, `#b91c1c` | status text and dots |
+| soft fills | tone at 15 % (`bg-warning/15`) | tone at 10 % (`bg-warning/10`) | badge and alert fills |
 
-Rules: colour means something or it is neutral. Status uses the semantic tones; labels are neutral chips; "admin" and "hidden" are muted mono tags, not purple badges. The accent appears in at most three places per screen (primary action, focus, current-nav). The zinc-400-style "subtle" grey is retired from informational text. Contrast of every token pair is enforced by `lib/ui/contrast.test.ts`, which reads the values out of `globals.css`; the table above shows the shipped values.
+The names are shadcn's, so every shadcn component works unchanged; `--secondary`, `--accent` (shadcn's hover fill, not the brand colour) and `--popover` are aliases of the tokens above. Two text levels only: `foreground` and `muted-foreground`.
+
+Rules: colour means something or it is neutral. Status uses the semantic tones; labels are neutral chips; "admin" and "hidden" are muted mono tags, not purple badges. The primary colour appears in at most three places per screen (primary action, focus, current-nav). The zinc-400-style "subtle" grey is retired from informational text. Contrast of every token pair is enforced by `lib/ui/contrast.test.ts`, which reads the values out of `globals.css`; the table above shows the shipped values.
 
 ### 2.2 Typography
 
@@ -82,30 +82,21 @@ Dark is the default and the design target; light is a first-class mirror, not an
 
 ### Shared primitives (`components/ui`)
 
-Kept and reworked:
+shadcn/ui (Base UI, "nova" preset, lucide icons) is the primitive layer; its components are copied into `components/ui` by the CLI and owned by the project, so they are restyled through the tokens above and edited where the direction needs it (button sizes, tone variants). App-specific compositions wrap them rather than forking them. Icons come from `lucide-react` only; no hand-drawn SVGs.
 
-- **Button** gains `focus-visible` ring, an optional leading icon, and a `SubmitButton` variant that reads `useFormStatus` so every plain server-action form shows pending state without local code. Variants stay `primary | secondary | ghost | danger`; `danger` is allowed only inside confirm dialogs and the danger zone.
-- **Input / Select / Textarea** get 32 px and 44 px sizes, `aria-invalid` styling and a mono variant.
-- **Table** becomes a small kit: `Table`, `Th` (with `sort` prop rendering `aria-sort` and an icon), `Td`, `Row` (`href` makes the whole row a link, `selected` fills it), `SelectAll` checkbox, plus an `EmptyState` slot.
-- **Badge** splits into `StatusBadge` (tone by meaning: `ok | warn | danger | neutral | accent`, dot + label) and `Chip` (neutral label). `lib/users/status.ts` keeps returning kinds; the mapping to tone lives in the badge.
-- **Alert** stays for inline, persistent notices (server unreachable, version mismatch, stale policy).
+From shadcn, restyled through the tokens:
 
-New:
+- **Button** (`default | outline | ghost | destructive | link`; sizes `xs | sm | default | lg`, where `lg` is the 44 px guest size). `SubmitButton` wraps it with `useFormStatus` and a `Spinner`, so every plain server-action form shows pending state without local code. Navigation that looks like a button uses `render={<Link />}`; a button is never nested in a link.
+- **Input, Textarea, NativeSelect, Label, Field** (`Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup`, `FieldSet`); `FormField` composes them into one labelled control (`id`, `label`, `help`, `error`) that wires `aria-describedby` and `aria-invalid`.
+- **Card** as the surface for `Section` (one real `h2`, description, action slot).
+- **Table**, **Badge** (with `success | warning | destructive | outline` tones), **Alert**, **Empty**, **Skeleton**, **Kbd**, **Spinner**, **Tooltip**, **Dialog** and **AlertDialog**, **DropdownMenu**, **Tabs**, **Sonner** (toasts), added by the packages that need them.
 
-- **Field** (compound: `Field`, `Field.Label`, `Field.Control`, `Field.Help`, `Field.Error`) replaces every `Label` + `Input` + `Help` cluster and gives one place for error text and `aria-describedby`.
-- **Section** replaces `Card`/`CardTitle`: a `<section>` with `aria-labelledby`, title, optional description and action slot.
+App compositions:
+
 - **PageHeader**: breadcrumb, title, count, actions. One `h1` per page at one size.
-- **Dialog** built on the native `<dialog>` element: `Dialog`, `Dialog.Title`, `Dialog.Body`, `Dialog.Footer`, and a `ConfirmDialog` that embeds the typed-phrase guard. Used for create forms, previews and every destructive action.
-- **Toast**: a client component that reads the existing `?ok=`/`?error=` params, shows a dismissible toast, and immediately strips the params from the URL with `history.replaceState`. The server-action redirect mechanism does not change; only the presentation and the URL hygiene do.
-- **KeyValue** (`<dl>` grid with one column width) for facts.
-- **Timestamp**: relative text, absolute time as visible muted text on detail pages and as a tooltip that also opens on focus in tables.
-- **CopyField**: mono text with a copy button, used for invite and reset links.
-- **EmptyState**: title, one line of explanation, one action.
-- **Skeleton** blocks for `loading.tsx` on every console route.
-- **Icon**: a hand-written set of about ten inline SVGs (search, sort, check, close, copy, external, warning, chevron, sun, moon, spinner). No icon dependency.
-- **ThemeToggle**, **Kbd**.
+- **Section** over Card; **KeyValue** (`<dl>` grid, stacks on phones) for facts; **StatusBadge** (tone by meaning) and **Chip** over Badge; **Timestamp**; **CopyField**; **ThemeToggle**; **EmptyState** over Empty; **ConfirmDialog** over AlertDialog with the typed-phrase guard; **Toast** over Sonner that reads the `?ok=`/`?error=` params, shows them and strips them from the URL.
 
-Deleted: `Card`, `CardTitle`, standalone `Label`/`Help`, `EmptyRow`, the params-based `Notice`, `ConfirmForm` (folded into `ConfirmDialog`), the four hand-rolled public fetch forms (replaced by one `usePublicForm` hook that owns pending, error and 429 handling), and the four copies of the `back()` redirect helper (one `redirectWithNotice` in `lib/notice.ts`).
+Deleted: the hand-written `Card`, `CardTitle`, `Label`, `Help`, `EmptyRow`, `Notice`, `ConfirmForm`, the hand-drawn icon set, the four hand-rolled public fetch forms (one `usePublicForm` hook), and the four copies of the `back()` redirect helper.
 
 ### Composition rules
 
@@ -163,7 +154,7 @@ Inherit the primitives: create-profile becomes a dialog; the sessions summary be
 ## 5. Open decisions
 
 1. **Accent hue.** Recommend indigo-violet (`#9d97ff` dark, `#5b4fe0` light): it sits next to Jellyfin's purple-to-blue without copying it.
-2. **Icons.** Recommend a hand-written ten-icon inline set: no dependency, and this surface needs few icons.
+2. **Icons and primitives.** Decided by Rudi (2026-09-11): shadcn/ui components where they fit and `lucide-react` for icons, instead of hand-written primitives and SVGs.
 3. **Shell.** Recommend keeping the top bar over a sidebar: six sections fit, and tables get the width.
 4. **Users table columns.** Recommend dropping Devices and merging Last login into Last seen: recency and status are what the admin acts on; counts are one click away.
 5. **Theme persistence.** Recommend a plain `jellycrew_theme` cookie read in the root layout over `localStorage` plus a pre-hydration script: no flash, no inline script, and it is a UI preference, not session handling.
@@ -174,7 +165,7 @@ Inherit the primitives: create-profile becomes a dialog; the sessions summary be
 - Server actions, redirect-with-notice and URL-state filters remain the mutation and state model; only their presentation changes.
 - Progressive enhancement of console forms is preserved (they still submit without JavaScript); dialogs degrade to their content rendered inline behind a details element only where cheap, otherwise they require JavaScript, which is acceptable for the admin console but not for the guest forms.
 - The public route handlers keep their request and response shapes; guest forms only change how they render.
-- The Docker image is unchanged: no new runtime dependencies, fonts stay with `next/font`.
+- The Docker image is unchanged in shape; shadcn adds `@base-ui/react`, `class-variance-authority`, `cn`, `lucide-react`, `tw-animate-css` and the `shadcn` package as regular dependencies. Fonts stay with `next/font`.
 - Dev sign-in for screenshots uses the credentials documented in the README.
 
 ## 7. Proposals that touch off-limits layers (not done without approval)

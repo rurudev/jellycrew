@@ -3,8 +3,9 @@ import { requireAdmin } from "@/lib/auth/session";
 import { distinctAuditActions, listAudit, type AuditFilters } from "@/lib/services/audit";
 import { listUsers } from "@/lib/services/users";
 import { Time } from "@/components/time";
-import { Button, buttonClasses } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyRow, Table, Td, Th } from "@/components/ui/table";
 
@@ -66,26 +67,26 @@ export default async function AuditPage(props: PageProps<"/audit">) {
         title="Audit log"
         actions={
           <>
-            <a href={`/audit/export?format=csv&${exportQs}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+            <a href={`/audit/export?format=csv&${exportQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
               Export CSV
             </a>
-            <a href={`/audit/export?format=json&${exportQs}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+            <a href={`/audit/export?format=json&${exportQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
               Export JSON
             </a>
           </>
         }
       />
       <form method="get" action="/audit" className="flex flex-wrap items-end gap-2">
-        <Select name="actorType" defaultValue={filters.raw.actorType ?? ""} width="auto" aria-label="Actor type">
+        <NativeSelect name="actorType" defaultValue={filters.raw.actorType ?? ""} aria-label="Actor type">
           <option value="">Any actor</option>
           {ACTOR_TYPES.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
           ))}
-        </Select>
-        <Input name="actorId" placeholder="Actor id" defaultValue={filters.raw.actorId ?? ""} width="auto" className="w-40" aria-label="Actor id" />
-        <Select name="action" defaultValue={filters.raw.action ?? ""} width="auto" aria-label="Action">
+        </NativeSelect>
+        <Input name="actorId" placeholder="Actor id" defaultValue={filters.raw.actorId ?? ""} className="w-40" aria-label="Actor id" />
+        <NativeSelect name="action" defaultValue={filters.raw.action ?? ""} aria-label="Action">
           <option value="">Any action</option>
           {[...new Set(actions.map((a) => `${a.split(".")[0]}.*`))].map((prefix) => (
             <option key={prefix} value={prefix}>
@@ -97,21 +98,21 @@ export default async function AuditPage(props: PageProps<"/audit">) {
               {a}
             </option>
           ))}
-        </Select>
-        <Select name="targetUserId" defaultValue={filters.raw.targetUserId ?? ""} width="auto" aria-label="User">
+        </NativeSelect>
+        <NativeSelect name="targetUserId" defaultValue={filters.raw.targetUserId ?? ""} aria-label="User">
           <option value="">Any user</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
               {u.name}
             </option>
           ))}
-        </Select>
-        <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" width="auto" />
-        <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" width="auto" />
-        <Button type="submit" variant="secondary">
+        </NativeSelect>
+        <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" />
+        <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" />
+        <Button type="submit" variant="outline">
           Filter
         </Button>
-        <Link href="/audit" className="px-2 text-fg-muted hover:underline">
+        <Link href="/audit" className="px-2 text-muted-foreground hover:underline">
           Reset
         </Link>
       </form>
@@ -133,23 +134,23 @@ export default async function AuditPage(props: PageProps<"/audit">) {
             <tr key={r.id}>
               <Td className="whitespace-nowrap">
                 <Time date={r.ts} />
-                <div className="text-xs text-fg-subtle">#{r.id}</div>
+                <div className="text-xs text-muted-foreground">#{r.id}</div>
               </Td>
               <Td>
                 {r.actorType}
-                {r.actorId ? <div className="text-xs text-fg-muted">{nameById.get(r.actorId) ?? r.actorId}</div> : null}
+                {r.actorId ? <div className="text-xs text-muted-foreground">{nameById.get(r.actorId) ?? r.actorId}</div> : null}
               </Td>
               <Td>
                 <code className="text-xs">{r.action}</code>
               </Td>
               <Td>{r.targetUserId ? <Link href={`/users/${r.targetUserId}`}>{nameById.get(r.targetUserId) ?? r.targetUserId.slice(0, 8)}</Link> : ""}</Td>
-              <Td className="max-w-48 truncate text-xs text-fg-muted" title={pretty(r.before)}>
+              <Td className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.before)}>
                 {pretty(r.before)}
               </Td>
-              <Td className="max-w-48 truncate text-xs text-fg-muted" title={pretty(r.after)}>
+              <Td className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.after)}>
                 {pretty(r.after)}
               </Td>
-              <Td className="max-w-64 truncate text-xs text-fg-muted" title={pretty(r.detail)}>
+              <Td className="max-w-64 truncate text-xs text-muted-foreground" title={pretty(r.detail)}>
                 {pretty(r.detail)}
               </Td>
             </tr>
@@ -157,7 +158,7 @@ export default async function AuditPage(props: PageProps<"/audit">) {
         </tbody>
       </Table>
       {hasMore ? (
-        <Link href={`/audit?${nextQs}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+        <Link href={`/audit?${nextQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Older entries
         </Link>
       ) : null}

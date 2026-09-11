@@ -1,6 +1,8 @@
 "use client";
 
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { nextTheme, themeCookie, themeLabel, type Theme } from "@/lib/theme";
 
 /** Writes the preference cookie and switches the document in place. Module level so the component stays pure. */
@@ -10,6 +12,8 @@ function applyTheme(theme: Theme | null) {
   else delete document.documentElement.dataset.theme;
 }
 
+const icons = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
+
 /**
  * Cycles system → light → dark. The browser writes the preference cookie itself, so the
  * switch is instant and needs no server round trip; the root layout reads the cookie on the
@@ -18,18 +22,20 @@ function applyTheme(theme: Theme | null) {
 export function ThemeToggle({ theme }: { theme: Theme | null }) {
   const [shown, setShown] = useState(theme);
   const next = nextTheme(shown);
+  const Icon = icons[shown ?? "system"];
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={() => {
         applyTheme(next);
         setShown(next);
       }}
       aria-label={`Theme: ${themeLabel(shown)}. Switch to ${themeLabel(next).toLowerCase()}`}
       title={`Switch to ${themeLabel(next).toLowerCase()} theme`}
-      className="inline-flex h-7 items-center rounded-md px-2 text-xs text-fg-muted transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:bg-surface-2 hover:text-fg"
     >
-      Theme: {themeLabel(shown)}
-    </button>
+      <Icon data-icon="inline-start" />
+      {themeLabel(shown)}
+    </Button>
   );
 }

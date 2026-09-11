@@ -11,9 +11,9 @@ import { DiffTable } from "@/components/policy/diff-table";
 import { PolicyEditor } from "@/components/policy/policy-editor";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Field, Hint } from "@/components/ui/field";
-import { Input, Textarea } from "@/components/ui/input";
+import { FormField, Hint } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -38,21 +38,21 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
         <Section title="Details">
           <form action={updateProfileAction} className="space-y-3">
             <input type="hidden" name="profileId" value={id} />
-            <Field id="name" label="Name">
+            <FormField id="name" label="Name">
               <Input name="name" defaultValue={profile.name} required maxLength={80} />
-            </Field>
-            <Field id="description" label="Description">
+            </FormField>
+            <FormField id="description" label="Description">
               <Textarea name="description" defaultValue={profile.description ?? ""} maxLength={500} className="min-h-16" />
-            </Field>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <Field id="defaultExpiryDays" label="Default expiry (days)">
+              <FormField id="defaultExpiryDays" label="Default expiry (days)">
                 <Input name="defaultExpiryDays" type="number" min={1} max={3650} defaultValue={profile.defaultExpiryDays ?? ""} />
-              </Field>
-              <Field id="inactivityDisableDays" label="Disable after inactivity (days)">
+              </FormField>
+              <FormField id="inactivityDisableDays" label="Disable after inactivity (days)">
                 <Input name="inactivityDisableDays" type="number" min={1} max={3650} defaultValue={profile.inactivityDisableDays ?? ""} />
-              </Field>
+              </FormField>
             </div>
-            <SubmitButton variant="secondary" pendingLabel="Saving…">
+            <SubmitButton variant="outline" pendingLabel="Saving…">
               Save details
             </SubmitButton>
           </form>
@@ -61,7 +61,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
         <Section
           title={
             <>
-              Members <span className="text-sm font-normal text-fg-muted">{members.length}</span>
+              Members <span className="text-sm font-normal text-muted-foreground">{members.length}</span>
             </>
           }
         >
@@ -79,7 +79,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
                   <Td>
                     <Link href={`/users/${m.id}`}>{m.name}</Link> {m.isAdmin ? <Badge tone="purple">admin</Badge> : null} {m.isDisabled ? <Badge tone="red">disabled</Badge> : null}
                   </Td>
-                  <Td>{m.drift.length ? <Badge tone="amber">{m.drift.length} field(s)</Badge> : <span className="text-fg-subtle">none</span>}</Td>
+                  <Td>{m.drift.length ? <Badge tone="amber">{m.drift.length} field(s)</Badge> : <span className="text-muted-foreground">none</span>}</Td>
                 </tr>
               ))}
             </tbody>
@@ -98,7 +98,7 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
                   <input type="hidden" name="profileId" value={id} />
                   <input type="hidden" name="confirm" value="1" />
                   <SubmitButton pendingLabel="Applying…">Confirm: apply to all members</SubmitButton>
-                  <Link href={`/profiles/${id}`} className="text-fg-muted hover:underline">
+                  <Link href={`/profiles/${id}`} className="text-muted-foreground hover:underline">
                     Cancel
                   </Link>
                 </form>
@@ -106,9 +106,9 @@ export default async function ProfilePage(props: PageProps<"/profiles/[id]">) {
             ) : (
               <form action={applyToMembersAction} className="space-y-1">
                 <input type="hidden" name="profileId" value={id} />
-                <Button type="submit" variant="secondary" disabled={members.length === 0}>
+                <SubmitButton variant="outline" disabled={members.length === 0}>
                   Preview apply to all members
-                </Button>
+                </SubmitButton>
                 <Hint>Shows every member&apos;s diff first; execution is sequential with a per-user result.</Hint>
               </form>
             )}

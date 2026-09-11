@@ -7,8 +7,10 @@ import { Notice } from "@/components/notice";
 import { Time } from "@/components/time";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Field } from "@/components/ui/field";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -58,8 +60,8 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
           {invites.map((inv) => (
             <tr key={inv.id}>
               <Td>
-                {inv.label ?? <span className="text-fg-subtle">untitled</span>}
-                <div className="text-xs text-fg-subtle">
+                {inv.label ?? <span className="text-muted-foreground">untitled</span>}
+                <div className="text-xs text-muted-foreground">
                   created <Time date={inv.createdAt} />
                   {inv.requireEmail ? " · email required" : ""}
                 </div>
@@ -67,22 +69,22 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
               <Td>
                 <Badge tone={tone[inv.status]}>{inv.status}</Badge>
               </Td>
-              <Td>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-fg-subtle">none</span>}</Td>
+              <Td>{inv.profileId ? <Link href={`/profiles/${inv.profileId}`}>{profiles.find((p) => p.id === inv.profileId)?.name ?? "deleted"}</Link> : <span className="text-muted-foreground">none</span>}</Td>
               <Td className="tabular-nums">
                 {inv.uses}
                 {inv.maxUses !== null ? ` / ${inv.maxUses}` : " / ∞"}
               </Td>
-              <Td>{inv.expiresAt ? <Time date={inv.expiresAt} /> : <span className="text-fg-subtle">never</span>}</Td>
-              <Td>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-fg-subtle">profile default</span>}</Td>
+              <Td>{inv.expiresAt ? <Time date={inv.expiresAt} /> : <span className="text-muted-foreground">never</span>}</Td>
+              <Td>{inv.accountExpiryDays ? `${inv.accountExpiryDays} days` : <span className="text-muted-foreground">profile default</span>}</Td>
               <Td>
                 {inv.usedBy.length === 0 ? (
-                  <span className="text-fg-subtle">nobody yet</span>
+                  <span className="text-muted-foreground">nobody yet</span>
                 ) : (
                   <ul className="text-xs">
                     {inv.usedBy.map((u) => (
                       <li key={u.id}>
                         <Link href={`/users/${u.jellyfinUserId}`}>{u.userName ?? u.jellyfinUserId.slice(0, 8)}</Link>{" "}
-                        <span className="text-fg-subtle">
+                        <span className="text-muted-foreground">
                           <Time date={u.createdAt} />
                         </span>
                       </li>
@@ -96,7 +98,7 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
                   {inv.status === "active" ? (
                     <form action={revokeInviteAction}>
                       <input type="hidden" name="inviteId" value={inv.id} />
-                      <SubmitButton size="sm" variant="danger">
+                      <SubmitButton size="sm" variant="destructive">
                         Revoke
                       </SubmitButton>
                     </form>
@@ -111,34 +113,34 @@ export default async function InvitesPage(props: PageProps<"/invites">) {
       <Section title="Create an invite">
         <form action={createInviteAction} className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3">
-            <Field id="label" label="Label">
+            <FormField id="label" label="Label">
               <Input name="label" maxLength={100} placeholder="Family, Friends of Alex…" />
-            </Field>
-            <Field id="profileId" label="Profile" help="Applied right after the account is created; if that fails the account is removed again.">
-              <Select name="profileId" defaultValue="">
+            </FormField>
+            <FormField id="profileId" label="Profile" help="Applied right after the account is created; if that fails the account is removed again.">
+              <NativeSelect name="profileId" defaultValue="" className="w-full">
                 <option value="">None (Jellyfin defaults)</option>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </Select>
-            </Field>
-            <Field id="noteForInvitee" label="Note for the invitee">
+              </NativeSelect>
+            </FormField>
+            <FormField id="noteForInvitee" label="Note for the invitee">
               <Textarea name="noteForInvitee" maxLength={1000} className="min-h-16" placeholder="Shown on the signup page." />
-            </Field>
+            </FormField>
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
-              <Field id="linkExpiryDays" label="Link expires (days)" help="0 = never">
+              <FormField id="linkExpiryDays" label="Link expires (days)" help="0 = never">
                 <Input name="linkExpiryDays" type="number" min={0} max={3650} defaultValue={INVITE_DEFAULT_EXPIRY_DAYS} />
-              </Field>
-              <Field id="maxUses" label="Max uses" help="0 = unlimited">
+              </FormField>
+              <FormField id="maxUses" label="Max uses" help="0 = unlimited">
                 <Input name="maxUses" type="number" min={0} max={100000} defaultValue={1} />
-              </Field>
-              <Field id="accountExpiryDays" label="Account expiry (days)" help="blank = profile default">
+              </FormField>
+              <FormField id="accountExpiryDays" label="Account expiry (days)" help="blank = profile default">
                 <Input name="accountExpiryDays" type="number" min={0} max={3650} />
-              </Field>
+              </FormField>
             </div>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="requireEmail" /> Require an email address

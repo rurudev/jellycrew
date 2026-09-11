@@ -1,9 +1,11 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /*
-  Design tokens (docs/design/direction.md §2).
-  Dark is the design default; light is a first-class mirror. Each token is written once
-  with light-dark() and switched by color-scheme:
+  Design tokens (docs/design/direction.md §2), in shadcn's vocabulary so every shadcn
+  component works unchanged. Dark is the design default; light is a first-class mirror.
+  Each token is written once with light-dark() and switched by color-scheme:
     :root                 dark
     [data-theme="light"]  light
     no attribute          follows prefers-color-scheme
@@ -12,27 +14,36 @@
 :root {
   color-scheme: dark;
 
-  --canvas: light-dark(#f6f6f8, #0c0d10);
-  --surface: light-dark(#ffffff, #14161a);
-  --surface-2: light-dark(#f1f2f5, #1b1e24);
-  --edge: light-dark(#e2e4e9, #272b33);
-  --edge-strong: light-dark(#868d98, #626977);
+  /* Surfaces and text */
+  --background: light-dark(#f6f6f8, #0c0d10);
+  --foreground: light-dark(#15171c, #e8eaed);
+  --card: light-dark(#ffffff, #14161a);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --muted: light-dark(#f1f2f5, #1b1e24);
+  --muted-foreground: light-dark(#4f5663, #9aa2ad);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  /* shadcn's "accent" is its hover and highlight fill, not the brand colour (that is --primary). */
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
+  --border: light-dark(#e2e4e9, #272b33);
+  /* Control borders: held at 3:1 against background and card. */
+  --input: light-dark(#868d98, #626977);
 
-  --fg: light-dark(#15171c, #e8eaed);
-  --fg-muted: light-dark(#4f5663, #9aa2ad);
-  --fg-subtle: light-dark(#5d6572, #7e8794);
+  /* The one accent */
+  --primary: light-dark(#5b4fe0, #9d97ff);
+  --primary-foreground: light-dark(#ffffff, #0c0d10);
+  --ring: var(--primary);
 
-  --accent: light-dark(#5b4fe0, #9d97ff);
-  --accent-fg: light-dark(#ffffff, #0c0d10);
-  --accent-soft: light-dark(rgb(91 79 224 / 0.1), rgb(157 151 255 / 0.14));
+  /* Semantic tones; soft fills are the tone at 10 % in light and 15 % in dark (bg-warning/10 dark:bg-warning/15). */
+  --destructive: light-dark(#b91c1c, #f87171);
+  --success: light-dark(#11703a, #4ade80);
+  --warning: light-dark(#9a4707, #fbbf24);
 
-  --ok: light-dark(#11703a, #4ade80);
-  --ok-soft: light-dark(rgb(17 112 58 / 0.1), rgb(74 222 128 / 0.14));
-  --warn: light-dark(#9a4707, #fbbf24);
-  --warn-soft: light-dark(rgb(154 71 7 / 0.1), rgb(251 191 36 / 0.14));
-  --danger: light-dark(#b91c1c, #f87171);
-  --danger-fg: light-dark(#ffffff, #0c0d10);
-  --danger-soft: light-dark(rgb(185 28 28 / 0.1), rgb(248 113 113 / 0.14));
+  /* Shape: rounded-lg 8 px (sections, controls), rounded-md 6.4 px, rounded-sm 4.8 px (badges). */
+  --radius: 0.5rem;
 
   /* Motion: only where it explains a state change. Fades keep a short duration under reduced motion. */
   --duration-fast: 120ms;
@@ -59,29 +70,37 @@
   }
 }
 
-/* Utilities read as meaning (bg-surface, text-fg-muted, border-edge), never as palette. */
 @theme inline {
-  --color-canvas: var(--canvas);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-edge: var(--edge);
-  --color-edge-strong: var(--edge-strong);
-  --color-fg: var(--fg);
-  --color-fg-muted: var(--fg-muted);
-  --color-fg-subtle: var(--fg-subtle);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
-  --color-accent-fg: var(--accent-fg);
-  --color-accent-soft: var(--accent-soft);
-  --color-ok: var(--ok);
-  --color-ok-soft: var(--ok-soft);
-  --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
-  --color-danger: var(--danger);
-  --color-danger-fg: var(--danger-fg);
-  --color-danger-soft: var(--danger-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
 }
 
 @theme {
@@ -99,14 +118,12 @@
   --text-2xl: 1.625rem;
   --text-2xl--line-height: 2rem;
 
-  /* Shape uses Tailwind's defaults unchanged: rounded-sm 4 px (badges, chips), rounded-md 6 px (controls), rounded-lg 8 px (sections, dialogs). */
-
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 /*
-  Transitional: `dark:` utilities follow data-theme (or the OS when no theme is chosen)
-  until every component uses the tokens above. Removed in the final design package.
+  `dark:` utilities (shadcn's and the transitional ones in old components) follow data-theme,
+  or the OS when no theme is chosen.
 */
 @custom-variant dark {
   &:where([data-theme="dark"], [data-theme="dark"] *) {
@@ -120,24 +137,28 @@
 }
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   html {
-    scrollbar-color: var(--edge-strong) transparent;
+    scrollbar-color: var(--input) transparent;
   }
 
   body {
-    background: var(--canvas);
-    color: var(--fg);
-    caret-color: var(--accent);
+    @apply bg-background text-foreground font-sans;
+    caret-color: var(--primary);
     font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    background: var(--accent);
-    color: var(--accent-fg);
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
 
+  /* Elements that are not shadcn components (links, native checkboxes) still get a visible ring. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
 }

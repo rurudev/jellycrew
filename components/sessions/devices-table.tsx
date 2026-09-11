@@ -23,13 +23,13 @@ export function DevicesTable({ devices, showUser = true, returnTo }: { devices: 
           <tr key={d.id}>
             <Td>
               {d.name}
-              <div className="text-xs text-fg-subtle">
+              <div className="text-xs text-muted-foreground">
                 <code>{d.id}</code>
               </div>
             </Td>
             <Td>
               {d.appName ?? "—"}
-              {d.appVersion ? <span className="text-fg-subtle"> {d.appVersion}</span> : null}
+              {d.appVersion ? <span className="text-muted-foreground"> {d.appVersion}</span> : null}
             </Td>
             {showUser ? <Td>{d.lastUserId ? <Link href={`/users/${d.lastUserId}`}>{d.lastUserName ?? d.lastUserId}</Link> : "—"}</Td> : null}
             <Td>
@@ -39,7 +39,7 @@ export function DevicesTable({ devices, showUser = true, returnTo }: { devices: 
               <form action={revokeDeviceAction}>
                 <input type="hidden" name="deviceId" value={d.id} />
                 <input type="hidden" name="returnTo" value={returnTo} />
-                <SubmitButton size="sm" variant="danger" title="Signs the device out and revokes its tokens">
+                <SubmitButton size="sm" variant="destructive" title="Signs the device out and revokes its tokens">
                   Revoke
                 </SubmitButton>
               </form>
