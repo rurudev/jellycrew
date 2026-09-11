@@ -8,7 +8,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 |---|---------|--------|-------|
 | 1 | Foundation: tokens, theme, type scale | `design/foundation` | done, merged 2026-09-11 |
 | 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done, merged 2026-09-11 (rebased onto shadcn) |
-| 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done (2026-09-11, on branch) |
+| 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | planned |
 | 5 | Console shell (header, nav, status) | `design/shell` | planned |
 | 6 | Users list | `design/users-list` | planned |
