@@ -11,7 +11,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done, merged 2026-09-11 |
 | 5 | Console shell (header, nav, status) | `design/shell` | done, merged 2026-09-11 |
-| 6 | Users list | `design/users-list` | done (2026-09-11, on branch) |
+| 6 | Users list | `design/users-list` | done, merged 2026-09-11 |
 | 7 | User detail layout | `design/user-detail-layout` | planned |
 | 8 | User actions menu and dialogs | `design/user-actions` | planned |
 | 9 | Policy editor | `design/policy-editor` | planned |

@@ -2,7 +2,7 @@ import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { listUsers } from "@/lib/services/users";
-import { applyUsersQuery, parseUsersQuery } from "@/lib/users/query";
+import { applyUsersQuery, parseUsersQuery, usersQueryToParams } from "@/lib/users/query";
 import { listProfiles } from "@/lib/services/profiles";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -34,7 +34,8 @@ export default async function UsersPage(props: PageProps<"/users">) {
         }
       />
       <UsersToolbar query={query} labels={labels} profiles={profiles} />
-      <BulkSelection action={bulkAction} profiles={profiles} ids={rows.map((r) => r.id)}>
+      {/* Keyed on the query so a selection never outlives the list it was made in. */}
+      <BulkSelection key={usersQueryToParams(query).toString()} action={bulkAction} profiles={profiles} ids={rows.map((r) => r.id)}>
         <UsersTable rows={rows} query={query} />
       </BulkSelection>
     </div>

@@ -22,7 +22,11 @@ type Profiles = Array<{ id: string; name: string }>;
 
 /** Search plus filters that apply as soon as they change; the URL is the only state. */
 export function UsersToolbar({ query, labels, profiles }: { query: UsersQuery; labels: string[]; profiles: Profiles }) {
+  // A filter already in the URL stays selectable even when nothing matches it any more, so the
+  // next auto-submit cannot silently drop it.
   const inactiveOptions = query.inactive && !inactivePresets.includes(query.inactive) ? [...inactivePresets, query.inactive].sort((a, b) => a - b) : inactivePresets;
+  const labelOptions = query.label && !labels.includes(query.label) ? [...labels, query.label].sort() : labels;
+  const profileOptions = query.profile && query.profile !== "none" && !profiles.some((p) => p.id === query.profile) ? [...profiles, { id: query.profile, name: "Unknown profile" }] : profiles;
   // Keyed on the query: uncontrolled fields keep their DOM value across client navigations
   // otherwise, so a removed chip or a cleared search would resubmit stale values.
   const key = usersQueryToParams(query).toString();
@@ -43,16 +47,16 @@ export function UsersToolbar({ query, labels, profiles }: { query: UsersQuery; l
         <AutoSubmitSelect name="profile" defaultValue={query.profile ?? ""} aria-label="Profile">
           <option value="">Any profile</option>
           <option value="none">No profile</option>
-          {profiles.map((p) => (
+          {profileOptions.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
           ))}
         </AutoSubmitSelect>
-        {labels.length > 0 ? (
+        {labelOptions.length > 0 ? (
           <AutoSubmitSelect name="label" defaultValue={query.label ?? ""} aria-label="Label">
             <option value="">Any label</option>
-            {labels.map((l) => (
+            {labelOptions.map((l) => (
               <option key={l} value={l}>
                 {l}
               </option>
@@ -72,7 +76,8 @@ export function UsersToolbar({ query, labels, profiles }: { query: UsersQuery; l
             </option>
           ))}
         </AutoSubmitSelect>
-        <button type="submit" className="sr-only">
+        {/* Submit target for browsers without JavaScript; not a tab stop, Enter and the selects already submit. */}
+        <button type="submit" tabIndex={-1} className="sr-only">
           Apply filters
         </button>
       </FilterForm>

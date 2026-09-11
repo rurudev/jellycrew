@@ -10,6 +10,11 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable=true]") !== null;
 }
 
+/** True while a modal owns the page: focus is inside a dialog, or the field itself is behind one. */
+function isBehindDialog(input: HTMLInputElement | null): boolean {
+  return document.activeElement?.closest("[role=dialog], [role=alertdialog]") !== null || input?.closest('[aria-hidden="true"]') !== null;
+}
+
 /** Escape clears a filled search and resubmits so the filter is removed; on an empty one it just blurs. */
 function onEscape(input: HTMLInputElement) {
   if (input.value) {
@@ -29,7 +34,7 @@ export function SearchField({ className, onKeyDown, ...props }: ComponentProps<t
   const [focused, setFocused] = useState(false);
   useEffect(() => {
     function onKey(e: globalThis.KeyboardEvent) {
-      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target) || isBehindDialog(ref.current)) return;
       e.preventDefault();
       ref.current?.focus();
       ref.current?.select();

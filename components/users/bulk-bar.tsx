@@ -56,7 +56,12 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
   const [kind, setKind] = useState<BulkKind>("assign_profile");
   const [dismissed, setDismissed] = useState<BulkState | null>(null);
   const param = BULK_PARAM[kind];
-  const dialogOpen = (state.stage === "preview" || state.stage === "done") && state !== dismissed;
+  // What the UI shows: a dismissed preview or result behaves like idle again (the action state
+  // itself only changes on the next submit).
+  const view = state === dismissed ? "idle" : state.stage;
+  const dialogOpen = view === "preview" || view === "done";
+  // Rows filtered out of view are neither counted nor submitted.
+  const visible = ids.filter((id) => selected.has(id));
   const selection: Selection = {
     ids,
     selected,
@@ -69,7 +74,7 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
       }),
     setAll: (on) => setSelected(on ? new Set(ids) : new Set()),
   };
-  const count = selected.size;
+  const count = visible.length;
   const close = () => {
     setDismissed(state);
     if (state.stage === "done") setSelected(new Set());
@@ -78,10 +83,10 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
   return (
     <SelectionContext value={selection}>
       <form id={formId} action={formAction} className="space-y-3">
-        {[...selected].map((id) => (
+        {visible.map((id) => (
           <input key={id} type="hidden" name="userIds" value={id} />
         ))}
-        {state.stage === "preview" ? (
+        {view === "preview" ? (
           <>
             <input type="hidden" name="kind" value={state.kind} />
             {state.profileId ? <input type="hidden" name="profileId" value={state.profileId} /> : null}
@@ -90,10 +95,10 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
             {state.label ? <input type="hidden" name="label" value={state.label} /> : null}
           </>
         ) : null}
-        {state.stage === "error" ? <Callout tone="error">{state.error}</Callout> : null}
+        {view === "error" ? <Callout tone="error">{state.error}</Callout> : null}
         {children}
-        {count > 0 && state.stage !== "preview" ? (
-          <div role="region" aria-label="Bulk actions" className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2 shadow-md">
+        {count > 0 && view !== "preview" ? (
+          <div role="region" aria-label="Bulk actions" className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2">
             <span className="px-1 text-sm font-medium" aria-live="polite">
               {count} selected
             </span>
@@ -105,7 +110,7 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
               ))}
             </NativeSelect>
             {param === "profile" ? (
-              <NativeSelect name="profileId" defaultValue="" aria-label="Profile for bulk action">
+              <NativeSelect name="profileId" defaultValue={state.profileId ?? ""} aria-label="Profile for bulk action">
                 <option value="">{kind === "apply_profile" ? "Choose a profile…" : "No profile (unassign)"}</option>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -114,9 +119,10 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
                 ))}
               </NativeSelect>
             ) : null}
-            {param === "date" ? <Input type="date" name="date" className="w-auto" aria-label="Expiry date" required /> : null}
-            {param === "days" ? <Input type="number" name="days" min={1} defaultValue={30} className="w-24" aria-label="Days" required /> : null}
-            {param === "label" ? <Input name="label" placeholder="label" className="w-40" aria-label="Label" required maxLength={50} /> : null}
+            {/* Defaults come from the last action state so an error does not wipe what was typed (React resets forms after an action). */}
+            {param === "date" ? <Input type="date" name="date" defaultValue={state.date?.slice(0, 10) ?? ""} className="w-auto" aria-label="Expiry date" required /> : null}
+            {param === "days" ? <Input type="number" name="days" min={1} defaultValue={state.days ?? 30} className="w-24" aria-label="Days" required /> : null}
+            {param === "label" ? <Input name="label" defaultValue={state.label ?? ""} placeholder="label" className="w-40" aria-label="Label" required maxLength={50} /> : null}
             <Button type="submit" variant="outline" disabled={pending}>
               {pending ? <Spinner data-icon="inline-start" /> : null}
               Preview
@@ -130,7 +136,7 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-2xl">
-          {state.stage === "preview" && state.preview ? (
+          {view === "preview" && state.preview ? (
             <>
               <DialogHeader>
                 <DialogTitle>
@@ -157,7 +163,7 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
               </DialogFooter>
             </>
           ) : null}
-          {state.stage === "done" && state.results ? (
+          {view === "done" && state.results ? (
             <>
               <DialogHeader>
                 <DialogTitle>
