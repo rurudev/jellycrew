@@ -24,3 +24,14 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - UI primitives are hand-written Tailwind components in `components/ui` instead of the shadcn CLI, to keep the dependency surface small; shadcn remains allowed if a richer widget is needed later.
 - `pnpm test` runs both vitest projects (`unit`, `integration`); the integration project needs Docker.
 - Development machine runs Node 24; the project targets Node 22 (`.nvmrc`, `engines`, Docker image). No Node-24-only APIs are used.
+
+## Stage 2 — Users read path and sessions
+
+- The users table, filters and sort live entirely in the URL (`lib/users/query.ts`); filtering and sorting happen in memory after one `GET /Users` because Jellyfin offers no server-side query for these fields.
+- Session and device counts come from `GET /Sessions?activeWithinSeconds=960` (the same window Jellyfin's dashboard uses) and `GET /Devices`; sessions from the app's own device id or with the all-zero user id (API-key calls) are filtered out.
+- The session list is the only cross-request cache (10 s, in-process, `lib/services/sessions.ts`); mutations invalidate it.
+- User avatars are proxied through `/users/[id]/avatar` with the API key server-side; the browser never talks to Jellyfin.
+- The policy field catalog (`lib/policy/fields.ts`) is the single source for grouping, labels, help text, value kind and profile/user scope; a unit test fails when the OpenAPI `UserPolicy` schema gains or loses a field.
+- Result messages after server-action forms travel as `?ok=`/`?error=` query params (rendered by `components/notice.tsx`), which keeps forms progressive-enhancement friendly without client state.
+- The global sessions page re-renders through `router.refresh()` every 10 s from a tiny client component that pauses while the tab is hidden; no JSON API is exposed for it.
+- `/` redirects to `/users`; server and app health details will live on the settings page (stage 4) rather than a dashboard.

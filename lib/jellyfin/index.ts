@@ -1,12 +1,21 @@
 import { env } from "@/lib/env";
 import { ensureDeviceId } from "@/lib/settings";
-import { call, createJellyfinClient, type JellyfinClient } from "./client";
+import { JellyfinError, buildAuthHeader, call, createJellyfinClient, type JellyfinClient } from "./client";
 import {
   AuthenticationResultSchema,
+  DeviceListSchema,
+  MediaFolderListSchema,
+  ParentalRatingListSchema,
+  SessionListSchema,
   SystemInfoSchema,
   UserDtoSchema,
   UserListSchema,
+  type PlaystateCommand,
   type ValidatedAuthResult,
+  type ValidatedDevice,
+  type ValidatedMediaFolder,
+  type ValidatedParentalRating,
+  type ValidatedSession,
   type ValidatedSystemInfo,
   type ValidatedUser,
 } from "./schemas";
@@ -82,4 +91,68 @@ export async function logoutSession(sessionToken: string): Promise<void> {
   const e = env();
   const client = createJellyfinClient({ baseUrl: e.JELLYFIN_URL, deviceId: ensureDeviceId(), token: sessionToken });
   await call("ReportSessionEnded", () => client.POST("/Sessions/Logout"));
+}
+
+/** Sessions seen by the server within the last `activeWithinSeconds` (Jellyfin's dashboard uses 960). */
+export async function fetchSessions(activeWithinSeconds = 960): Promise<ValidatedSession[]> {
+  const data = await call("GetSessions", () =>
+    jellyfin().GET("/Sessions", { params: { query: { activeWithinSeconds } } }),
+  );
+  return SessionListSchema.parse(data);
+}
+
+export async function fetchDevices(userId?: string): Promise<ValidatedDevice[]> {
+  const data = await call("GetDevices", () =>
+    jellyfin().GET("/Devices", { params: { query: userId ? { userId } : {} } }),
+  );
+  return DeviceListSchema.parse(data).Items ?? [];
+}
+
+export async function fetchMediaFolders(): Promise<ValidatedMediaFolder[]> {
+  const data = await call("GetMediaFolders", () => jellyfin().GET("/Library/MediaFolders"));
+  return MediaFolderListSchema.parse(data).Items ?? [];
+}
+
+export async function fetchParentalRatings(): Promise<ValidatedParentalRating[]> {
+  const data = await call("GetParentalRatings", () => jellyfin().GET("/Localization/ParentalRatings"));
+  return ParentalRatingListSchema.parse(data);
+}
+
+/** Proxies a user's primary image. Returns null when the user has none. */
+export async function fetchUserImage(userId: string, tag?: string): Promise<Response | null> {
+  const e = env();
+  const url = new URL(`${e.JELLYFIN_URL}/UserImage`);
+  url.searchParams.set("userId", userId);
+  if (tag) url.searchParams.set("tag", tag);
+  const res = await fetch(url, {
+    headers: { Authorization: buildAuthHeader({ deviceId: ensureDeviceId(), token: e.JELLYFIN_API_KEY }) },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new JellyfinError("GetUserImage", res.status, await res.text());
+  return res;
+}
+
+// ---- Writes. Only lib/services/* may call these, and each caller audits. ----
+
+export async function sendPlaystateCommand(sessionId: string, command: PlaystateCommand): Promise<void> {
+  await call("SendPlaystateCommand", () =>
+    jellyfin().POST("/Sessions/{sessionId}/Playing/{command}", { params: { path: { sessionId, command } } }),
+  );
+}
+
+export async function sendMessageCommand(
+  sessionId: string,
+  message: { text: string; header?: string; timeoutMs?: number },
+): Promise<void> {
+  await call("SendMessageCommand", () =>
+    jellyfin().POST("/Sessions/{sessionId}/Message", {
+      params: { path: { sessionId } },
+      body: { Text: message.text, Header: message.header ?? null, TimeoutMs: message.timeoutMs ?? null },
+    }),
+  );
+}
+
+export async function deleteDevice(deviceId: string): Promise<void> {
+  await call("DeleteDevice", () => jellyfin().DELETE("/Devices", { params: { query: { id: deviceId } } }));
 }

@@ -5,7 +5,10 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "./actions";
 
-const nav: Array<{ href: string; label: string }> = [{ href: "/", label: "Overview" }];
+const nav: Array<{ href: string; label: string }> = [
+  { href: "/users", label: "Users" },
+  { href: "/sessions", label: "Sessions" },
+];
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
   const session = await requireAdmin();

@@ -1,3 +1,4 @@
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { audit, type ActorType, type AuditRow } from "@/lib/db/schema";
 import { logger } from "@/lib/log";
@@ -42,4 +43,8 @@ export function recordAudit(input: AuditInput): AuditRow {
     "audit",
   );
   return row;
+}
+
+export function listAuditForUser(userId: string, limit = 100): AuditRow[] {
+  return getDb().select().from(audit).where(eq(audit.targetUserId, userId)).orderBy(desc(audit.id)).limit(limit).all();
 }
