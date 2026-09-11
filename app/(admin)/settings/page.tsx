@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Help, Label } from "@/components/ui/label";
-import { runLifecycleNowAction, saveSettingsAction } from "./actions";
+import { runLifecycleNowAction, saveSettingsAction, testSmtpAction } from "./actions";
 
 export const metadata = { title: "Settings" };
 
@@ -119,12 +119,23 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
         <Card>
           <CardTitle>Email (SMTP)</CardTitle>
           {smtpConfigured ? (
-            <dl className="grid grid-cols-[10rem_1fr] gap-y-1">
-              <dt className="text-zinc-500">From</dt>
-              <dd>{e.SMTP_FROM}</dd>
-              <dt className="text-zinc-500">Last test</dt>
-              <dd>{smtpTest ? `${smtpTest.ok ? "ok" : "failed"} · ${smtpTest.message} (${smtpTest.at})` : "never"}</dd>
-            </dl>
+            <div className="space-y-3">
+              <dl className="grid grid-cols-[10rem_1fr] gap-y-1">
+                <dt className="text-zinc-500">From</dt>
+                <dd>{e.SMTP_FROM}</dd>
+                <dt className="text-zinc-500">Last test</dt>
+                <dd>{smtpTest ? `${smtpTest.ok ? "ok" : "failed"} · ${smtpTest.message} (${smtpTest.at})` : "never"}</dd>
+              </dl>
+              <form action={testSmtpAction} className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label htmlFor="to">Send a test mail to (optional)</Label>
+                  <Input id="to" name="to" type="email" placeholder="you@example.com" />
+                </div>
+                <Button type="submit" variant="secondary">
+                  Test SMTP
+                </Button>
+              </form>
+            </div>
           ) : (
             <p className="text-zinc-500">
               Not configured. Set <code>SMTP_URL</code> and <code>SMTP_FROM</code> to enable verification and reset mail. Admins can always generate reset links by hand.

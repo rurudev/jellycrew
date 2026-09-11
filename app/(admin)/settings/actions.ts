@@ -8,6 +8,8 @@ import { errorMessage, withNotice } from "@/lib/notice";
 import { recordAudit } from "@/lib/services/audit";
 import { runLifecycleJob } from "@/lib/services/scheduler";
 import { getSettingOrDefault, setSetting } from "@/lib/settings";
+import { sendMail, verifySmtp } from "@/lib/mail";
+import { env } from "@/lib/env";
 
 const SettingsForm = z.object({
   graceDays: z.coerce.number().int().min(0).max(3650),
@@ -52,4 +54,22 @@ export async function runLifecycleNowAction(): Promise<void> {
   } catch (err) {
     redirect(withNotice("/settings", { error: errorMessage(err) }));
   }
+}
+
+export async function testSmtpAction(formData: FormData): Promise<void> {
+  const actor = await adminActor();
+  const to = String(formData.get("to") ?? "").trim();
+  let result = await verifySmtp();
+  if (result.ok && to) {
+    try {
+      await sendMail({ to, subject: "jellycrew SMTP test", text: `This is a test message from jellycrew (${env().PUBLIC_BASE_URL}). SMTP works.` });
+      result = { ok: true, message: `Connection verified and test mail sent to ${to}` };
+    } catch (err) {
+      result = { ok: false, message: `Connection verified but sending failed: ${errorMessage(err)}` };
+    }
+  }
+  setSetting("smtpTestResult", { at: new Date().toISOString(), ...result });
+  recordAudit({ actor, action: "settings.smtp_test", detail: { ...result, to: to || null } });
+  revalidatePath("/settings");
+  redirect(withNotice("/settings", result.ok ? { ok: result.message } : { error: result.message }));
 }

@@ -7,6 +7,8 @@ import { recordAudit, type Actor } from "./audit";
 import { addLabel, cancelDeletion, extendExpiry, removeLabel, scheduleDeletion, setExpiry } from "./lifecycle";
 import { applyProfileToUser, assignProfile, getProfile, requireProfile } from "./profiles";
 import { getSettingOrDefault } from "@/lib/settings";
+import { isMailConfigured } from "@/lib/mail";
+import { adminEmailResetLink } from "./reset";
 import { absoluteTime } from "@/lib/format";
 import { toSubject } from "./protection";
 import { setUserEnabled } from "./user-actions";
@@ -143,6 +145,11 @@ function previewOne(ctx: Ctx, kind: BulkKind, userId: string, params: BulkParams
       if (!meta?.labels.includes(label)) return { userId, name, summary: "", changes: [], skip: "Does not have the label." };
       return { userId, name, summary: `Remove label "${label}"`, changes: [{ key: "labels", before: meta.labels, after: meta.labels.filter((l) => l !== label) }] };
     }
+    case "send_reset_link": {
+      if (!isMailConfigured()) return { userId, name, summary: "", changes: [], skip: "SMTP is not configured." };
+      if (!meta?.email) return { userId, name, summary: "", changes: [], skip: "No email address on file." };
+      return { userId, name, summary: `Email a reset link to ${meta.email}`, changes: [] };
+    }
   }
 }
 
@@ -208,6 +215,11 @@ export async function executeBulk(actor: Actor, kind: BulkKind, userIds: string[
           removeLabel(actor, row.userId, params.label!);
           results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
           break;
+        case "send_reset_link": {
+          const { email } = await adminEmailResetLink(actor, row.userId);
+          results.push({ userId: row.userId, name: row.name, ok: true, message: `Reset link emailed to ${email}` });
+          break;
+        }
       }
     } catch (err) {
       results.push({ userId: row.userId, name: row.name, ok: false, message: err instanceof Error ? err.message : String(err) });

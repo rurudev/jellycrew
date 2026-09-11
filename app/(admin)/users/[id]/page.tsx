@@ -22,7 +22,10 @@ import { Avatar } from "@/components/users/avatar";
 import { LifecycleCard } from "@/components/users/lifecycle-card";
 import { StatusBadge } from "@/components/users/status-badge";
 import { getSettingOrDefault } from "@/lib/settings";
+import { CopyButton } from "@/components/invites/copy-button";
+import { isMailConfigured } from "@/lib/mail";
 import { adoptIntoProfileAction, applyProfileAction, assignProfileAction, copyPolicyAction, renameUserAction, setEnabledAction, setPasswordAction } from "./actions";
+import { createResetLinkAction, emailResetLinkAction, sendVerificationAction } from "./reset-actions";
 
 export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
   const session = await requireAdmin();
@@ -37,6 +40,8 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
   const drift = userDrift(policy, assigned);
   const adopt = assigned ? await previewAdopt(assigned.id, id) : null;
   const copyFrom = typeof params.copyFrom === "string" ? params.copyFrom : null;
+  const resetLink = typeof params.resetLink === "string" ? params.resetLink : null;
+  const mailConfigured = isMailConfigured();
   const copyPreview = copyFrom ? await copyPolicyFromUser({ type: "admin", id: session.userId }, id, copyFrom, false).catch(() => null) : null;
   const isSelf = session.userId === id;
 
@@ -83,6 +88,14 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
         </div>
       </header>
       <Notice params={params} />
+      {resetLink ? (
+        <Alert tone="success" title="Reset link created (valid 60 minutes, single use)">
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="break-all text-xs">{resetLink}</code>
+            <CopyButton value={resetLink} />
+          </div>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -171,6 +184,28 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
 
       <Card>
         <CardTitle>Actions</CardTitle>
+        <div className="mb-6 flex flex-wrap gap-2">
+          <form action={createResetLinkAction}>
+            <input type="hidden" name="userId" value={id} />
+            <Button type="submit" variant="secondary" title="Works without email; hand the link over yourself">
+              Generate reset link
+            </Button>
+          </form>
+          <form action={emailResetLinkAction}>
+            <input type="hidden" name="userId" value={id} />
+            <Button type="submit" variant="secondary" disabled={!mailConfigured || !row.meta.email} title={!mailConfigured ? "SMTP is not configured" : !row.meta.email ? "No email on file" : undefined}>
+              Email reset link
+            </Button>
+          </form>
+          {row.meta.email && !row.meta.emailVerifiedAt ? (
+            <form action={sendVerificationAction}>
+              <input type="hidden" name="userId" value={id} />
+              <Button type="submit" variant="secondary" disabled={!mailConfigured} title={!mailConfigured ? "SMTP is not configured" : undefined}>
+                Send verification email
+              </Button>
+            </form>
+          ) : null}
+        </div>
         <div className="grid gap-6 md:grid-cols-3">
           <form action={renameUserAction} className="space-y-2">
             <input type="hidden" name="userId" value={id} />

@@ -75,3 +75,16 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - Jellyfin rejects names it does not like with a bare "Error processing request."; the app pre-checks case-insensitive name clashes itself and otherwise surfaces Jellyfin's message verbatim.
 - The URL shown to invitees after signup is the `jellyfinPublicUrl` setting (new, on the settings page), falling back to `JELLYFIN_URL`, because the internal URL is usually not reachable from outside.
 - Link expiry defaults to 7 days; `0` means the link never expires. `max_uses` blank/0 means unlimited.
+
+## Stage 6 — Self-service and password reset
+
+- Jellyfin answers `403` to `AuthenticateByName` for a disabled account (whatever the password) and `401` otherwise, so the self-service login can honestly say "this account is disabled" and add the app-side reason (expired / inactive / by an administrator) without leaking anything Jellyfin does not already reveal.
+- The self-service cookie (`jellycrew_me`, 30 days) is set by the public login Route Handler; logged-in `/me` mutations (change password, set email, revoke device, sign out) are ordinary server actions protected by Next's origin check and the cookie.
+- Change-password always calls `AuthenticateByName` with the current password first and only then sets the new one with the API key; the check is rate-limited per user (10/min) to keep it from becoming a password oracle.
+- Tokens (`token` table) are 128-bit, stored as SHA-256, single-use (consumed with an `UPDATE ... WHERE used_at IS NULL`), and issuing a new token of the same kind for a user invalidates older unused ones. Reset links live 60 minutes, verification links 24 hours.
+- Verification tokens remember the address they were issued for (`token.email`); verifying only succeeds while that address is still the one on file, so changing the address after requesting a link invalidates the link.
+- `/reset` matches a verified email first, then a username whose account has a verified email; the response body is identical either way (`RESET_GENERIC_MESSAGE`) and unmatched requests are audited without a target. No mail is ever sent for unverified addresses. When SMTP is not configured the page says to contact the admin and the route answers 503.
+- Admins can always create a one-hour reset link by hand (shown once, copyable) and, when SMTP is set up, email one to the address on file even if it is unverified (the admin vouches for it); both are audited (`user.reset_link.create` / `user.reset_link.email`). Consuming any reset link is audited as the `self` actor with `tokenCreatedBy` in the detail.
+- Mail goes through nodemailer with `SMTP_URL` as the transport URL; every template is plain text with a light HTML twin. The settings page can verify the SMTP connection and optionally send a test mail; the result is stored in the `smtpTestResult` setting.
+- Integration tests run a Mailpit container alongside Jellyfin and read messages through its HTTP API; the `server-only` marker is aliased to a stub in vitest so server modules can be imported by tests.
+- Public pages that read runtime configuration but use no request APIs (`/reset`) are marked `force-dynamic` so `next build` never tries to prerender them without an environment.

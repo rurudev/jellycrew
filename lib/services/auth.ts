@@ -27,7 +27,11 @@ export async function verifyCredentials(username: string, password: string): Pro
   try {
     result = await authenticateByName(username, password);
   } catch (err) {
-    if (err instanceof JellyfinError && (err.status === 401 || err.status === 403)) {
+    // Jellyfin answers 403 for disabled accounts (whatever the password) and 401 otherwise.
+    if (err instanceof JellyfinError && err.status === 403) {
+      throw new LoginError("disabled", "This account is disabled.");
+    }
+    if (err instanceof JellyfinError && err.status === 401) {
       throw new LoginError("invalid_credentials", "Invalid username or password.");
     }
     logger.error({ err }, "authentication request failed");

@@ -11,6 +11,7 @@ export const BULK_KINDS = [
   "cancel_deletion",
   "add_label",
   "remove_label",
+  "send_reset_link",
 ] as const;
 export type BulkKind = (typeof BULK_KINDS)[number];
 
@@ -26,6 +27,7 @@ export const BULK_LABELS: Record<BulkKind, string> = {
   cancel_deletion: "Cancel scheduled deletion",
   add_label: "Add label",
   remove_label: "Remove label",
+  send_reset_link: "Email a password reset link",
 };
 
 /** Which extra parameter a kind needs, for the form. */
@@ -41,4 +43,5 @@ export const BULK_PARAM: Record<BulkKind, "profile" | "date" | "days" | "label" 
   cancel_deletion: null,
   add_label: "label",
   remove_label: "label",
+  send_reset_link: null,
 };

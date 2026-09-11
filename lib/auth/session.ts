@@ -74,3 +74,29 @@ export async function clearAdminSession(): Promise<void> {
   const store = await cookies();
   store.delete(ADMIN_COOKIE);
 }
+
+export async function getSelfSession(): Promise<SelfSession | null> {
+  const store = await cookies();
+  return unsealSession<SelfSession>(store.get(SELF_COOKIE)?.value, "self", SELF_TTL_SECONDS);
+}
+
+export async function setSelfSession(session: Omit<SelfSession, "kind" | "issuedAt">): Promise<void> {
+  const store = await cookies();
+  const value = await sealSession({ kind: "self", issuedAt: Date.now(), ...session }, SELF_TTL_SECONDS);
+  store.set(SELF_COOKIE, value, cookieOptions(SELF_TTL_SECONDS));
+}
+
+export async function clearSelfSession(): Promise<void> {
+  const store = await cookies();
+  store.delete(SELF_COOKIE);
+}
+
+/** Cookie attributes for route handlers that set the self-service cookie on a Response. */
+export function selfCookieHeader(value: string): string {
+  const o = cookieOptions(SELF_TTL_SECONDS);
+  return `${SELF_COOKIE}=${value}; Path=${o.path}; Max-Age=${o.maxAge}; HttpOnly; SameSite=Lax${o.secure ? "; Secure" : ""}`;
+}
+
+export function clearSelfCookieHeader(): string {
+  return `${SELF_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`;
+}
