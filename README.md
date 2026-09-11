@@ -31,7 +31,7 @@ Tested against Jellyfin **10.11.11**. The UI warns when the live server runs ano
    SMTP_FROM="Jellyfin <noreply@example.com>"       # required when SMTP_URL is set
    ```
 
-3. `docker compose up -d`. The app migrates its database on start and reports `GET /healthz`.
+3. `docker compose up -d`. The app migrates its database on start and reports `GET /healthz`. If it exits with `Invalid environment`, the log lists exactly which variables are missing or malformed.
 4. Open the **admin** hostname and sign in with any Jellyfin administrator account (jellycrew has no password store of its own).
 5. Create a profile, assign users, create an invite. Check *Settings* for the scheduler status, grace period, minimum password length and the SMTP test.
 
@@ -85,8 +85,7 @@ Requirements: Node 22, pnpm 12, Docker (integration tests start real Jellyfin an
 
 ```bash
 pnpm install
-pnpm jellyfin:dev          # disposable Jellyfin 10.11 on :8096; prints JELLYFIN_URL / JELLYFIN_API_KEY
-cp .env.example .env.local # fill in the printed values and a SESSION_SECRET
+pnpm jellyfin:dev          # disposable Jellyfin 10.11 on :8096; writes .env.local (API key, secret) if missing
 pnpm dev                   # http://localhost:3000, sign in as admin / admin-password-1
 ```
 
