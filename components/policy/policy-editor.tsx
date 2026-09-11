@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useMemo, useState } from "react";
+import { useActionState, useId, useMemo, useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
@@ -35,17 +35,20 @@ function FieldKey({ name }: { name: string }) {
   return <code className="text-xs font-normal text-muted-foreground [[data-keys=off]_&]:hidden">{name}</code>;
 }
 
-function FieldInput({ field, id, value, refData }: { field: PolicyFieldDef; id: string; value: unknown; refData: EditorRefData }) {
+/** The id and `aria-describedby` that `FormField` clones onto whatever it wraps. */
+type FieldAria = Pick<ComponentProps<"input">, "aria-describedby" | "aria-invalid">;
+
+function FieldInput({ field, id, value, refData, ...aria }: { field: PolicyFieldDef; id: string; value: unknown; refData: EditorRefData } & FieldAria) {
   switch (field.kind) {
     case "boolean":
-      return <Checkbox id={id} name={field.key} defaultChecked={value === true} />;
+      return <Checkbox id={id} name={field.key} defaultChecked={value === true} {...aria} />;
     case "integer":
-      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} />;
+      return <Input id={id} type="number" name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} {...aria} />;
     case "string":
-      return <Input id={id} name={field.key} defaultValue={typeof value === "string" ? value : ""} />;
+      return <Input id={id} name={field.key} defaultValue={typeof value === "string" ? value : ""} {...aria} />;
     case "stringList":
     case "channelIds":
-      return <Textarea id={id} name={field.key} defaultValue={Array.isArray(value) ? value.join("\n") : ""} placeholder="One per line" className="min-h-16" />;
+      return <Textarea id={id} name={field.key} defaultValue={Array.isArray(value) ? value.join("\n") : ""} placeholder="One per line" className="min-h-16" {...aria} />;
     case "folderIds":
       return <IdCheckboxes name={field.key} selected={Array.isArray(value) ? value.map(String) : []} options={refData.folders.map((f) => ({ id: f.id, label: f.name }))} empty="This server has no libraries." />;
     case "deviceIds":
@@ -60,7 +63,7 @@ function FieldInput({ field, id, value, refData }: { field: PolicyFieldDef; id: 
     case "rating": {
       const values = [...new Map(refData.ratings.filter((r) => r.value !== null).map((r) => [r.value, r])).values()].sort((a, b) => (a.value ?? 0) - (b.value ?? 0));
       return (
-        <NativeSelect id={id} name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)}>
+        <NativeSelect id={id} name={field.key} defaultValue={value === null || value === undefined ? "" : String(value)} {...aria}>
           <option value="">No limit</option>
           {values.map((r) => (
             <option key={r.value} value={String(r.value)}>
@@ -78,7 +81,7 @@ function FieldInput({ field, id, value, refData }: { field: PolicyFieldDef; id: 
       return <IdCheckboxes name={field.key} selected={Array.isArray(value) ? value.map(String) : []} options={UNRATED_ITEM_VALUES.map((v) => ({ id: v, label: v }))} />;
     case "syncPlayAccess":
       return (
-        <NativeSelect id={id} name={field.key} defaultValue={typeof value === "string" ? value : "CreateAndJoinGroups"}>
+        <NativeSelect id={id} name={field.key} defaultValue={typeof value === "string" ? value : "CreateAndJoinGroups"} {...aria}>
           {SYNC_PLAY_ACCESS_VALUES.map((v) => (
             <option key={v} value={v}>
               {v}
@@ -95,6 +98,7 @@ function FieldInput({ field, id, value, refData }: { field: PolicyFieldDef; id: 
           className="min-h-20 font-mono text-xs"
           spellCheck={false}
           placeholder='[{"DayOfWeek":"Weekend","StartHour":8,"EndHour":20}]'
+          {...aria}
         />
       );
   }
@@ -176,6 +180,17 @@ function HiddenField({ field, value }: { field: PolicyFieldDef; value: unknown }
   }
 }
 
+/** Controlled so that React's reset-after-action does not throw away unsaved JSON. */
+function RawPanel({ initial }: { initial: string }) {
+  const [text, setText] = useState(initial);
+  return (
+    <>
+      <Textarea name="raw" value={text} onChange={(event) => setText(event.target.value)} className="min-h-96 font-mono text-xs" spellCheck={false} aria-label="Policy JSON" />
+      <Hint>Keys you leave out keep their current value, and keys outside the catalogue are preserved as Jellyfin returned them. Values are type-checked before the preview.</Hint>
+    </>
+  );
+}
+
 function changeCount(n: number): string {
   return `${n} ${n === 1 ? "change" : "changes"}`;
 }
@@ -216,6 +231,9 @@ export function PolicyEditor({
   const [showKeys, setShowKeys] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [editedSincePreview, setEditedSincePreview] = useState(false);
+  // Bumped only when a result brings a new starting point. A parse error brings none, so the
+  // form is left alone with what the operator typed.
+  const [seed, setSeed] = useState(0);
   // Every result is a new object: open the review when a preview arrives, and forget that the
   // form was touched. State is adjusted during render rather than in an effect.
   const [lastState, setLastState] = useState(state);
@@ -223,13 +241,14 @@ export function PolicyEditor({
     setLastState(state);
     setReviewOpen(state.status === "preview");
     setEditedSincePreview(false);
+    if (!(state.status === "error" && !state.edit)) setSeed((n) => n + 1);
   }
 
   // After a stale write the live policy becomes the new base; the operator's edit is kept.
   const base = state.status === "stale" && state.live ? state.live : policy;
   const baseHash = state.status === "stale" && state.liveHash ? state.liveHash : (state.liveHash ?? hash);
   const current = useMemo(() => (state.edit ? mergeEdit(base, state.edit) : base), [base, state.edit]);
-  const formKey = `${baseHash}:${state.status}:${state.changes?.length ?? 0}`;
+  const formKey = `${baseHash}:${seed}`;
 
   const groups = POLICY_GROUPS.map((g) => {
     const all = fieldsInGroup(g.id).filter((f) => scope === "all" || f.scope === scope);
@@ -240,8 +259,9 @@ export function PolicyEditor({
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[12rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)]">
+      {/* Keyed with the form: the sections it observes are recreated whenever the form is. */}
       {mode === "grouped" ? (
-        <GroupIndex groups={groups.filter((g) => g.shown.length > 0).map((g) => ({ id: g.id, title: g.title, count: g.shown.length }))} />
+        <GroupIndex key={`index-${formKey}`} groups={groups.filter((g) => g.shown.length > 0).map((g) => ({ id: g.id, title: g.title, count: g.shown.length }))} />
       ) : (
         <div className="hidden lg:block" />
       )}
@@ -251,7 +271,10 @@ export function PolicyEditor({
         id={formId}
         action={formAction}
         data-keys={showKeys ? "on" : "off"}
-        onChange={() => setEditedSincePreview(true)}
+        onChange={(event) => {
+          // The list filters live inside the form but change nothing that gets submitted.
+          if (!(event.target as HTMLElement).closest("[data-no-dirty]")) setEditedSincePreview(true);
+        }}
         className="min-w-0 space-y-4"
       >
         <input type="hidden" name={idField} value={target.id} />
@@ -304,7 +327,7 @@ export function PolicyEditor({
                   ))}
                 </div>
               ) : (
-                <Section key={g.id} id={`g-${g.id}`} title={g.title} description={g.description} className="scroll-mt-14">
+                <Section key={g.id} id={`g-${g.id}`} title={g.title} description={g.description} level={target.kind === "user" ? 2 : 3} className="scroll-mt-14">
                   <div className="grid items-start gap-x-8 gap-y-4 xl:grid-cols-2">
                     {g.shown.map((f) => (
                       <div key={f.key} className={WIDE_KINDS.has(f.kind) ? "xl:col-span-2" : undefined}>
@@ -322,8 +345,7 @@ export function PolicyEditor({
           </TabsContent>
 
           <TabsContent value="raw" className="space-y-1.5">
-            <Textarea name="raw" defaultValue={JSON.stringify(current, null, 2)} className="min-h-96 font-mono text-xs" spellCheck={false} aria-label="Policy JSON" />
-            <Hint>Keys you leave out keep their current value, and keys outside the catalogue are preserved as Jellyfin returned them. Values are type-checked before the preview.</Hint>
+            <RawPanel initial={JSON.stringify(current, null, 2)} />
           </TabsContent>
         </Tabs>
 

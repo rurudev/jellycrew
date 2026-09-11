@@ -19,8 +19,14 @@ export function IdCheckboxes({ name, options, selected, searchFrom = 10, empty =
   const uid = useId();
   const [chosen, setChosen] = useState<string[]>(selected);
   const [query, setQuery] = useState("");
-  const known = new Set(options.map((o) => o.id));
-  const rows = [...options.map((o) => ({ ...o, missing: false })), ...selected.filter((id) => !known.has(id)).map((id) => ({ id, label: id, missing: true }))];
+  // Two checkboxes for one id would submit it twice, so an id repeated by the server or by the
+  // stored policy is rendered once.
+  const unique = new Map<string, IdOption>();
+  for (const option of options) if (!unique.has(option.id)) unique.set(option.id, option);
+  const rows = [
+    ...[...unique.values()].map((o) => ({ ...o, missing: false })),
+    ...[...new Set(selected)].filter((id) => !unique.has(id)).map((id) => ({ id, label: id, missing: true })),
+  ];
   const q = query.trim().toLowerCase();
   const shown = q ? rows.filter((r) => r.label.toLowerCase().includes(q) || r.id.toLowerCase().includes(q)) : rows;
   const toggle = (id: string, on: boolean) => setChosen((prev) => (on ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((x) => x !== id)));
@@ -31,10 +37,19 @@ export function IdCheckboxes({ name, options, selected, searchFrom = 10, empty =
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Inside the editor form: Enter here filters, it does not submit the policy.
+            if (e.key === "Enter") e.preventDefault();
+            if (e.key === "Escape" && query) {
+              e.preventDefault();
+              setQuery("");
+            }
+          }}
           placeholder={`Search ${rows.length} entries`}
           aria-label={`Search ${name}`}
           className="max-w-xs"
           type="search"
+          data-no-dirty
         />
       ) : null}
       {rows.length === 0 ? <p className="text-muted-foreground">{empty}</p> : null}

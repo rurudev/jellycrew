@@ -10,6 +10,7 @@ export function Section({
   children,
   className,
   id,
+  level = 2,
 }: {
   title: ReactNode;
   description?: ReactNode;
@@ -18,13 +19,16 @@ export function Section({
   className?: string;
   /** Anchor target for in-page navigation. */
   id?: string;
+  /** Heading level. Use 3 when the section sits inside another section's region. */
+  level?: 2 | 3;
 }) {
   const headingId = useId();
+  const Heading = level === 3 ? "h3" : "h2";
   return (
     <Card id={id} role="region" aria-labelledby={headingId} className={cn("scroll-mt-4", className)}>
       <CardHeader>
         <CardTitle>
-          <h2 id={headingId}>{title}</h2>
+          <Heading id={headingId}>{title}</Heading>
         </CardTitle>
         {description ? <CardDescription className="text-xs">{description}</CardDescription> : null}
         {actions ? <CardAction className="flex items-center gap-2">{actions}</CardAction> : null}
