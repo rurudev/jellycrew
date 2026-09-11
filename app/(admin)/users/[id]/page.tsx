@@ -52,6 +52,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
   const profiles = listProfiles();
   const assigned = row.profileId ? profiles.find((p) => p.id === row.profileId) ?? null : null;
   const drift = userDrift(policy, assigned);
+  const driftKeys = new Set((drift ?? []).map((c) => c.key));
   // Needs the assigned profile, which only the detail knows, so this one waits.
   const adopt = assigned && drift?.length ? await previewAdopt(assigned.id, id) : null;
   const mailConfigured = isMailConfigured();
@@ -118,7 +119,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
               </Link>
             }
           >
-            <AccessSummary policy={policy} profile={assigned} refData={ref} />
+            <AccessSummary policy={policy} profile={assigned ? { id: assigned.id, name: assigned.name } : null} driftKeys={driftKeys} refData={ref} />
           </Section>
 
           <Section title="Sessions">
@@ -242,7 +243,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                       <input type="hidden" name="userId" value={id} />
                       <input type="hidden" name="sourceId" value={copyFrom} />
                       <input type="hidden" name="confirm" value="1" />
-                      <SubmitButton size="sm" pendingLabel="Copying…">
+                      <SubmitButton size="sm" variant="outline" pendingLabel="Copying…">
                         Confirm copy
                       </SubmitButton>
                     </form>

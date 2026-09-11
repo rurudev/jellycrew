@@ -17,9 +17,9 @@ export function ProfileCard({ userId, profiles, assigned, drift, adopt }: { user
     <Section title="Profile">
       <form action={assignProfileAction} className="space-y-2">
         <input type="hidden" name="userId" value={userId} />
-        <FormField id="profileId" label="Assigned profile" help="Assigning only records the link. Apply pushes the profile's managed fields to Jellyfin.">
-          <div className="flex gap-2">
-            <NativeSelect name="profileId" defaultValue={assigned?.id ?? ""} className="min-w-0 flex-1">
+        <div className="flex items-end gap-2">
+          <FormField id="profileId" label="Assigned profile" className="min-w-0 flex-1">
+            <NativeSelect name="profileId" defaultValue={assigned?.id ?? ""} className="w-full">
               <option value="">No profile</option>
               {profiles.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -27,11 +27,12 @@ export function ProfileCard({ userId, profiles, assigned, drift, adopt }: { user
                 </option>
               ))}
             </NativeSelect>
-            <SubmitButton variant="outline" pendingLabel="Assigning…">
-              Assign
-            </SubmitButton>
-          </div>
-        </FormField>
+          </FormField>
+          <SubmitButton variant="outline" pendingLabel="Assigning…">
+            Assign
+          </SubmitButton>
+        </div>
+        <Hint>Assigning only records the link. Apply pushes the profile&apos;s managed fields to Jellyfin.</Hint>
       </form>
       {assigned ? (
         <div className="mt-4 space-y-3">

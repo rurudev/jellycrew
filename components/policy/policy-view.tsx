@@ -100,6 +100,17 @@ export function PolicyRow({ field, value, refData, drift = false }: { field: Pol
   );
 }
 
+/** Keys Jellyfin returned that the catalogue does not know; shown wherever the policy is, never folded away. */
+export function UnknownFields({ fields }: { fields: Record<string, unknown> }) {
+  return (
+    <section className="rounded-lg border border-warning/40 p-3">
+      <h3 className="font-medium">Unknown fields</h3>
+      <p className="mb-2 text-xs text-muted-foreground">Returned by Jellyfin but not in this app&apos;s catalog. They are preserved on save.</p>
+      <pre className="overflow-x-auto text-xs">{JSON.stringify(fields, null, 2)}</pre>
+    </section>
+  );
+}
+
 /** Read-only grouped rendering of a full UserPolicy, plus any keys the catalog does not know. */
 export function PolicyView({ policy, refData, drift }: { policy: Record<string, unknown>; refData: ReferenceData; /** Keys that differ from the assigned profile. */ drift?: ReadonlySet<string> }) {
   const known = new Set<string>();
@@ -120,13 +131,7 @@ export function PolicyView({ policy, refData, drift }: { policy: Record<string, 
           </section>
         );
       })}
-      {Object.keys(policy).some((k) => !known.has(k)) ? (
-        <section className="rounded-lg border border-warning/40 p-3">
-          <h3 className="font-medium">Unknown fields</h3>
-          <p className="mb-2 text-xs text-muted-foreground">Returned by Jellyfin but not in this app&apos;s catalog. They are preserved on save.</p>
-          <pre className="overflow-x-auto text-xs">{JSON.stringify(Object.fromEntries(Object.entries(policy).filter(([k]) => !known.has(k))), null, 2)}</pre>
-        </section>
-      ) : null}
+      {Object.keys(policy).some((k) => !known.has(k)) ? <UnknownFields fields={Object.fromEntries(Object.entries(policy).filter(([k]) => !known.has(k)))} /> : null}
     </div>
   );
 }

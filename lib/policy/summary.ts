@@ -1,27 +1,11 @@
-import { JELLYFIN_DEFAULT_MANAGED_POLICY } from "./defaults";
+import { JELLYFIN_DEFAULT_POLICY } from "./defaults";
 import { policyValueEqual } from "./diff";
 import { POLICY_FIELDS, POLICY_GROUPS, type PolicyFieldDef, type PolicyGroupId } from "./fields";
-
-/**
- * Jellyfin 10.11's new-user values for the per-user fields (the managed ones live in
- * defaults.ts). Only used to decide which fields are worth surfacing first; never written.
- */
-export const PER_USER_DEFAULTS: Record<string, unknown> = {
-  IsAdministrator: false,
-  IsDisabled: false,
-  IsHidden: true,
-  EnableAllDevices: true,
-  EnabledDevices: [],
-  AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
-  PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider",
-  InvalidLoginAttemptCount: 0,
-  LoginAttemptsBeforeLockout: -1,
-};
 
 export interface SummaryRow {
   field: PolicyFieldDef;
   value: unknown;
-  /** The assigned profile defines this field and the live value differs from it. */
+  /** The live value differs from the assigned profile (per the caller's drift diff). */
   drift: boolean;
   /** The live value differs from Jellyfin's new-user default. */
   nonDefault: boolean;
@@ -38,33 +22,34 @@ export interface PolicySummary {
   groups: SummaryGroup[];
   highlighted: number;
   total: number;
-}
-
-function defaultFor(key: string): unknown {
-  return key in JELLYFIN_DEFAULT_MANAGED_POLICY ? JELLYFIN_DEFAULT_MANAGED_POLICY[key] : PER_USER_DEFAULTS[key];
+  /** Keys Jellyfin returned that the catalogue does not know. Never hidden. */
+  unknown: Record<string, unknown>;
 }
 
 /**
- * What an admin needs to see first: every catalogued field whose live value differs from the
- * assigned profile (drift) or from Jellyfin's new-user default. Everything else is default and
- * can stay folded away.
+ * What an admin needs to see first: every catalogued field whose live value drifts from the
+ * assigned profile (`drift` is the key set of the page's drift diff, so both sections agree)
+ * or differs from Jellyfin's new-user default. Everything else can stay folded away.
  */
-export function summarizePolicy(live: Record<string, unknown>, profilePolicy: Record<string, unknown> | null): PolicySummary {
+export function summarizePolicy(live: Record<string, unknown>, drift: ReadonlySet<string>): PolicySummary {
   const groups: SummaryGroup[] = [];
+  const known = new Set<string>();
   let highlighted = 0;
   for (const g of POLICY_GROUPS) {
     const rows: SummaryRow[] = [];
     for (const field of POLICY_FIELDS) {
       if (field.group !== g.id) continue;
+      known.add(field.key);
       const value = live[field.key];
-      const drift = profilePolicy !== null && field.key in profilePolicy && !policyValueEqual(value, profilePolicy[field.key]);
-      const nonDefault = !policyValueEqual(value, defaultFor(field.key));
-      if (drift || nonDefault) rows.push({ field, value, drift, nonDefault });
+      const drifted = drift.has(field.key);
+      const nonDefault = !policyValueEqual(value, JELLYFIN_DEFAULT_POLICY[field.key]);
+      if (drifted || nonDefault) rows.push({ field, value, drift: drifted, nonDefault });
     }
     if (rows.length) {
       groups.push({ id: g.id, title: g.title, rows });
       highlighted += rows.length;
     }
   }
-  return { groups, highlighted, total: POLICY_FIELDS.length };
+  const unknown = Object.fromEntries(Object.entries(live).filter(([k]) => !known.has(k)));
+  return { groups, highlighted, total: POLICY_FIELDS.length, unknown };
 }

@@ -3,7 +3,8 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { audit, userMeta } from "@/lib/db/schema";
 import { call } from "@/lib/jellyfin/client";
-import { JELLYFIN_DEFAULT_MANAGED_POLICY } from "@/lib/policy/defaults";
+import { JELLYFIN_DEFAULT_MANAGED_POLICY, JELLYFIN_DEFAULT_POLICY } from "@/lib/policy/defaults";
+import { POLICY_FIELDS } from "@/lib/policy/fields";
 import { extractManagedFields } from "@/lib/policy/merge";
 import { policyHash } from "@/lib/policy/hash";
 import { ProtectionError } from "@/lib/policy/protection";
@@ -50,8 +51,10 @@ describe("profiles and policy application", () => {
   it("hardcoded defaults match a freshly created Jellyfin user", async () => {
     const u = await createRawUser(uniqueName("defaults"));
     try {
-      const managed = extractManagedFields(await livePolicy(u.id));
-      expect(managed).toEqual(JELLYFIN_DEFAULT_MANAGED_POLICY);
+      const live = await livePolicy(u.id);
+      expect(extractManagedFields(live)).toEqual(JELLYFIN_DEFAULT_MANAGED_POLICY);
+      // Every catalogued field, per-user ones included: the user page's access summary relies on these.
+      expect(Object.fromEntries(POLICY_FIELDS.map((f) => [f.key, live[f.key] ?? null]))).toEqual(JELLYFIN_DEFAULT_POLICY);
     } finally {
       await deleteRawUser(u.id);
     }

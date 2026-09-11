@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { PolicyRow, PolicyView } from "@/components/policy/policy-view";
+import { PolicyRow, PolicyView, UnknownFields } from "@/components/policy/policy-view";
 import { summarizePolicy } from "@/lib/policy/summary";
 import type { ReferenceData } from "@/lib/services/reference";
 import { AccessToggles } from "./access-toggles";
 
 /**
- * The access section: first the fields that differ from the assigned profile or from
- * Jellyfin's defaults (usually a handful), the full 44-field view behind a toggle.
+ * The access section: first the fields that drift from the assigned profile or differ from
+ * Jellyfin's defaults (usually a handful), the full 44-field view behind a toggle. `driftKeys`
+ * comes from the page's drift diff so this and the profile card never disagree.
  */
-export function AccessSummary({ policy, profile, refData }: { policy: Record<string, unknown>; profile: { id: string; name: string; policy: Record<string, unknown> } | null; refData: ReferenceData }) {
-  const summary = summarizePolicy(policy, profile?.policy ?? null);
-  const drifted = new Set(summary.groups.flatMap((g) => g.rows.filter((r) => r.drift).map((r) => r.field.key)));
-  const drifting = drifted.size;
+export function AccessSummary({ policy, profile, driftKeys, refData }: { policy: Record<string, unknown>; profile: { id: string; name: string } | null; driftKeys: ReadonlySet<string>; refData: ReferenceData }) {
+  const summary = summarizePolicy(policy, driftKeys);
+  const drifting = summary.groups.reduce((n, g) => n + g.rows.filter((r) => r.drift).length, 0);
   const intro =
     summary.highlighted === 0 ? (
       <p className="text-muted-foreground">Every field is at Jellyfin&apos;s default{profile ? " and matches the profile" : ""}.</p>
@@ -29,14 +29,14 @@ export function AccessSummary({ policy, profile, refData }: { policy: Record<str
         .
       </p>
     );
+  const hasUnknown = Object.keys(summary.unknown).length > 0;
   return (
     <AccessToggles
-      highlighted={summary.highlighted}
       total={summary.total}
       summary={
         <div className="space-y-3">
           {intro}
-          {summary.groups.length ? (
+          {summary.groups.length || hasUnknown ? (
             <div className="grid gap-4 lg:grid-cols-2">
               {summary.groups.map((g) => (
                 <section key={g.id} className="rounded-lg border p-3">
@@ -48,11 +48,12 @@ export function AccessSummary({ policy, profile, refData }: { policy: Record<str
                   </dl>
                 </section>
               ))}
+              {hasUnknown ? <UnknownFields fields={summary.unknown} /> : null}
             </div>
           ) : null}
         </div>
       }
-      full={<PolicyView policy={policy} refData={refData} drift={drifted} />}
+      full={<PolicyView policy={policy} refData={refData} drift={driftKeys} />}
     />
   );
 }
