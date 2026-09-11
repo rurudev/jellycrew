@@ -21,10 +21,10 @@ export function PlayMethodBadge({ s }: { s: SessionView }) {
   );
 }
 
-export function SessionsTable({ sessions, showUser = true, returnTo }: { sessions: SessionView[]; showUser?: boolean; returnTo: string }) {
+export function SessionsTable({ sessions, showUser = true, returnTo, variant = "card" }: { sessions: SessionView[]; showUser?: boolean; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
   const cols = showUser ? 7 : 6;
   return (
-    <Table variant={showUser ? "card" : "plain"}>
+    <Table variant={variant}>
       <TableHeader>
         <TableRow>
           {showUser ? <TableHead>User</TableHead> : null}

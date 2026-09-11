@@ -181,11 +181,11 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
       </Section>
 
       <Section title="Sessions">
-        <SessionsTable sessions={sessions} showUser={false} returnTo={returnTo} />
+        <SessionsTable sessions={sessions} showUser={false} returnTo={returnTo} variant="plain" />
       </Section>
 
       <Section title="Devices">
-        <DevicesTable devices={devices} showUser={false} returnTo={returnTo} />
+        <DevicesTable devices={devices} showUser={false} returnTo={returnTo} variant="plain" />
       </Section>
 
       <Section title="Actions">

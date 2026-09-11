@@ -3,7 +3,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Chip, Tag } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { LinkRow, SortHead, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LinkRow } from "@/components/ui/link-row";
+import { SortHead, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Timestamp } from "@/components/ui/timestamp";
 import { usersQueryToParams, type SortKey, type UsersQuery } from "@/lib/users/query";
 import type { UserRow } from "@/lib/users/types";
@@ -56,8 +57,10 @@ export function UsersTable({ rows, query, selectable = false }: { rows: UserRow[
         {rows.map((r) => (
           <LinkRow key={r.id} href={`/users/${r.id}`}>
             {selectable ? (
-              <TableCell>
-                <input type="checkbox" name="userIds" value={r.id} aria-label={`Select ${r.name}`} className="size-4 accent-primary" />
+              <TableCell data-no-row-link className="p-0">
+                <label className="flex h-9 cursor-pointer items-center px-3">
+                  <input type="checkbox" name="userIds" value={r.id} aria-label={`Select ${r.name}`} className="size-4 accent-primary" />
+                </label>
               </TableCell>
             ) : null}
             <TableCell>
@@ -87,8 +90,8 @@ export function UsersTable({ rows, query, selectable = false }: { rows: UserRow[
             <TableCell>
               <Timestamp date={r.lastActivity} />
             </TableCell>
-            <TableCell className="text-right">{r.activeSessions}</TableCell>
-            <TableCell className="text-right">{r.deviceCount}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{r.activeSessions}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{r.deviceCount}</TableCell>
             <TableCell>{r.expiresAt ? <Timestamp date={r.expiresAt} /> : <span className="text-muted-foreground">never</span>}</TableCell>
             <TableCell className="whitespace-normal">
               <div className="flex flex-wrap gap-1">

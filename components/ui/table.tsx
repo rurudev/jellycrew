@@ -1,26 +1,27 @@
-"use client"
-
+// No "use client" here on purpose (shadcn ships one): the kit is server-safe and every table on
+// every page would otherwise become a client boundary. The one interactive piece, LinkRow, lives
+// in components/ui/link-row.tsx.
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { cn } from "cn"
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from "lucide-react"
 
 /**
- * shadcn Table, tuned for the console: 36 px rows (cells stretch for taller content), 13 px cells, quiet 12 px headers that stay
- * put while the page scrolls on wide screens, and a bordered surface when the table stands on
- * its own (`variant="card"`). Inside a Section use `variant="plain"`.
+ * shadcn Table, tuned for the console: 36 px rows (cells stretch for taller content), 13 px cells
+ * that wrap unless a cell opts into `whitespace-nowrap`, quiet 12 px headers, horizontal scrolling
+ * when a table is wider than its container, and a bordered surface when the table stands on its
+ * own (`variant="card"`). Inside a Section use `variant="plain"`.
  */
 function Table({ className, variant = "card", ...props }: React.ComponentProps<"table"> & { variant?: "card" | "plain" }) {
   return (
-    <div data-slot="table-container" className={cn("relative w-full max-md:overflow-x-auto", variant === "card" && "rounded-lg border bg-card")}>
+    <div data-slot="table-container" className={cn("relative w-full overflow-x-auto", variant === "card" && "rounded-lg border bg-card")}>
       <table data-slot="table" className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   )
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
-  return <thead data-slot="table-header" className={cn("z-10 bg-card md:sticky md:top-0 [&_tr]:border-b", className)} {...props} />
+  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
@@ -52,7 +53,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
-  return <td data-slot="table-cell" className={cn("h-9 px-3 py-1.5 align-middle whitespace-nowrap [&:has([type=checkbox])]:pr-0", className)} {...props} />
+  return <td data-slot="table-cell" className={cn("h-9 px-3 py-1.5 align-middle [&:has([type=checkbox])]:pr-0", className)} {...props} />
 }
 
 function TableCaption({ className, ...props }: React.ComponentProps<"caption">) {
@@ -84,26 +85,4 @@ function SortHead({
   )
 }
 
-/**
- * A row that opens `href` when clicked anywhere that is not itself interactive, while the
- * first cell keeps a real link for the keyboard, middle-click and screen readers. Nothing is
- * overlaid, so tooltips and buttons inside the row keep working.
- */
-function LinkRow({ href, className, onClick, ...props }: React.ComponentProps<"tr"> & { href: string }) {
-  const router = useRouter()
-  return (
-    <TableRow
-      className={cn("cursor-pointer", className)}
-      onClick={(e) => {
-        onClick?.(e)
-        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-        if ((e.target as HTMLElement).closest("a, button, input, select, textarea, label, summary, [role=button]")) return
-        if (window.getSelection()?.toString()) return
-        router.push(href)
-      }}
-      {...props}
-    />
-  )
-}
-
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption, SortHead, LinkRow }
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption, SortHead }

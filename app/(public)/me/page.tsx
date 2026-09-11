@@ -55,7 +55,7 @@ export default async function MePage(props: PageProps<"/me">) {
         <KeyValue>
           <KeyValue.Item label="Server">{overview.serverName}</KeyValue.Item>
           <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-muted-foreground">none</span>}</KeyValue.Item>
-          <KeyValue.Item label="Access until">{overview.expiresAt ? <Timestamp date={overview.expiresAt} /> : "no expiry"}</KeyValue.Item>
+          <KeyValue.Item label="Access until">{overview.expiresAt ? <Timestamp date={overview.expiresAt} absolute /> : "no expiry"}</KeyValue.Item>
         </KeyValue>
       </Section>
 

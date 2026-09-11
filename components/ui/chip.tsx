@@ -9,5 +9,5 @@ export function Chip({ className, ...props }: Omit<ComponentProps<typeof Badge>,
 
 /** A fixed attribute of a record ("admin", "hidden"): quiet, mono, never coloured. */
 export function Tag({ className, ...props }: Omit<ComponentProps<typeof Badge>, "variant">) {
-  return <Badge variant="outline" className={cn("rounded-sm px-1.5 font-mono font-normal text-muted-foreground", className)} {...props} />;
+  return <Badge variant="outline" className={cn("px-1.5 font-mono font-normal text-muted-foreground", className)} {...props} />;
 }

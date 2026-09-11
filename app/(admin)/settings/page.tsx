@@ -60,10 +60,10 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
           <KeyValue>
             <KeyValue.Item label="Interval">every {LIFECYCLE_INTERVAL_MS / 60000} minutes</KeyValue.Item>
             <KeyValue.Item label="Last started">
-              <Timestamp date={job?.lastStartedAt ?? null} />
+              <Timestamp date={job?.lastStartedAt ?? null} absolute />
             </KeyValue.Item>
             <KeyValue.Item label="Last finished">
-              <Timestamp date={job?.lastFinishedAt ?? null} />
+              <Timestamp date={job?.lastFinishedAt ?? null} absolute />
             </KeyValue.Item>
             <KeyValue.Item label="Running">{job?.lockUntil && job.lockUntil > new Date() ? "yes" : "no"}</KeyValue.Item>
             <KeyValue.Item label="Last result">

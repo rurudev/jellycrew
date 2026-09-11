@@ -50,22 +50,22 @@ export function LifecycleCard({ row, assigned, graceDays, isSelf }: { row: UserR
       <KeyValue className="mt-4">
         {row.meta.disabledByAppAt ? (
           <KeyValue.Item label="Disabled by app">
-            <Timestamp date={row.meta.disabledByAppAt} /> ({row.meta.disabledReason})
+            <Timestamp date={row.meta.disabledByAppAt} absolute /> ({row.meta.disabledReason})
           </KeyValue.Item>
         ) : null}
         <KeyValue.Item label="Last login">
-          <Timestamp date={row.lastLogin} />
+          <Timestamp date={row.lastLogin} absolute />
         </KeyValue.Item>
         <KeyValue.Item label="Last activity">
-          <Timestamp date={row.lastActivity} />
+          <Timestamp date={row.lastActivity} absolute />
         </KeyValue.Item>
         <KeyValue.Item label="First seen by app">
-          <Timestamp date={row.meta.firstSeenAt} />
+          <Timestamp date={row.meta.firstSeenAt} absolute />
         </KeyValue.Item>
         <KeyValue.Item label="Deletion">
           {row.meta.deleteAfter ? (
             <>
-              scheduled <Timestamp date={row.meta.deleteAfter} />
+              scheduled <Timestamp date={row.meta.deleteAfter} absolute />
             </>
           ) : (
             <span className="text-muted-foreground">not scheduled</span>

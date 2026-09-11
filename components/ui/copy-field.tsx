@@ -38,7 +38,7 @@ export function CopyButton({ value, label = "Copy", size = "sm", variant = "outl
 export function CopyField({ value, label = "Copy", className }: { value: string; label?: string; className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <code className="min-w-0 flex-1 truncate rounded-md border border-input bg-muted/40 px-2.5 py-1.5 font-mono text-xs" title={value}>
+      <code className="min-w-0 flex-1 break-all rounded-md border border-input bg-muted/40 px-2.5 py-1.5 font-mono text-xs">
         {value}
       </code>
       <CopyButton value={value} label={label} />

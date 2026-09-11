@@ -6,9 +6,9 @@ import { Timestamp } from "@/components/ui/timestamp";
 import type { DeviceView } from "@/lib/services/devices";
 import { revokeDeviceAction } from "@/app/(admin)/sessions/actions";
 
-export function DevicesTable({ devices, showUser = true, returnTo }: { devices: DeviceView[]; showUser?: boolean; returnTo: string }) {
+export function DevicesTable({ devices, showUser = true, returnTo, variant = "card" }: { devices: DeviceView[]; showUser?: boolean; returnTo: string; /** `plain` inside a Section. */ variant?: "card" | "plain" }) {
   return (
-    <Table variant={showUser ? "card" : "plain"}>
+    <Table variant={variant}>
       <TableHeader>
         <TableRow>
           <TableHead>Device</TableHead>
