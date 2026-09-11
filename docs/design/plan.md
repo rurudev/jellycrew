@@ -53,7 +53,7 @@ Update the State column (planned → in progress → done, with the merge commit
 - `@custom-variant dark` bound to `[data-theme="dark"]` and to `prefers-color-scheme` when no attribute is set, so the 70 existing `dark:` classes follow the toggle during the migration. Removed in package 16.
 - Root layout reads the `jellycrew_theme` cookie (validated by `lib/theme.ts`) and sets `data-theme` on `<html>`. `ThemeToggle` cycles system → light → dark through the server action, then `router.refresh()`.
 
-**Verified by.** `lib/ui/contrast.test.ts` parses `globals.css` and asserts WCAG ratios for every text/background pair in both themes (fg ≥ 7:1, fg-muted ≥ 6:1, fg-subtle ≥ 4.5:1, accent-fg on accent ≥ 4.5:1, semantic tones on surface ≥ 4.5:1). `lib/theme.test.ts` covers cookie parsing. Lint, typecheck, unit. Playwright: `/login` and `/users` in system, light and dark; reload keeps the theme with no flash; existing `dark:` styling follows the toggle.
+**Verified by.** `lib/ui/contrast.test.ts` parses `globals.css` and asserts WCAG ratios for every text/background pair in both themes (fg ≥ 7:1, fg-muted ≥ 5.5:1, fg-subtle ≥ 4.5:1, accent-fg on accent ≥ 4.5:1, semantic tones on every surface ≥ 4.5:1). `lib/theme.test.ts` covers cookie parsing. Lint, typecheck, unit. Playwright: `/login` and `/users` in system, light and dark; reload keeps the theme with no flash; existing `dark:` styling follows the toggle.
 
 **Out of scope.** Any component or page change beyond mounting the toggle. Pages still look like today.
 
