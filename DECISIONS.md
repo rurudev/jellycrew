@@ -35,3 +35,18 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - Result messages after server-action forms travel as `?ok=`/`?error=` query params (rendered by `components/notice.tsx`), which keeps forms progressive-enhancement friendly without client state.
 - The global sessions page re-renders through `router.refresh()` every 10 s from a tiny client component that pauses while the tab is hidden; no JSON API is exposed for it.
 - `/` redirects to `/users`; server and app health details will live on the settings page (stage 4) rather than a dashboard.
+
+## Stage 3 — Policy editing, profiles and safeguards
+
+- Field classification lives in the catalog (`scope: "profile" | "user"` in `lib/policy/fields.ts`); `EnableUserPreferenceAccess`, `EnablePublicSharing`, `EnableRemoteControlOfOtherUsers` and `EnableSharedDeviceControl` are treated as profile-managed "other permissions", channels (`EnableAllChannels`, `EnabledChannels`, `BlockedChannels`) as library access.
+- "Blank" profiles use a hardcoded copy of Jellyfin 10.11's new-user defaults (`lib/policy/defaults.ts`); an integration test compares it with a freshly created user so an upgrade that changes defaults fails loudly.
+- Stale-write protection carries the base policy and its SHA-256 (canonical JSON) in hidden form fields; a mismatch on save returns the diff of what changed server-side and re-seeds the editor from the live policy with the operator's edits reapplied.
+- The policy editor is a two-step form (Preview → Confirm) driven by `useActionState`; because React resets forms after an action, the parsed edit is echoed back in the action state and the form re-keys itself with those values as defaults.
+- Raw JSON edits are merged onto the live policy (omitted keys keep their value); values are type-checked against the catalog before preview and unknown keys are preserved.
+- Jellyfin refuses `IsDisabled=true` for administrators (HTTP 403 "Administrators cannot be disabled"); the app checks first and tells the operator to remove admin rights before disabling.
+- Protection rules (`lib/policy/protection.ts`): never disable/delete/demote yourself; never disable/delete/demote an administrator unless another *enabled* administrator remains.
+- "Assign profile" only records the link (drift becomes visible); "Apply profile" pushes managed fields and records the link; "Adopt" overwrites the profile from the user's live managed fields and reports how many other members drift.
+- Copy-policy-from-user copies profile-managed fields only, so admin rights, device allowlists and lockout counters never travel between accounts.
+- Bulk actions run through one service (`lib/services/bulk.ts`): preview per user, sequential execution, a result row per user, plus one `bulk.<kind>` audit row with counts. Administrators are skipped by bulk disable.
+- Password minimum length is a setting (`minPasswordLength`, default 8) enforced for admin-set passwords and reused by later stages.
+- Route-level constants shared with client components live in pure modules (`lib/bulk/kinds.ts`, `lib/policy/*`) so no client bundle can pull in the database or the Jellyfin client.

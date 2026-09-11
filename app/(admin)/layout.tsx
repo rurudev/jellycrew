@@ -7,6 +7,7 @@ import { logoutAction } from "./actions";
 
 const nav: Array<{ href: string; label: string }> = [
   { href: "/users", label: "Users" },
+  { href: "/profiles", label: "Profiles" },
   { href: "/sessions", label: "Sessions" },
 ];
 

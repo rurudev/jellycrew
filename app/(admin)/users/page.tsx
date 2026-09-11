@@ -1,9 +1,12 @@
 import { requireAdmin } from "@/lib/auth/session";
 import { listUsers } from "@/lib/services/users";
 import { applyUsersQuery, parseUsersQuery } from "@/lib/users/query";
+import { listProfiles } from "@/lib/services/profiles";
 import { Notice } from "@/components/notice";
+import { BulkForm } from "@/components/users/bulk-form";
 import { UsersFilters } from "@/components/users/users-filters";
 import { UsersTable } from "@/components/users/users-table";
+import { bulkAction } from "./bulk-actions";
 
 export const metadata = { title: "Users" };
 
@@ -14,6 +17,7 @@ export default async function UsersPage(props: PageProps<"/users">) {
   const all = await listUsers();
   const rows = applyUsersQuery(all, query);
   const labels = [...new Set(all.flatMap((r) => r.labels))].sort();
+  const profiles = listProfiles().map((p) => ({ id: p.id, name: p.name }));
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -22,8 +26,10 @@ export default async function UsersPage(props: PageProps<"/users">) {
         </h1>
       </div>
       <Notice params={params} />
-      <UsersFilters query={query} labels={labels} profiles={[]} />
-      <UsersTable rows={rows} query={query} />
+      <UsersFilters query={query} labels={labels} profiles={profiles} />
+      <BulkForm action={bulkAction} profiles={profiles}>
+        <UsersTable rows={rows} query={query} selectable />
+      </BulkForm>
     </div>
   );
 }

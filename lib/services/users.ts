@@ -1,6 +1,7 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { userMeta, type AuditRow, type UserMeta } from "@/lib/db/schema";
+import { profile as profileTable, userMeta, type AuditRow, type DisabledReason, type Profile, type UserMeta } from "@/lib/db/schema";
+import { driftDiff } from "@/lib/policy/diff";
 import { parseDate } from "@/lib/format";
 import { JellyfinError, fetchUser, fetchUserImage, fetchUsers, type ValidatedUser } from "@/lib/jellyfin";
 import type { SessionView } from "@/lib/sessions/view";
@@ -45,6 +46,21 @@ interface Counts {
   devices: Map<string, number>;
 }
 
+/** Records (or clears) why the app considers a user disabled. */
+export function markDisabledByApp(userId: string, reason: DisabledReason | null, opts: { onlyIfUnset?: boolean } = {}): void {
+  const db = getDb();
+  const meta = getMeta(userId);
+  if (opts.onlyIfUnset && meta.disabledByAppAt) return;
+  db.update(userMeta)
+    .set(reason ? { disabledByAppAt: new Date(), disabledReason: reason, updatedAt: new Date() } : { disabledByAppAt: null, disabledReason: null, updatedAt: new Date() })
+    .where(eq(userMeta.jellyfinUserId, userId))
+    .run();
+}
+
+export function profilesById(): Map<string, Profile> {
+  return new Map(getDb().select().from(profileTable).all().map((p) => [p.id, p]));
+}
+
 function countBy<T>(items: T[], key: (t: T) => string | null): Map<string, number> {
   const m = new Map<string, number>();
   for (const item of items) {
@@ -54,10 +70,12 @@ function countBy<T>(items: T[], key: (t: T) => string | null): Map<string, numbe
   return m;
 }
 
-export function toUserRow(user: ValidatedUser, meta: UserMeta, counts: Counts, now: Date): UserRow {
+export function toUserRow(user: ValidatedUser, meta: UserMeta, counts: Counts, now: Date, profiles: Map<string, Profile> = new Map()): UserRow {
   const lastLogin = parseDate(user.LastLoginDate);
   const lastActivity = parseDate(user.LastActivityDate);
   const isDisabled = user.Policy?.IsDisabled ?? false;
+  const profile = meta.profileId ? profiles.get(meta.profileId) : undefined;
+  const drift = profile ? driftDiff((user.Policy ?? {}) as Record<string, unknown>, profile.policy).length > 0 : null;
   return {
     id: user.Id,
     name: user.Name ?? user.Id,
@@ -66,9 +84,9 @@ export function toUserRow(user: ValidatedUser, meta: UserMeta, counts: Counts, n
     isHidden: user.Policy?.IsHidden ?? false,
     imageTag: user.PrimaryImageTag ?? null,
     status: computeUserStatus(isDisabled, meta, now),
-    profileId: meta.profileId,
-    profileName: null,
-    drift: null,
+    profileId: profile?.id ?? null,
+    profileName: profile?.name ?? null,
+    drift,
     lastLogin,
     lastActivity,
     activityBasis: activityBasis(lastActivity, lastLogin, meta.firstSeenAt),
@@ -92,7 +110,8 @@ async function liveCounts(): Promise<Counts> {
 export async function listUsers(now: Date = new Date()): Promise<UserRow[]> {
   const [users, counts] = await Promise.all([fetchUsers(), liveCounts()]);
   const metas = ensureMetaRows(users.map((u) => u.Id));
-  return users.map((u) => toUserRow(u, metas.get(u.Id)!, counts, now));
+  const profiles = profilesById();
+  return users.map((u) => toUserRow(u, metas.get(u.Id)!, counts, now, profiles));
 }
 
 export interface UserDetail {
@@ -118,7 +137,7 @@ export async function getUserDetail(userId: string, now: Date = new Date()): Pro
   const meta = getMeta(user.Id);
   const counts: Counts = { sessions: countBy(sessions, (s) => s.userId), devices: countBy(devices, (d) => d.lastUserId) };
   return {
-    row: toUserRow(user, meta, counts, now),
+    row: toUserRow(user, meta, counts, now, profilesById()),
     user,
     policy: (user.Policy ?? {}) as Record<string, unknown>,
     sessions: sessions.filter((s) => s.userId === user.Id),

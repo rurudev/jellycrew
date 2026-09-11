@@ -34,20 +34,26 @@ function SortHeader({ col, query }: { col: (typeof columns)[number]; query: User
   );
 }
 
-export function UsersTable({ rows, query }: { rows: UserRow[]; query: UsersQuery }) {
+export function UsersTable({ rows, query, selectable = false }: { rows: UserRow[]; query: UsersQuery; selectable?: boolean }) {
   return (
     <Table>
       <thead>
         <tr>
+          {selectable ? <Th className="w-8"><span className="sr-only">Select</span></Th> : null}
           {columns.map((c) => (
             <SortHeader key={c.key} col={c} query={query} />
           ))}
         </tr>
       </thead>
       <tbody>
-        {rows.length === 0 ? <EmptyRow colSpan={columns.length}>No users match.</EmptyRow> : null}
+        {rows.length === 0 ? <EmptyRow colSpan={columns.length + (selectable ? 1 : 0)}>No users match.</EmptyRow> : null}
         {rows.map((r) => (
           <tr key={r.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+            {selectable ? (
+              <Td>
+                <input type="checkbox" name="userIds" value={r.id} aria-label={`Select ${r.name}`} />
+              </Td>
+            ) : null}
             <Td>
               <Link href={`/users/${r.id}`} className="flex items-center gap-2 font-medium">
                 <Avatar userId={r.id} name={r.name} imageTag={r.imageTag} />

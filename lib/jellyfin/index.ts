@@ -11,6 +11,8 @@ import {
   UserDtoSchema,
   UserListSchema,
   type PlaystateCommand,
+  type UserDto,
+  type UserPolicy,
   type ValidatedAuthResult,
   type ValidatedDevice,
   type ValidatedMediaFolder,
@@ -155,4 +157,25 @@ export async function sendMessageCommand(
 
 export async function deleteDevice(deviceId: string): Promise<void> {
   await call("DeleteDevice", () => jellyfin().DELETE("/Devices", { params: { query: { id: deviceId } } }));
+}
+
+/** Replaces the whole policy. Callers must have fetched it first (read-modify-write). */
+export async function updateUserPolicy(userId: string, policy: Record<string, unknown>): Promise<void> {
+  await call("UpdateUserPolicy", () =>
+    jellyfin().POST("/Users/{userId}/Policy", { params: { path: { userId } }, body: policy as unknown as UserPolicy }),
+  );
+}
+
+/** Updates the user DTO (name and other top-level fields). Send the object just fetched, modified. */
+export async function updateUser(userId: string, dto: ValidatedUser): Promise<void> {
+  await call("UpdateUser", () =>
+    jellyfin().POST("/Users", { params: { query: { userId } }, body: dto as unknown as UserDto }),
+  );
+}
+
+/** Sets a new password. With the API key no current password is needed. */
+export async function setUserPasswordRaw(userId: string, newPassword: string): Promise<void> {
+  await call("UpdateUserPassword", () =>
+    jellyfin().POST("/Users/Password", { params: { query: { userId } }, body: { NewPw: newPassword, ResetPassword: false } }),
+  );
 }

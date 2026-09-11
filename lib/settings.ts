@@ -7,7 +7,16 @@ import { setting } from "@/lib/db/schema";
 /** Every persisted setting, with its validation and default. */
 export const SettingSchemas = {
   deviceId: z.string().min(8),
+  minPasswordLength: z.number().int().min(1).max(128),
 } as const;
+
+export const SETTING_DEFAULTS = {
+  minPasswordLength: 8,
+} as const;
+
+export function getSettingOrDefault<K extends keyof typeof SETTING_DEFAULTS>(key: K): (typeof SETTING_DEFAULTS)[K] {
+  return (getSetting(key) as (typeof SETTING_DEFAULTS)[K] | undefined) ?? SETTING_DEFAULTS[key];
+}
 
 export type SettingKey = keyof typeof SettingSchemas;
 export type SettingValue<K extends SettingKey> = z.infer<(typeof SettingSchemas)[K]>;
