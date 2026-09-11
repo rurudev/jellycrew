@@ -97,3 +97,13 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - `docker-compose.example.yml` documents the two-router exposure model with Traefik: the admin router on an internal hostname, the public router restricted to `/invite`, `/reset`, `/me`, `/healthz`, `/api/public`, `/_next/static` and `/favicon.ico`, plus an optional Traefik rate limit.
 - `docker-compose.ci.yml` + `scripts/compose-check.sh` (`pnpm ops:check`) build the image, bootstrap a Jellyfin container through the app's own harness, and assert the container's healthcheck is `healthy`, `/healthz` reports Jellyfin reachable at the pinned version, and the process is not root. GitHub Actions runs it alongside the unit and integration jobs.
 - The README's online backup uses better-sqlite3's `backup()` from inside the container (the image has no `sqlite3` CLI); stopping and snapshotting the volume is the alternative.
+
+## Design
+
+- Colour tokens live in `app/globals.css` as CSS variables written once with `light-dark()` and switched by `color-scheme`: dark is the default on `:root`, `data-theme="light"` on `<html>` forces light, and no attribute follows the OS. Tailwind exposes them through `@theme inline` as meaning-named utilities (`bg-surface`, `text-fg-muted`, `border-edge`); palette classes such as `zinc-*` are being phased out package by package.
+- The theme choice is a plain `jellycrew_theme` cookie (`light` or `dark`, absent means system; one year, `HttpOnly`, `Secure` when `PUBLIC_BASE_URL` is https) read in the root layout so the server renders the right theme without a flash. A server action sets it from the toggle; it is unrelated to the session cookies.
+- `lib/ui/contrast.test.ts` reads the token values out of `globals.css` and fails the unit suite when any text token drops below its WCAG floor on canvas, surface or surface-2 in either theme (fg 7:1, fg-muted 5.5:1, everything else 4.5:1), so palette edits cannot regress contrast silently.
+- Tailwind's default type scale is redefined to 12 / 13 / 14 / 16 / 20 / 26 px with fixed line heights; the console body is `text-sm` (13 px) and numerals are tabular everywhere. Radii stay 4 / 6 / 8 px.
+- Motion durations are CSS variables (`--duration-fast|base|slow` = 120 / 160 / 200 ms) with one easing (`--ease-standard`); `prefers-reduced-motion` zeroes them except the 80 ms `--duration-fade`.
+- A transitional `@custom-variant dark` keeps the existing `dark:` utilities working under `data-theme` until every component uses tokens; the final design package deletes it together with the last `dark:` classes.
+- Browser baseline for the design work is `light-dark()`, native `<dialog>` and the Popover API (browsers from early 2024 on); no polyfills.

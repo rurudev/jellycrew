@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth/session";
 import { getServerStatus } from "@/lib/services/system";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getTheme } from "@/lib/theme-server";
 import { logoutAction } from "./actions";
 
 const nav: Array<{ href: string; label: string }> = [
@@ -16,7 +18,7 @@ const nav: Array<{ href: string; label: string }> = [
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
   const session = await requireAdmin();
-  const status = await getServerStatus();
+  const [status, theme] = await Promise.all([getServerStatus(), getTheme()]);
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -36,6 +38,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
               {status.serverName ?? "Jellyfin"} {status.version ? `· ${status.version}` : "· unreachable"}
             </span>
             <span>{session.userName}</span>
+            <ThemeToggle theme={theme} />
             <form action={logoutAction}>
               <Button type="submit" variant="ghost" size="sm">
                 Sign out

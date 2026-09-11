@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getTheme } from "@/lib/theme-server";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -10,9 +11,11 @@ export const metadata: Metadata = {
   description: "User management for Jellyfin",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Rendered server-side from the preference cookie so the page never flashes the wrong theme.
+  const theme = await getTheme();
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" data-theme={theme ?? undefined} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans text-sm">{children}</body>
     </html>
   );
