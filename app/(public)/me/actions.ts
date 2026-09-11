@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clearSelfSession, getSelfSession } from "@/lib/auth/session";
@@ -9,11 +8,6 @@ import { PUBLIC_LIMITS, RateLimitedError, enforceLimits } from "@/lib/ratelimit"
 import { currentRequestId } from "@/lib/request-context";
 import { recordAudit } from "@/lib/services/audit";
 import { changeOwnPassword, resendOwnVerification, revokeOwnDevice, setOwnEmail } from "@/lib/services/self";
-
-function back(notice: { ok?: string; error?: string }): never {
-  revalidatePath("/me");
-  redirectWithNotice("/me", notice);
-}
 
 async function requireSelf() {
   const session = await getSelfSession();
@@ -33,28 +27,28 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
   const current = String(formData.get("currentPassword") ?? "");
   const next = String(formData.get("newPassword") ?? "");
   const confirm = String(formData.get("confirmPassword") ?? "");
-  if (!current || !next) back({ error: "Fill in all password fields." });
-  if (next !== confirm) back({ error: "The new passwords do not match." });
+  if (!current || !next) redirectWithNotice("/me", { error: "Fill in all password fields." }, { revalidate: ["/me"] });
+  if (next !== confirm) redirectWithNotice("/me", { error: "The new passwords do not match." }, { revalidate: ["/me"] });
   try {
     enforceLimits([{ key: `me-password:${session.userId}`, ...PUBLIC_LIMITS.loginPerIp }]);
     await changeOwnPassword(session.userId, current, next, await currentRequestId());
   } catch (err) {
-    back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again in a minute." : errorMessage(err) });
+    redirectWithNotice("/me", { error: err instanceof RateLimitedError ? "Too many attempts. Try again in a minute." : errorMessage(err) }, { revalidate: ["/me"] });
   }
-  back({ ok: "Password changed." });
+  redirectWithNotice("/me", { ok: "Password changed." }, { revalidate: ["/me"] });
 }
 
 export async function setEmailAction(formData: FormData): Promise<void> {
   const session = await requireSelf();
   const parsed = z.email("Enter a valid email address.").safeParse(String(formData.get("email") ?? "").trim());
-  if (!parsed.success) back({ error: parsed.error.issues[0]?.message ?? "Invalid email." });
+  if (!parsed.success) redirectWithNotice("/me", { error: parsed.error.issues[0]?.message ?? "Invalid email." }, { revalidate: ["/me"] });
   try {
     enforceLimits([{ key: `me-email:${session.userId}`, max: 5, windowMs: 3_600_000 }]);
     await setOwnEmail(session.userId, parsed.data, await currentRequestId());
   } catch (err) {
-    back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) });
+    redirectWithNotice("/me", { error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) }, { revalidate: ["/me"] });
   }
-  back({ ok: "Verification email sent. Open the link in it to confirm the address." });
+  redirectWithNotice("/me", { ok: "Verification email sent. Open the link in it to confirm the address." }, { revalidate: ["/me"] });
 }
 
 export async function resendVerificationAction(): Promise<void> {
@@ -63,9 +57,9 @@ export async function resendVerificationAction(): Promise<void> {
     enforceLimits([{ key: `me-email:${session.userId}`, max: 5, windowMs: 3_600_000 }]);
     await resendOwnVerification(session.userId, await currentRequestId());
   } catch (err) {
-    back({ error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) });
+    redirectWithNotice("/me", { error: err instanceof RateLimitedError ? "Too many attempts. Try again later." : errorMessage(err) }, { revalidate: ["/me"] });
   }
-  back({ ok: "Verification email sent again." });
+  redirectWithNotice("/me", { ok: "Verification email sent again." }, { revalidate: ["/me"] });
 }
 
 export async function revokeOwnDeviceAction(formData: FormData): Promise<void> {
@@ -74,7 +68,7 @@ export async function revokeOwnDeviceAction(formData: FormData): Promise<void> {
   try {
     await revokeOwnDevice(session.userId, deviceId, await currentRequestId());
   } catch (err) {
-    back({ error: errorMessage(err) });
+    redirectWithNotice("/me", { error: errorMessage(err) }, { revalidate: ["/me"] });
   }
-  back({ ok: "Device signed out." });
+  redirectWithNotice("/me", { ok: "Device signed out." }, { revalidate: ["/me"] });
 }

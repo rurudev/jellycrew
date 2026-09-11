@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 /** Flash messages travel in the URL so plain server-action forms can report results after redirect. */
@@ -10,8 +11,12 @@ export function withNotice(path: string, notice: { ok?: string; error?: string }
   return `${url.pathname}${url.search}`;
 }
 
-/** Redirects with a flash message; the toast reader in the root layout shows it and cleans the URL. */
-export function redirectWithNotice(path: string, notice: { ok?: string; error?: string }): never {
+/**
+ * Redirects with a flash message; the toast reader in the layout shows it and cleans the URL.
+ * `revalidate` lists the paths whose cached render must be refreshed first.
+ */
+export function redirectWithNotice(path: string, notice: { ok?: string; error?: string }, options: { revalidate?: string[] } = {}): never {
+  for (const p of options.revalidate ?? []) revalidatePath(p);
   redirect(withNotice(path, notice));
 }
 

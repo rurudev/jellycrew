@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Suspense } from "react";
-import { NoticeToast } from "@/components/ui/notice-toast";
-import { Toaster } from "@/components/ui/sonner";
 import { getTheme } from "@/lib/theme-server";
 import "./globals.css";
 
@@ -19,13 +16,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const theme = await getTheme();
   return (
     <html lang="en" data-theme={theme ?? undefined} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans text-sm">
-        {children}
-        <Toaster theme={theme ?? "system"} closeButton position="bottom-right" />
-        <Suspense fallback={null}>
-          <NoticeToast />
-        </Suspense>
-      </body>
+      <body className="min-h-full flex flex-col font-sans text-sm">{children}</body>
     </html>
   );
 }

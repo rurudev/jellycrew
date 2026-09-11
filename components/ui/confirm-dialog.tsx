@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useId, useState, type ReactNode } from "react";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { SubmitButton } from "@/components/ui/submit-button";
  * The guard for destructive actions: a dialog whose submit button stays disabled until the
  * operator types `phrase`. The form posts to a server action, so it works exactly like the
  * inline forms it replaced, but nothing destructive is on the page until asked for.
+ * The dialog closes when the action reports back (success or error arrive as `?ok=`/`?error=`
+ * on the same route, which would otherwise leave it open in front of the toast).
  * `disabledReason` renders the trigger disabled with the reason beside it.
  */
 export function ConfirmDialog({
@@ -38,7 +41,20 @@ export function ConfirmDialog({
   size?: "default" | "sm";
 }) {
   const id = useId();
+  const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
+  const params = useSearchParams();
+  const reported = params.has("ok") || params.has("error");
+  // Close when the action reports back. State is adjusted during render (React's pattern for
+  // reacting to a changed input) rather than in an effect.
+  const [lastReported, setLastReported] = useState(reported);
+  if (reported !== lastReported) {
+    setLastReported(reported);
+    if (reported) {
+      setOpen(false);
+      setTyped("");
+    }
+  }
   if (disabledReason) {
     return (
       <div className="space-y-1">
@@ -50,7 +66,13 @@ export function ConfirmDialog({
     );
   }
   return (
-    <AlertDialog onOpenChange={(open) => !open && setTyped("")}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setTyped("");
+      }}
+    >
       <AlertDialogTrigger render={<Button variant={variant} size={size} />}>{label}</AlertDialogTrigger>
       <AlertDialogContent>
         <form action={action} className="grid gap-4">
@@ -67,7 +89,7 @@ export function ConfirmDialog({
               </>
             }
           >
-            <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} autoFocus />
+            <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} />
           </FormField>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

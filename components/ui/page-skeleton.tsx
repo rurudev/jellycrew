@@ -13,7 +13,7 @@ function HeaderSkeleton() {
 
 export function ListSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="space-y-4" aria-busy aria-label="Loading">
+    <div className="space-y-4" role="status" aria-label="Loading">
       <HeaderSkeleton />
       <div className="flex flex-wrap gap-2">
         <Skeleton className="h-8 min-w-48 flex-1" />
@@ -54,7 +54,7 @@ function SectionSkeleton({ lines = 4 }: { lines?: number }) {
 
 export function DetailSkeleton() {
   return (
-    <div className="space-y-4" aria-busy aria-label="Loading">
+    <div className="space-y-4" role="status" aria-label="Loading">
       <Skeleton className="h-3 w-24" />
       <div className="flex items-center gap-3">
         <Skeleton className="size-7 rounded-full" />
@@ -75,7 +75,7 @@ export function DetailSkeleton() {
 
 export function FormSkeleton() {
   return (
-    <div className="space-y-4" aria-busy aria-label="Loading">
+    <div className="space-y-4" role="status" aria-label="Loading">
       <HeaderSkeleton />
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionSkeleton lines={6} />

@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth/session";
-import { getServerStatus } from "@/lib/services/system";
-import { Callout } from "@/components/ui/callout";
+import { NoticeToast } from "@/components/ui/notice-toast";
+import { Toaster } from "@/components/ui/sonner";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getTheme } from "@/lib/theme-server";
 import { logoutAction } from "./actions";
+import { ServerStatusAlerts, ServerStatusItem } from "./server-status";
 
 const nav: Array<{ href: string; label: string }> = [
   { href: "/users", label: "Users" },
@@ -17,8 +19,7 @@ const nav: Array<{ href: string; label: string }> = [
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
-  const session = await requireAdmin();
-  const [status, theme] = await Promise.all([getServerStatus(), getTheme()]);
+  const [session, theme] = await Promise.all([requireAdmin(), getTheme()]);
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b border-border bg-card">
@@ -34,9 +35,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-            <span title={status.reachable ? `Jellyfin ${status.version}` : status.error}>
-              {status.serverName ?? "Jellyfin"} {status.version ? `· ${status.version}` : "· unreachable"}
-            </span>
+            <Suspense fallback={<span>Jellyfin</span>}>
+              <ServerStatusItem />
+            </Suspense>
             <span>{session.userName}</span>
             <ThemeToggle theme={theme} />
             <form action={logoutAction}>
@@ -48,18 +49,15 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 space-y-4 px-4 py-4">
-        {status.reachable && !status.compatible ? (
-          <Callout tone="warning" title="Jellyfin version mismatch">
-            This server runs Jellyfin {status.version}; jellycrew is tested against {status.targetVersion}. Policy fields may differ.
-          </Callout>
-        ) : null}
-        {!status.reachable ? (
-          <Callout tone="error" title="Jellyfin is unreachable">
-            {status.error}
-          </Callout>
-        ) : null}
+        <Suspense fallback={null}>
+          <ServerStatusAlerts />
+        </Suspense>
         {children}
       </main>
+      <Toaster theme={theme ?? "system"} closeButton position="bottom-right" />
+      <Suspense fallback={null}>
+        <NoticeToast />
+      </Suspense>
     </div>
   );
 }

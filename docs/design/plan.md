@@ -9,7 +9,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 1 | Foundation: tokens, theme, type scale | `design/foundation` | done, merged 2026-09-11 |
 | 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done, merged 2026-09-11 (rebased onto shadcn) |
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
-| 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done (2026-09-11, on branch) |
+| 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done, merged 2026-09-11 |
 | 5 | Console shell (header, nav, status) | `design/shell` | planned |
 | 6 | Users list | `design/users-list` | planned |
 | 7 | User detail layout | `design/user-detail-layout` | planned |
@@ -101,7 +101,7 @@ Update the State column (planned → in progress → done, with the merge commit
 **What changes.**
 - shadcn `Dialog`/`AlertDialog` (Base UI) trap focus, close on Esc and backdrop, return focus, and animate per direction §2.4. Server-rendered form content is passed as children, so existing server actions keep working inside dialogs.
 - `ConfirmDialog` embeds the typed-phrase guard; the three existing `ConfirmForm` uses (two in `lifecycle-card.tsx`, one in `profiles/[id]/page.tsx`) become buttons that open it.
-- `Toast` reads `?ok=`/`?error=` on mount, shows a Sonner toast (success or error), and strips the params with `history.replaceState`. The server-action redirect mechanism is unchanged.
+- `NoticeToast` reads `?ok=`/`?error=` on mount, shows a Sonner toast (success or error), and strips the params with `history.replaceState(null, …)`; it is mounted in the console layout and a new `app/(public)/me/layout.tsx`, the only surfaces whose actions emit notices. The server-action redirect mechanism is unchanged (`redirectWithNotice` with a `revalidate` option replaces every `back()` copy).
 - Skeletons are static blocks matching each page's shape; `error.tsx` and the new `not-found.tsx` files use `EmptyState` and the system styles.
 
 **Verified by.** Lint, typecheck, unit. Playwright: save settings and observe the toast and a clean URL; open a confirm dialog with the keyboard, type the phrase, Esc closes and focus returns; click a nav link and screenshot immediately to see the skeleton; visit `/users/nope` for the not-found state.
