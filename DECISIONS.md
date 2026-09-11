@@ -88,3 +88,12 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - Mail goes through nodemailer with `SMTP_URL` as the transport URL; every template is plain text with a light HTML twin. The settings page can verify the SMTP connection and optionally send a test mail; the result is stored in the `smtpTestResult` setting.
 - Integration tests run a Mailpit container alongside Jellyfin and read messages through its HTTP API; the `server-only` marker is aliased to a stub in vitest so server modules can be imported by tests.
 - Public pages that read runtime configuration but use no request APIs (`/reset`) are marked `force-dynamic` so `next build` never tries to prerender them without an environment.
+
+## Stage 7 — Ops
+
+- The image is a three-stage `node:22-alpine` build (deps → build → runtime) that runs the Next.js standalone server as uid 1001 with `/data` as the only writable state; `drizzle/` is copied explicitly so migrations run at start regardless of output tracing.
+- `HEALTHCHECK` calls `/healthz` with busybox `wget`; the endpoint returns 200 whenever the app and database work, so a Jellyfin outage shows as `status: degraded` in the body instead of restarting the container.
+- Build tools (`python3 make g++`) are installed only in the deps stage in case `better-sqlite3` has no prebuilt binary for the platform; the runtime stage carries no compilers.
+- `docker-compose.example.yml` documents the two-router exposure model with Traefik: the admin router on an internal hostname, the public router restricted to `/invite`, `/reset`, `/me`, `/healthz`, `/api/public`, `/_next/static` and `/favicon.ico`, plus an optional Traefik rate limit.
+- `docker-compose.ci.yml` + `scripts/compose-check.sh` (`pnpm ops:check`) build the image, bootstrap a Jellyfin container through the app's own harness, and assert the container's healthcheck is `healthy`, `/healthz` reports Jellyfin reachable at the pinned version, and the process is not root. GitHub Actions runs it alongside the unit and integration jobs.
+- The README's online backup uses better-sqlite3's `backup()` from inside the container (the image has no `sqlite3` CLI); stopping and snapshotting the volume is the alternative.

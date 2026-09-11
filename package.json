@@ -12,7 +12,9 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "db:generate": "drizzle-kit generate",
-    "jellyfin:gen": "tsx scripts/gen-jellyfin-client.ts"
+    "jellyfin:gen": "tsx scripts/gen-jellyfin-client.ts",
+    "ops:check": "bash scripts/compose-check.sh",
+    "jellyfin:dev": "tsx scripts/dev-jellyfin.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

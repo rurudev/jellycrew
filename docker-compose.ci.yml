@@ -1,0 +1,33 @@
+# Used by `pnpm ops:check` and CI: builds the image and checks the container's healthcheck
+# against a real Jellyfin container. No Traefik.
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.11
+    ports:
+      - "28096:8096"
+    healthcheck:
+      # The image ships curl (its own HEALTHCHECK uses it); the public info endpoint only
+      # answers once the API is up, unlike /health which is 200 during startup migrations.
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8096/System/Info/Public"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  jellycrew:
+    build: .
+    depends_on:
+      jellyfin:
+        condition: service_healthy
+    ports:
+      - "23000:3000"
+    environment:
+      JELLYFIN_URL: http://jellyfin:8096
+      JELLYFIN_API_KEY: ${JELLYFIN_API_KEY:?set by scripts/compose-check.sh}
+      PUBLIC_BASE_URL: http://localhost:23000
+      SESSION_SECRET: ci-session-secret-0123456789abcdef0123456789
+      LOG_LEVEL: info
+    volumes:
+      - jellycrew-ci-data:/data
+
+volumes:
+  jellycrew-ci-data:
