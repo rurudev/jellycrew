@@ -329,7 +329,13 @@ export function UserActions({ user, users, mailConfigured, isSelf, graceDays }: 
               onClick={enable}
             />
           ) : (
-            <ActionItem icon={UserXIcon} label="Disable…" disabled={isSelf} hint="You cannot disable your own account." onClick={() => openDialog("disable")} />
+            <ActionItem
+              icon={UserXIcon}
+              label="Disable…"
+              disabled={isSelf || user.isAdmin}
+              hint={isSelf ? "You cannot disable your own account." : "Jellyfin does not allow disabling administrators. Remove administrator rights first."}
+              onClick={() => openDialog("disable")}
+            />
           )}
           {user.deletionScheduled ? null : (
             <ActionItem
@@ -377,7 +383,7 @@ export function UserActions({ user, users, mailConfigured, isSelf, graceDays }: 
         open={dialog === "disable"}
         onOpenChange={close}
         title={`Disable ${user.name}?`}
-        description="Ends their active sessions and blocks sign-in until the account is enabled again. Nothing is deleted."
+        description="Blocks sign-in until the account is enabled again. Sessions already running are not ended: revoke the device for that. Nothing is deleted."
         confirmLabel="Disable"
         pendingLabel="Disabling…"
         action={setEnabledAction}

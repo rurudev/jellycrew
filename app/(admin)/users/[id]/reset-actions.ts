@@ -11,6 +11,7 @@ import { adminSendVerification } from "@/lib/services/self";
 export async function createResetLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   let url: string;
   try {
     ({ url } = await adminCreateResetLink(actor, userId));
@@ -24,6 +25,7 @@ export async function createResetLinkAction(_prev: ActionState, formData: FormDa
 export async function emailResetLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   let email: string;
   try {
     ({ email } = await adminEmailResetLink(actor, userId));
@@ -37,6 +39,7 @@ export async function emailResetLinkAction(_prev: ActionState, formData: FormDat
 export async function sendVerificationAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   try {
     await adminSendVerification(actor, userId);
   } catch (err) {

@@ -18,6 +18,7 @@ function userIdFrom(formData: FormData): string {
 export async function setEnabledAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   const enabled = formData.get("enabled") === "1";
   try {
     await setUserEnabled(actor, userId, enabled, "manual");
@@ -25,7 +26,7 @@ export async function setEnabledAction(_prev: ActionState, formData: FormData): 
     return { error: errorMessage(err) };
   }
   refreshUser(userId);
-  return { ok: enabled ? "User enabled." : "User disabled. Active sessions are ended." };
+  return { ok: enabled ? "User enabled." : "User disabled." };
 }
 
 export async function assignProfileAction(formData: FormData): Promise<void> {
@@ -72,6 +73,7 @@ export async function adoptIntoProfileAction(formData: FormData): Promise<void> 
 export async function renameUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   const parsed = z.string().trim().min(1).max(100).safeParse(formData.get("name"));
   if (!parsed.success) return { error: "A name is required." };
   try {
@@ -86,6 +88,7 @@ export async function renameUserAction(_prev: ActionState, formData: FormData): 
 export async function setPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   const password = String(formData.get("password") ?? "");
   if (password !== String(formData.get("confirm") ?? "")) return { error: "The two passwords do not match." };
   try {
@@ -100,6 +103,7 @@ export async function setPasswordAction(_prev: ActionState, formData: FormData):
 export async function copyPolicyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await adminActor();
   const userId = String(formData.get("userId") ?? "");
+  if (!userId) return { error: "Missing user id." };
   const sourceId = String(formData.get("sourceId") ?? "");
   if (!sourceId) return { error: "Choose a user to copy from." };
   const confirm = formData.get("confirm") === "1";
