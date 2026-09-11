@@ -14,7 +14,7 @@ export function NavLink({ href, children }: { href: string; children: ReactNode 
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-11 shrink-0 items-center border-b-2 border-transparent px-0.5 text-sm text-muted-foreground transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:text-foreground",
+        "flex h-11 shrink-0 items-center border-b-2 border-transparent px-0.5 text-sm text-muted-foreground transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:text-foreground focus-visible:outline-offset-[-2px]",
         active && "border-primary text-foreground",
       )}
     >

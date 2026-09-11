@@ -19,7 +19,8 @@ const icons = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
  * switch is instant and needs no server round trip; the root layout reads the cookie on the
  * next request and renders the same theme server-side.
  */
-export function ThemeToggle({ theme }: { theme: Theme | null }) {
+/** `compact` drops the label below `sm` (the console header); guest surfaces keep it. */
+export function ThemeToggle({ theme, compact = false }: { theme: Theme | null; compact?: boolean }) {
   const [shown, setShown] = useState(theme);
   const next = nextTheme(shown);
   const Icon = icons[shown ?? "system"];
@@ -27,6 +28,7 @@ export function ThemeToggle({ theme }: { theme: Theme | null }) {
     <Button
       variant="ghost"
       size="sm"
+      className={compact ? "max-sm:px-1.5" : undefined}
       onClick={() => {
         applyTheme(next);
         setShown(next);
@@ -35,7 +37,7 @@ export function ThemeToggle({ theme }: { theme: Theme | null }) {
       title={`Switch to ${themeLabel(next).toLowerCase()} theme`}
     >
       <Icon data-icon="inline-start" />
-      <span className="hidden sm:inline">{themeLabel(shown)}</span>
+      <span className={compact ? "hidden sm:inline" : undefined}>{themeLabel(shown)}</span>
     </Button>
   );
 }

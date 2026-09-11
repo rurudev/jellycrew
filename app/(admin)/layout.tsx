@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
             jellycrew
           </Link>
           {/* Scrolls sideways on narrow screens instead of wrapping or overflowing the page. */}
-          <nav aria-label="Sections" className="flex min-w-0 flex-1 gap-3 overflow-x-auto">
+          <nav aria-label="Sections" className="flex min-w-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {nav.map((n) => (
               <NavLink key={n.href} href={n.href}>
                 {n.label}
@@ -44,9 +44,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
               <ServerStatusItem />
             </Suspense>
             <span className="hidden lg:inline">{session.userName}</span>
-            <ThemeToggle theme={theme} />
+            <ThemeToggle theme={theme} compact />
             <form action={logoutAction}>
-              <SubmitButton variant="ghost" size="sm" aria-label="Sign out">
+              <SubmitButton variant="ghost" size="sm" aria-label="Sign out" pendingLabel="Signing out…" className="max-sm:px-1.5">
                 <LogOutIcon data-icon="inline-start" />
                 <span className="hidden sm:inline">Sign out</span>
               </SubmitButton>

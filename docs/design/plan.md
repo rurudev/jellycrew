@@ -10,7 +10,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 2 | Fields, buttons, sections, page header | `design/fields-and-sections` | done, merged 2026-09-11 (rebased onto shadcn) |
 | 3 | Table kit, status badges, chips, empty states | `design/tables-badges-empty` | done, merged 2026-09-11 |
 | 4 | Dialogs, toast, loading and error states | `design/dialogs-toast-loading` | done, merged 2026-09-11 |
-| 5 | Console shell (header, nav, status) | `design/shell` | done (2026-09-11, on branch) |
+| 5 | Console shell (header, nav, status) | `design/shell` | done, merged 2026-09-11 |
 | 6 | Users list | `design/users-list` | planned |
 | 7 | User detail layout | `design/user-detail-layout` | planned |
 | 8 | User actions menu and dialogs | `design/user-actions` | planned |
@@ -260,7 +260,7 @@ Update the State column (planned → in progress → done, with the merge commit
 
 ## Proposals that touch off-limits layers (not in any package)
 
-1. Wrap `getServerStatus`, `listDevices`, `listSessions` and `getReferenceData` in `React.cache()` in `lib/services` to remove the duplicate Jellyfin calls per request.
+1. Wrap `getServerStatus`, `listDevices`, `listSessions` and `getReferenceData` in `React.cache()` in `lib/services` to remove the duplicate Jellyfin calls per request. (The console layout memoises its own probe in `components/shell/server-status.tsx`, but `/settings` still probes again through `getHealth()`.)
 2. Return `{ field, message }` errors from the public route handlers so guest forms can show inline, per-field errors; until then the UI shows the single message returned today.
 3. Unseal invite links in parallel inside `lib/services/invites.ts` if `listInvites` ever returns links itself (the page-level loop is fixed in package 10 without touching the service).
 
