@@ -29,12 +29,11 @@ export default async function ResetTokenPage(props: PageProps<"/reset/[token]">)
     );
   }
   return (
-    <div className="space-y-6">
+    <ResetForm token={token} minPasswordLength={getSettingOrDefault("minPasswordLength")} serverName={serverName}>
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Choose a new password</h1>
         <p className="text-muted-foreground">This replaces your password on {serverName}. Other devices will ask you to sign in again.</p>
       </div>
-      <ResetForm token={token} minPasswordLength={getSettingOrDefault("minPasswordLength")} serverName={serverName} />
-    </div>
+    </ResetForm>
   );
 }

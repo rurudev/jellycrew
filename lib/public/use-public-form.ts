@@ -16,7 +16,7 @@ export interface PublicForm<T> {
  * The one way the guest pages talk to the public API: post JSON, show one message when it
  * fails, keep the result when it works. Every guest form had its own copy of this before.
  */
-export function usePublicForm<T>(url: string, fallback: string): PublicForm<T> {
+export function usePublicForm<T>(url: string, fallback: string, options: { /** Guards against a 200 whose body is missing what the success screen shows. */ isComplete?: (data: T) => boolean } = {}): PublicForm<T> {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<T | null>(null);
@@ -32,6 +32,10 @@ export function usePublicForm<T>(url: string, fallback: string): PublicForm<T> {
         return null;
       }
       const data = (body ?? {}) as T;
+      if (options.isComplete && !options.isComplete(data)) {
+        setError(fallback);
+        return null;
+      }
       setResult(data);
       return data;
     } catch {

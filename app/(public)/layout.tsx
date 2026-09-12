@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { publicServerName } from "@/lib/public/server-name";
 import { getTheme } from "@/lib/theme-server";
@@ -11,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** The guest surface: the server's own name, one column, larger type than the console. */
-export default async function PublicLayout({ children }: { children: ReactNode }) {
+export default async function PublicLayout({ children }: LayoutProps<"/">) {
   const [theme, serverName] = await Promise.all([getTheme(), publicServerName()]);
   return (
     <div className="flex min-h-full flex-1 flex-col">

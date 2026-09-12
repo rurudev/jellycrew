@@ -133,16 +133,3 @@ export function EditorSkeleton() {
   );
 }
 
-export function FormSkeleton() {
-  return (
-    <div className="space-y-4" role="status" aria-label="Loading">
-      <HeaderSkeleton />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SectionSkeleton lines={6} />
-        <SectionSkeleton lines={6} />
-        <SectionSkeleton lines={4} />
-        <SectionSkeleton lines={3} />
-      </div>
-    </div>
-  );
-}

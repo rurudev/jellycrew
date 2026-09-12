@@ -13,30 +13,29 @@ import { env } from "@/lib/env";
 const SettingsForm = z.object({
   graceDays: z.coerce.number().int().min(0).max(3650),
   minPasswordLength: z.coerce.number().int().min(1).max(128),
-  publicBaseUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url().nullable()),
-  jellyfinPublicUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url().nullable()),
+  publicBaseUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url("Enter a full URL, including https://").nullable()),
+  jellyfinPublicUrl: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : (v as string).trim().replace(/\/+$/, "")), z.url("Enter a full URL, including https://").nullable()),
 });
 
+type SettingKey = keyof z.infer<typeof SettingsForm>;
+const SETTING_KEYS: SettingKey[] = ["graceDays", "minPasswordLength", "publicBaseUrl", "jellyfinPublicUrl"];
+
+/**
+ * Saves the settings a form actually carries. The page has one form per section, and a form
+ * that never showed a field must not blank it.
+ */
 export async function saveSettingsAction(formData: FormData): Promise<void> {
   const actor = await adminActor();
-  const parsed = SettingsForm.safeParse({
-    graceDays: formData.get("graceDays"),
-    minPasswordLength: formData.get("minPasswordLength"),
-    publicBaseUrl: formData.get("publicBaseUrl"),
-    jellyfinPublicUrl: formData.get("jellyfinPublicUrl"),
-  });
+  const present = SETTING_KEYS.filter((key) => formData.has(key));
+  if (present.length === 0) redirectWithNotice("/settings", { error: "Nothing to save." });
+  const parsed = SettingsForm.pick(Object.fromEntries(present.map((key) => [key, true])) as Record<SettingKey, true>).safeParse(
+    Object.fromEntries(present.map((key) => [key, formData.get(key)])),
+  );
   if (!parsed.success) redirectWithNotice("/settings", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
-  const before = {
-    graceDays: getSettingOrDefault("graceDays"),
-    minPasswordLength: getSettingOrDefault("minPasswordLength"),
-    publicBaseUrl: getSettingOrDefault("publicBaseUrl"),
-    jellyfinPublicUrl: getSettingOrDefault("jellyfinPublicUrl"),
-  };
-  setSetting("graceDays", parsed.data.graceDays);
-  setSetting("minPasswordLength", parsed.data.minPasswordLength);
-  setSetting("publicBaseUrl", parsed.data.publicBaseUrl);
-  setSetting("jellyfinPublicUrl", parsed.data.jellyfinPublicUrl);
-  recordAudit({ actor, action: "settings.update", before, after: parsed.data });
+  const values = parsed.data as Partial<z.infer<typeof SettingsForm>>;
+  const before = Object.fromEntries(present.map((key) => [key, getSettingOrDefault(key)]));
+  for (const key of present) setSetting(key, values[key] ?? null);
+  recordAudit({ actor, action: "settings.update", before, after: values });
   revalidatePath("/settings");
   redirectWithNotice("/settings", { ok: "Settings saved." });
 }

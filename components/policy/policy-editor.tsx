@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { DiffTable } from "@/components/policy/diff-table";
-import { GroupIndex } from "@/components/policy/group-index";
+import { SectionIndex } from "@/components/ui/section-index";
 import { IdCheckboxes } from "@/components/policy/id-checkboxes";
 import { POLICY_GROUPS, SYNC_PLAY_ACCESS_VALUES, UNRATED_ITEM_VALUES, fieldsInGroup, type PolicyFieldDef } from "@/lib/policy/fields";
 import { mergeEdit } from "@/lib/policy/merge";
@@ -261,7 +261,7 @@ export function PolicyEditor({
     <div className="grid items-start gap-4 lg:grid-cols-[12rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)]">
       {/* Keyed with the form: the sections it observes are recreated whenever the form is. */}
       {mode === "grouped" ? (
-        <GroupIndex key={`index-${formKey}`} groups={groups.filter((g) => g.shown.length > 0).map((g) => ({ id: g.id, title: g.title, count: g.shown.length }))} />
+        <SectionIndex key={`index-${formKey}`} sections={groups.filter((g) => g.shown.length > 0).map((g) => ({ id: `g-${g.id}`, title: g.title, count: g.shown.length }))} />
       ) : (
         <div className="hidden lg:block" />
       )}
