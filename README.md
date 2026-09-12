@@ -75,32 +75,25 @@ the app.
 
 ## Install
 
-You need a Jellyfin server and somewhere to run one container.
+You need a Jellyfin server, somewhere to run one container, and an API key from *Jellyfin →
+Dashboard → API Keys → +*.
 
-1. **Make an API key** in Jellyfin: *Dashboard → API Keys → +*. It has administrator rights, so it
-   stays in the environment and is never shown in the browser.
-2. **Copy the compose file.** `docker-compose.example.yml` has two Traefik routers (see
-   [Exposure](#exposure)), a health check and the volume for the database. Set your hostnames and
-   put the secrets in an `.env` next to it:
+```bash
+docker run -d --name jellycrew -p 3000:3000 -v jellycrew-data:/data \
+  -e JELLYFIN_URL=http://192.168.1.10:8096 \
+  -e JELLYFIN_API_KEY=your-api-key \
+  -e PUBLIC_BASE_URL=http://localhost:3000 \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  ghcr.io/rurudev/jellycrew:latest
+```
 
-   ```env
-   JELLYFIN_URL=http://jellyfin:8096
-   JELLYFIN_API_KEY=...                             # from step 1
-   PUBLIC_BASE_URL=https://users.example.com
-   SESSION_SECRET=...                               # openssl rand -hex 32
-   SMTP_URL=smtp://user:pass@mail.example.com:587   # optional
-   SMTP_FROM="Jellyfin <noreply@example.com>"       # required when SMTP_URL is set
-   ```
+`JELLYFIN_URL` is Jellyfin as the container reaches it, so use the host's address rather than
+`localhost`. Open `http://localhost:3000` and sign in with any Jellyfin administrator account —
+jellycrew has none of its own. The database migrates itself; a bad environment stops the container
+and the log names the variable.
 
-3. **Start it.** `docker compose up -d`. The database migrates itself and the container reports
-   `GET /healthz`. A bad environment stops the container and the log names the variable.
-4. **Sign in** on the admin hostname with any Jellyfin administrator account. jellycrew has no
-   accounts of its own.
-5. Make a profile, assign a few users, send an invite. *Settings* shows the scheduler, the grace
-   period, the minimum password length and a mail test.
-
-The image is published as `ghcr.io/rurudev/jellycrew`. It also builds from this repository with
-`build: .`.
+For a real deployment — a hostname, TLS, mail, and the console kept off the public internet — start
+from [`docker-compose.example.yml`](docker-compose.example.yml) and read [Exposure](#exposure).
 
 ### Configuration
 
