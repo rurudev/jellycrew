@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listProfiles, previewAdopt, userDrift } from "@/lib/services/profiles";
 import { getReferenceData } from "@/lib/services/reference";
 import { getUserDetail, listUsers } from "@/lib/services/users";
+import { AuditPayload } from "@/components/audit/audit-table";
 import { DevicesTable } from "@/components/sessions/devices-table";
 import { SessionsTable } from "@/components/sessions/sessions-table";
 import { Timestamp } from "@/components/ui/timestamp";
@@ -130,7 +131,7 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                   <TableHead>When</TableHead>
                   <TableHead>Actor</TableHead>
                   <TableHead>Action</TableHead>
-                  <TableHead>Detail</TableHead>
+                  <TableHead>What changed</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,8 +148,8 @@ export default async function UserDetailPage(props: PageProps<"/users/[id]">) {
                     <TableCell>
                       <code className="text-xs">{h.action}</code>
                     </TableCell>
-                    <TableCell className="max-w-md truncate text-xs text-muted-foreground" title={h.detail ? JSON.stringify(h.detail) : ""}>
-                      {h.detail ? JSON.stringify(h.detail) : ""}
+                    <TableCell className="max-w-md">
+                      <AuditPayload row={h} />
                     </TableCell>
                   </TableRow>
                 ))}

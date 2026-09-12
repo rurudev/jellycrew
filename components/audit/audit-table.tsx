@@ -11,7 +11,7 @@ function hasContent(value: unknown): boolean {
 }
 
 /** The three payload columns collapse into one disclosure: nothing is truncated mid-word. */
-function Payload({ row }: { row: AuditRow }) {
+export function AuditPayload({ row }: { row: Pick<AuditRow, "before" | "after" | "detail"> }) {
   const parts = (
     [
       ["Before", row.before],
@@ -83,7 +83,7 @@ export function AuditTable({ rows, names, filtered }: { rows: AuditRow[]; /** Je
               )}
             </TableCell>
             <TableCell className="max-w-xl">
-              <Payload row={row} />
+              <AuditPayload row={row} />
             </TableCell>
           </TableRow>
         ))}
