@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StatusDot } from "@/components/ui/status-badge";
 
 /** Re-renders the current server component tree every `seconds` while the tab is visible. */
 export function AutoRefresh({ seconds }: { seconds: number }) {
@@ -33,5 +34,10 @@ export function AutoRefresh({ seconds }: { seconds: number }) {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [router, seconds]);
-  return <span className="text-xs text-zinc-400">{paused ? "paused" : `auto-refresh ${seconds}s`}</span>;
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="off">
+      <StatusDot tone={paused ? "neutral" : "success"} />
+      {paused ? "Paused while the tab is hidden" : `Refreshing every ${seconds} seconds`}
+    </span>
+  );
 }

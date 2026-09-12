@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Timestamp } from "@/components/ui/timestamp";
@@ -13,12 +13,14 @@ export const DEVICE_COLUMNS: readonly DeviceColumn[] = ["device", "app", "lastUs
 const COLUMNS: Record<DeviceColumn, { head: string; className?: string; cell: (d: DeviceView, returnTo: string) => ReactNode }> = {
   device: {
     head: "Device",
+    className: "max-w-64",
     cell: (d) => (
       <>
-        {d.name}
-        <div className="text-xs text-muted-foreground">
-          <code>{d.id}</code>
-        </div>
+        <div className="truncate">{d.name || <span className="text-muted-foreground">unnamed</span>}</div>
+        {/* Some clients report an id hundreds of characters long, so it is shown in one line. */}
+        <code className="block truncate text-xs text-muted-foreground" title={d.id}>
+          {d.id}
+        </code>
       </>
     ),
   },
@@ -43,13 +45,16 @@ const COLUMNS: Record<DeviceColumn, { head: string; className?: string; cell: (d
     head: "Actions",
     className: "text-right",
     cell: (d, returnTo) => (
-      <form action={revokeDeviceAction}>
-        <input type="hidden" name="deviceId" value={d.id} />
-        <input type="hidden" name="returnTo" value={returnTo} />
-        <SubmitButton size="sm" variant="destructive" title="Signs the device out and revokes its tokens">
-          Revoke
-        </SubmitButton>
-      </form>
+      <ConfirmDialog
+        label="Revoke"
+        size="sm"
+        variant="outline"
+        title={`Revoke ${d.name}?`}
+        description="Signs this device out and invalidates its tokens. Whoever uses it has to sign in again; nothing else changes."
+        confirmLabel="Revoke device"
+        action={revokeDeviceAction}
+        hidden={{ deviceId: d.id, returnTo }}
+      />
     ),
   },
 };

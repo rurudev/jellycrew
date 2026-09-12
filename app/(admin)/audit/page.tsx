@@ -2,13 +2,12 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { distinctAuditActions, listAudit, type AuditFilters } from "@/lib/services/audit";
 import { listUsers } from "@/lib/services/users";
-import { Timestamp } from "@/components/ui/timestamp";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { AuditTable } from "@/components/audit/audit-table";
+import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
+import { buttonVariants } from "@/components/ui/button";
+import { FilterForm } from "@/components/ui/filter-form";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page-header";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata = { title: "Audit" };
 
@@ -46,11 +45,6 @@ export function parseAuditFilters(params: Record<string, string | string[] | und
   return { ...f, raw };
 }
 
-function pretty(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  return typeof v === "string" ? v : JSON.stringify(v);
-}
-
 export default async function AuditPage(props: PageProps<"/audit">) {
   await requireAdmin();
   const params = await props.searchParams;
@@ -62,10 +56,12 @@ export default async function AuditPage(props: PageProps<"/audit">) {
   const qs = new URLSearchParams(filters.raw);
   const exportQs = qs.toString();
   const nextQs = new URLSearchParams({ ...filters.raw, before: String(page[page.length - 1]?.id ?? 0) }).toString();
+  const filtered = Object.keys(filters.raw).length > 0;
   return (
     <div className="space-y-4">
       <PageHeader
         title="Audit log"
+        description="Every change jellycrew made, and who asked for it. Entries are never edited or removed."
         actions={
           <>
             <a href={`/audit/export?format=csv&${exportQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -77,17 +73,16 @@ export default async function AuditPage(props: PageProps<"/audit">) {
           </>
         }
       />
-      <form method="get" action="/audit" className="flex flex-wrap items-end gap-2">
-        <NativeSelect name="actorType" defaultValue={filters.raw.actorType ?? ""} aria-label="Actor type">
-          <option value="">Any actor</option>
+      <FilterForm key={exportQs} action="/audit" className="flex flex-wrap items-center gap-2">
+        <AutoSubmitSelect name="actorType" defaultValue={filters.raw.actorType ?? ""} aria-label="Filter by who acted">
+          <option value="">Anyone</option>
           {ACTOR_TYPES.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
           ))}
-        </NativeSelect>
-        <Input name="actorId" placeholder="Actor id" defaultValue={filters.raw.actorId ?? ""} className="w-40" aria-label="Actor id" />
-        <NativeSelect name="action" defaultValue={filters.raw.action ?? ""} aria-label="Action">
+        </AutoSubmitSelect>
+        <AutoSubmitSelect name="action" defaultValue={filters.raw.action ?? ""} aria-label="Filter by action">
           <option value="">Any action</option>
           {[...new Set(actions.map((a) => `${a.split(".")[0]}.*`))].map((prefix) => (
             <option key={prefix} value={prefix}>
@@ -99,65 +94,28 @@ export default async function AuditPage(props: PageProps<"/audit">) {
               {a}
             </option>
           ))}
-        </NativeSelect>
-        <NativeSelect name="targetUserId" defaultValue={filters.raw.targetUserId ?? ""} aria-label="User">
+        </AutoSubmitSelect>
+        <AutoSubmitSelect name="targetUserId" defaultValue={filters.raw.targetUserId ?? ""} aria-label="Filter by user">
           <option value="">Any user</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
               {u.name}
             </option>
           ))}
-        </NativeSelect>
+          {filters.raw.targetUserId && !users.some((u) => u.id === filters.raw.targetUserId) ? <option value={filters.raw.targetUserId}>{filters.raw.targetUserId.slice(0, 8)}… (gone)</option> : null}
+        </AutoSubmitSelect>
         <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" className="w-auto" />
         <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" className="w-auto" />
-        <Button type="submit" variant="outline">
-          Filter
-        </Button>
-        <Link href="/audit" className="px-2 text-muted-foreground hover:underline">
-          Reset
-        </Link>
-      </form>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>When</TableHead>
-            <TableHead>Actor</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead>Before</TableHead>
-            <TableHead>After</TableHead>
-            <TableHead>Detail</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {page.length === 0 ? <EmptyState.Row colSpan={7} title="No audit entries match" description="Every change made through jellycrew is recorded here." /> : null}
-          {page.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell className="whitespace-nowrap">
-                <Timestamp date={r.ts} />
-                <div className="text-xs text-muted-foreground">#{r.id}</div>
-              </TableCell>
-              <TableCell>
-                {r.actorType}
-                {r.actorId ? <div className="text-xs text-muted-foreground">{nameById.get(r.actorId) ?? r.actorId}</div> : null}
-              </TableCell>
-              <TableCell>
-                <code className="text-xs">{r.action}</code>
-              </TableCell>
-              <TableCell>{r.targetUserId ? <Link href={`/users/${r.targetUserId}`}>{nameById.get(r.targetUserId) ?? r.targetUserId.slice(0, 8)}</Link> : ""}</TableCell>
-              <TableCell className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.before)}>
-                {pretty(r.before)}
-              </TableCell>
-              <TableCell className="max-w-48 truncate text-xs text-muted-foreground" title={pretty(r.after)}>
-                {pretty(r.after)}
-              </TableCell>
-              <TableCell className="max-w-64 truncate text-xs text-muted-foreground" title={pretty(r.detail)}>
-                {pretty(r.detail)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+        <button type="submit" className="sr-only" tabIndex={-1}>
+          Apply filters
+        </button>
+        {filtered ? (
+          <Link href="/audit" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Clear
+          </Link>
+        ) : null}
+      </FilterForm>
+      <AuditTable rows={page} names={nameById} filtered={filtered} />
       {hasMore ? (
         <Link href={`/audit?${nextQs}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Older entries

@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Timestamp } from "@/components/ui/timestamp";
 import { formatBitrate, ticksToDuration } from "@/lib/format";
 import type { SessionView } from "@/lib/sessions/view";
-import { sendMessageAction, stopPlaybackAction } from "@/app/(admin)/sessions/actions";
+import { MessageDialog } from "@/components/sessions/message-dialog";
+import { stopPlaybackAction } from "@/app/(admin)/sessions/actions";
 
 const methodTone = { direct: "success", remux: "primary", transcode: "warning" } as const;
 
@@ -93,25 +93,17 @@ const COLUMNS: Record<SessionColumn, { head: string; className?: string; cell: (
     head: "Actions",
     className: "text-right",
     cell: (s, returnTo) => (
-      <div className="flex flex-col items-end gap-1">
+      <div className="flex justify-end gap-1">
         {s.nowPlaying ? (
           <form action={stopPlaybackAction}>
             <input type="hidden" name="sessionId" value={s.id} />
             <input type="hidden" name="returnTo" value={returnTo} />
-            <SubmitButton size="sm" variant="outline">
+            <SubmitButton size="sm" variant="outline" pendingLabel="Stopping…">
               Stop
             </SubmitButton>
           </form>
         ) : null}
-        <details className="text-left">
-          <summary className="cursor-pointer text-xs text-muted-foreground hover:underline">Message</summary>
-          <form action={sendMessageAction} className="mt-1 flex gap-1">
-            <input type="hidden" name="sessionId" value={s.id} />
-            <input type="hidden" name="returnTo" value={returnTo} />
-            <Input name="text" placeholder="Message text" required maxLength={500} className="w-48" aria-label="Message text" />
-            <SubmitButton size="sm">Send</SubmitButton>
-          </form>
-        </details>
+        <MessageDialog sessionId={s.id} device={s.deviceName ?? s.client ?? "this client"} returnTo={returnTo} />
       </div>
     ),
   },
