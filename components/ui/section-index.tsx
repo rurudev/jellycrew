@@ -27,9 +27,14 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
     // The crossings are only the trigger; which group is current is then measured, so the
     // answer is the same whether you scrolled there or jumped.
     const pick = () => {
-      let current = elements[0];
-      for (const element of elements) {
-        if (element.getBoundingClientRect().top <= 96) current = element;
+      // At the bottom of the page the last section can never reach the top of the viewport,
+      // so being there is what makes it current.
+      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      let current = atBottom ? elements[elements.length - 1] : elements[0];
+      if (!atBottom) {
+        for (const element of elements) {
+          if (element.getBoundingClientRect().top <= 96) current = element;
+        }
       }
       if (current) setActive(current.id);
     };

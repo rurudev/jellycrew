@@ -141,7 +141,7 @@ function FieldRow({ field, value, refData }: { field: PolicyFieldDef; value: unk
   return (
     <FormField
       id={id}
-      className={FIELD_WIDTH[field.kind]}
+      controlClassName={FIELD_WIDTH[field.kind]}
       label={
         <span className="flex flex-wrap items-baseline gap-x-2">
           {field.label}

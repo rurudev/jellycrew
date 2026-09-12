@@ -46,10 +46,10 @@ export default async function SettingsPage() {
 
           <Section id="s-accounts" title="Accounts" description="Rules applied to every account this app creates or retires.">
             <form action={saveSettingsAction} className="space-y-4">
-              <FormField id="graceDays" label="Deletion grace period (days)" help="Between scheduling a deletion, which disables the account at once, and the account actually being removed." className="max-w-48">
+              <FormField id="graceDays" label="Deletion grace period (days)" help="Between scheduling a deletion, which disables the account at once, and the account actually being removed." controlClassName="max-w-48">
                 <Input name="graceDays" type="number" min={0} max={3650} defaultValue={getSettingOrDefault("graceDays")} />
               </FormField>
-              <FormField id="minPasswordLength" label="Minimum password length" help="Applies to passwords you set, invites and self-service resets." className="max-w-48">
+              <FormField id="minPasswordLength" label="Minimum password length" help="Applies to passwords you set, invites and self-service resets." controlClassName="max-w-48">
                 <Input name="minPasswordLength" type="number" min={1} max={128} defaultValue={getSettingOrDefault("minPasswordLength")} />
               </FormField>
               <SubmitButton pendingLabel="Saving…">Save account rules</SubmitButton>
@@ -58,11 +58,11 @@ export default async function SettingsPage() {
 
           <Section id="s-links" title="Links" description="The addresses that end up in invite and reset links, and in front of your users.">
             <form action={saveSettingsAction} className="space-y-4">
-              <FormField id="publicBaseUrl" label="This app's public address" help={`Used to build invite and reset links. Blank uses the environment setting, ${e.PUBLIC_BASE_URL}.`}>
-                <Input name="publicBaseUrl" type="url" defaultValue={getSettingOrDefault("publicBaseUrl") ?? ""} placeholder={e.PUBLIC_BASE_URL} className="max-w-md" />
+              <FormField id="publicBaseUrl" label="This app's public address" help={`Used to build invite and reset links. Blank uses the environment setting, ${e.PUBLIC_BASE_URL}.`} controlClassName="max-w-md">
+                <Input name="publicBaseUrl" type="url" defaultValue={getSettingOrDefault("publicBaseUrl") ?? ""} placeholder={e.PUBLIC_BASE_URL} />
               </FormField>
-              <FormField id="jellyfinPublicUrl" label="Jellyfin's address for users" help={`Shown to people after they sign up. Blank uses ${e.JELLYFIN_URL}, which is often an address only this app can reach.`}>
-                <Input name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} className="max-w-md" />
+              <FormField id="jellyfinPublicUrl" label="Jellyfin's address for users" help={`Shown to people after they sign up. Blank uses ${e.JELLYFIN_URL}, which is often an address only this app can reach.`} controlClassName="max-w-md">
+                <Input name="jellyfinPublicUrl" type="url" defaultValue={getSettingOrDefault("jellyfinPublicUrl") ?? ""} placeholder={e.JELLYFIN_URL} />
               </FormField>
               <SubmitButton pendingLabel="Saving…">Save links</SubmitButton>
             </form>

@@ -15,6 +15,7 @@ export function FormField({
   error,
   children,
   className,
+  controlClassName,
 }: {
   id: string;
   label: ReactNode;
@@ -24,6 +25,8 @@ export function FormField({
   error?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Width for the control alone, so a short input does not narrow its own help text. */
+  controlClassName?: string;
 }) {
   const helpId = help ? `${id}-help` : undefined;
   const errorId = error ? `${id}-error` : undefined;
@@ -40,7 +43,7 @@ export function FormField({
       <FieldLabel htmlFor={id} className={cn(hideLabel && "sr-only")}>
         {label}
       </FieldLabel>
-      {control}
+      {controlClassName ? <div className={controlClassName}>{control}</div> : control}
       {error ? (
         <FieldError id={errorId} className="text-xs">
           {error}

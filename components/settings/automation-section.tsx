@@ -23,12 +23,9 @@ export function AutomationSection({ job, intervalMs, id }: { job: JobRun | undef
         <p className="flex flex-wrap items-center gap-1.5">
           <StatusDot tone={summary ? (summary.tone === "warning" ? "warning" : "success") : "neutral"} />
           {job?.lastFinishedAt && summary ? (
-            <>
-              <span>
-                Ran <Timestamp date={job.lastFinishedAt} />:
-              </span>
-              <span>{summary.sentence}.</span>
-            </>
+            <span>
+              Ran <Timestamp date={job.lastFinishedAt} />: {summary.sentence}.
+            </span>
           ) : running ? (
             <span>Running now.</span>
           ) : (
