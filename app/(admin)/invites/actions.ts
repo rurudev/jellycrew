@@ -9,13 +9,13 @@ import { errorMessage, redirectWithNotice } from "@/lib/notice";
 import { createInvite, revokeInvite } from "@/lib/services/invites";
 
 const CreateForm = z.object({
-  label: z.string().trim().max(100).optional(),
+  label: z.string().trim().max(100, "A label can be at most 100 characters.").optional(),
   profileId: z.string().optional(),
   linkExpiryDays: optionalInt({ max: 3650 }),
   maxUses: optionalInt({ max: 100000 }),
   accountExpiryDays: optionalInt({ max: 3650 }),
   requireEmail: z.boolean(),
-  noteForInvitee: z.string().trim().max(1000).optional(),
+  noteForInvitee: z.string().trim().max(1000, "A note can be at most 1000 characters.").optional(),
 });
 
 /** The link comes back to the dialog that asked for it rather than travelling in the URL. */
