@@ -1,103 +1,211 @@
 # jellycrew
 
-Self-hosted user management for a single [Jellyfin](https://jellyfin.org) server. It replaces the Jellyfin dashboard for everything about users: who has access, to what, on what terms, for how long, and what they are doing right now.
+Self-hosted user management for a single [Jellyfin](https://jellyfin.org) server. It replaces the
+Jellyfin dashboard for everything about people: who has access, to what, on what terms, for how
+long, and what they are watching right now.
 
-Jellyfin stays the source of truth for users, policies, sessions, devices and libraries. jellycrew owns only what Jellyfin cannot: profiles, lifecycle rules, invites, contact details, reset tokens and an audit trail. One container, one SQLite file, one API key.
+![The users list](docs/screenshots/users.png)
+
+Jellyfin stays the source of truth for users, policies, sessions, devices and libraries. jellycrew
+owns only what Jellyfin cannot: profiles, lifecycle rules, invites, contact details, reset tokens
+and an audit trail. One container, one SQLite file, one API key.
+
+## Why
+
+Jellyfin's own user management assumes you set a policy once and forget it. If you run a server for
+family and friends, you end up doing the same work by hand over and over: repeating the same forty
+settings for each new account, remembering who was supposed to lose access in March, sending
+someone a password because there is no way for them to reset it, and having no record of what you
+changed last month.
+
+jellycrew adds exactly that layer and nothing else. It does not transcode, index or stream
+anything, and it never stores a password of its own.
 
 ## What it does
 
-- **Users**: sortable, filterable table with status (enabled, disabled, disabled-by-app with reason, expiring, scheduled for deletion), profile and drift, last login/activity, live sessions and device counts, labels. Multi-select bulk actions with a per-user preview and per-user results.
-- **Access editing**: every `UserPolicy` field in a grouped editor with plain-language labels, help text and the raw field name, plus a raw JSON fallback. Saves show a diff first and refuse stale writes (the policy changed on the server meanwhile).
-- **Profiles**: reusable sets of profile-managed policy fields (libraries, parental controls, playback, remote access, live TV, content management). Create blank, from a user, or by cloning; assign, apply, adopt; drift shown per field; apply to all members with preview.
-- **Safeguards**: administrators are never touched by automation or bulk disable/delete; the last enabled administrator and the signed-in admin cannot be disabled, demoted or deleted; destructive actions need typed confirmation; deletion is two-step (disable now, delete after a grace period).
-- **Lifecycle**: expiry dates, inactivity rules (per user or inherited from the profile), scheduled deletion, a 15-minute in-process scheduler with a database lock, every automated change audited as `system`.
-- **Sessions**: all live sessions refreshed every 10 s with play method (direct / remux / transcode and why), stop playback, send a message, revoke devices.
-- **Invites**: links with expiry, max uses, profile, account expiry and an optional note; public signup page with rate limiting and rollback if the profile cannot be applied.
-- **Self-service** (`/me`): sign in with Jellyfin credentials, change password (current password verified first), see sessions and devices, revoke devices, add and verify an email address.
-- **Password reset**: `/reset` sends a single-use one-hour link to a verified address (identical response whether or not the account exists); admins can generate links by hand without SMTP.
-- **Audit**: every write, by admin, self-service user, invite or the scheduler, with before/after values, filters and CSV/JSON export.
+- **Users.** One filterable table with status (enabled, disabled by you, disabled by automation
+  with the reason, expiring, scheduled for deletion), profile and drift, last seen, labels and live
+  sessions. Select several and act on them with a per-user preview and per-user results.
+- **Access.** Every `UserPolicy` field in plain language, grouped, with the raw field name one
+  toggle away and a JSON fallback for the rest. A save shows the diff first and refuses a write
+  that lost a race with somebody else's.
+- **Profiles.** Reusable sets of policy fields: create one blank, from a user's current settings or
+  by copying another. Assign it, apply it, or adopt a user's settings back into it. Drift is shown
+  per field, and applying to every member previews each one.
+- **Lifecycle.** Expiry dates, inactivity rules inherited from the profile, two-step deletion
+  (disabled now, removed after a grace period), and a scheduler that runs every fifteen minutes and
+  audits everything it does.
+- **Invites.** A link with an expiry, a number of uses, a profile and a note. The guest picks their
+  own username and password; if the profile cannot be applied, the account is rolled back.
+- **Self-service.** `/me` lets people change their own password, confirm an email address, see
+  where they are signed in and sign a device out. `/reset` mails a single-use link, and you can
+  hand one over yourself when there is no mail server.
+- **Audit.** Every write, by you, by a guest, by an invite or by the scheduler, with before and
+  after values, filters and CSV or JSON export.
 
-Tested against Jellyfin **10.11.11**. The UI warns when the live server runs another major.minor.
+**Safeguards.** Administrators are never touched by automation or bulk actions. The last enabled
+administrator and the account you are signed in as cannot be disabled, demoted or deleted.
+Destructive actions ask you to type the name. Deleting is two steps, and the audit log is
+append-only.
 
-## First run
+Tested against Jellyfin **10.11.11**; the interface warns you when the live server runs a different
+minor version.
 
-1. Create an API key in Jellyfin: *Dashboard → API Keys → +*. This key has administrator rights; keep it in the environment only.
-2. Copy `docker-compose.example.yml` to `docker-compose.yml`, set the hostnames, and provide the environment (an `.env` file next to it works):
+### One person's page
+
+![Everything about one user on one page](docs/screenshots/user-detail.png)
+
+What differs from the profile or from Jellyfin's defaults comes first, so you read two lines
+instead of forty-four. Sessions, devices and history sit below; the profile, the lifecycle rules
+and the facts sit beside them.
+
+### The access editor
+
+![Editing one user's access](docs/screenshots/access-editor.png)
+
+Forty-four fields with help text, a jump list, and a diff before anything is written.
+
+### What a guest sees
+
+<img src="docs/screenshots/invite.png" alt="The invite page on a phone" width="390">
+
+An invite link carries the server's name, not the tool's. One column, large controls, a password
+field that can be revealed, and a finished signup that ends with the server address to paste into
+the app.
+
+## Install
+
+You need a Jellyfin server and somewhere to run one container.
+
+1. **Make an API key** in Jellyfin: *Dashboard → API Keys → +*. It has administrator rights, so it
+   stays in the environment and is never shown in the browser.
+2. **Copy the compose file.** `docker-compose.example.yml` has two Traefik routers (see
+   [Exposure](#exposure)), a health check and the volume for the database. Set your hostnames and
+   put the secrets in an `.env` next to it:
 
    ```env
-   JELLYFIN_API_KEY=...            # from step 1
-   SESSION_SECRET=$(openssl rand -hex 32)
+   JELLYFIN_URL=http://jellyfin:8096
+   JELLYFIN_API_KEY=...                             # from step 1
+   PUBLIC_BASE_URL=https://users.example.com
+   SESSION_SECRET=...                               # openssl rand -hex 32
    SMTP_URL=smtp://user:pass@mail.example.com:587   # optional
    SMTP_FROM="Jellyfin <noreply@example.com>"       # required when SMTP_URL is set
    ```
 
-3. `docker compose up -d`. The app migrates its database on start and reports `GET /healthz`. If it exits with `Invalid environment`, the log lists exactly which variables are missing or malformed.
-4. Open the **admin** hostname and sign in with any Jellyfin administrator account (jellycrew has no password store of its own).
-5. Create a profile, assign users, create an invite. Check *Settings* for the scheduler status, grace period, minimum password length and the SMTP test.
+3. **Start it.** `docker compose up -d`. The database migrates itself and the container reports
+   `GET /healthz`. A bad environment stops the container and the log names the variable.
+4. **Sign in** on the admin hostname with any Jellyfin administrator account. jellycrew has no
+   accounts of its own.
+5. Make a profile, assign a few users, send an invite. *Settings* shows the scheduler, the grace
+   period, the minimum password length and a mail test.
 
-Environment variables:
+The image is published as `ghcr.io/rurudev/jellycrew`. It also builds from this repository with
+`build: .`.
+
+### Configuration
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `JELLYFIN_URL` | yes | Jellyfin as reachable from the container, e.g. `http://jellyfin:8096` |
+| `JELLYFIN_URL` | yes | Jellyfin as the container reaches it, e.g. `http://jellyfin:8096` |
 | `JELLYFIN_API_KEY` | yes | Administrator API key. Never logged, never sent to the browser |
-| `PUBLIC_BASE_URL` | yes | Public URL of jellycrew, used in invite and reset links (`https://users.example.com`) |
-| `SESSION_SECRET` | yes | ≥ 32 random characters; signs session cookies and invite links |
-| `DATA_DIR` | no | Directory of `app.db`; `/data` in the image |
-| `SMTP_URL` | no | `smtp://` or `smtps://` URL; enables verification and reset mail |
+| `PUBLIC_BASE_URL` | yes | Where guests reach jellycrew; it builds invite and reset links |
+| `SESSION_SECRET` | yes | 32 or more random characters; signs cookies and seals stored invite links |
+| `DATA_DIR` | no | Where `app.db` lives; `/data` in the image |
+| `SMTP_URL` | no | `smtp://` or `smtps://`; turns on verification and reset mail |
 | `SMTP_FROM` | with SMTP | Sender address |
-| `LOG_LEVEL` | no | `fatal`…`trace`, default `info` |
+| `LOG_LEVEL` | no | `fatal` to `trace`, default `info` |
 
-## Exposure model
+Everything else is a setting inside the app, so changing it needs no restart.
 
-jellycrew serves two audiences from one container and the example compose file gives them two Traefik routers:
+## Exposure
 
-- **Admin UI** (`/`, `/users`, `/profiles`, `/sessions`, `/invites`, `/audit`, `/settings`, `/login`): only on an internal hostname that resolves on your LAN or VPN. Do not publish it.
-- **Public self-service** on the public hostname, limited to `/invite/*`, `/reset*`, `/me*`, `/api/public/*`, `/healthz` and the static assets under `/_next/static`. Every other path on that hostname is simply not routed.
+One container serves two audiences, and the example compose file routes them separately.
 
-The public endpoints are rate-limited per IP and per token inside the app; the example adds a Traefik rate limit as a second layer. Session cookies are `HttpOnly`, `SameSite=Lax` and `Secure` when `PUBLIC_BASE_URL` is `https`. Admin sessions last 12 hours, self-service sessions 30 days.
+- **The console** (`/`, `/users`, `/profiles`, `/sessions`, `/invites`, `/audit`, `/settings`,
+  `/login`) belongs on an internal hostname that only resolves on your LAN or VPN. Do not publish
+  it.
+- **The guest paths** (`/invite/*`, `/reset*`, `/me*`, `/api/public/*`, `/healthz` and the static
+  assets) are the only ones routed on the public hostname. Every other path there is simply not
+  served.
+
+Public endpoints are rate-limited per IP and per token inside the app, and the example adds a
+Traefik limit in front as a second layer. Session cookies are `HttpOnly` and `SameSite=Lax`, and
+`Secure` whenever `PUBLIC_BASE_URL` is `https`. Console sessions last twelve hours, guest sessions
+thirty days.
 
 ## Backup and restore
 
-All state is `app.db` (plus `app.db-wal` / `app.db-shm` while running) in the `/data` volume. Either:
+All state is `app.db` in the `/data` volume (plus `app.db-wal` and `app.db-shm` while it runs).
 
 ```bash
-# consistent online copy with the sqlite3 CLI (WAL-safe)
 docker compose exec jellycrew node -e "require('better-sqlite3')('/data/app.db').backup('/data/backup.db').then(()=>console.log('ok'))"
 docker compose cp jellycrew:/data/backup.db ./jellycrew-$(date +%F).db
 ```
 
-or stop the container and snapshot the volume. Restore by putting the file back as `/data/app.db` (remove stale `-wal`/`-shm` files) and starting the container. Losing the database loses profiles, invites, lifecycle settings and the audit log; Jellyfin's users and policies are unaffected.
+Or stop the container and snapshot the volume. Restore by putting the file back as `/data/app.db`,
+removing any stale `-wal` and `-shm` files, and starting again. Losing the database loses profiles,
+invites, lifecycle settings and the audit log; the users themselves live in Jellyfin and are
+untouched. Keep `SESSION_SECRET` with the backup: stored invite links are sealed with it.
 
-`SESSION_SECRET` is part of the state too: invite links stored in the database are sealed with it, so keep it with the backup.
+## Upgrading
 
-## Upgrades
-
-1. Read `DECISIONS.md` and the release notes for the target version.
-2. Back up (above).
-3. Pull the new image and `docker compose up -d`. Migrations run automatically at start; there is no downgrade path, so keep the backup until you are happy.
-
-When the pinned Jellyfin version changes (`lib/jellyfin/version.ts`), the OpenAPI snapshot and generated client are regenerated with `pnpm jellyfin:gen`, and the policy field catalog test fails if `UserPolicy` gained or lost fields.
+Back up, pull the new image, `docker compose up -d`. Migrations run at start and there is no
+downgrade path, so keep that backup until the new version has proven itself. When the pinned
+Jellyfin version changes, the generated client is regenerated and a test fails if `UserPolicy`
+gained or lost a field, so an upgrade that would silently drop a setting cannot pass.
 
 ## Development
 
-Requirements: Node 22, pnpm 12, Docker (integration tests start real Jellyfin and Mailpit containers).
+Node 22, pnpm 12, and Docker for the integration tests, which start real Jellyfin and Mailpit
+containers.
 
 ```bash
 pnpm install
-pnpm jellyfin:dev          # disposable Jellyfin 10.11 on :8096; writes .env.local (API key, secret) if missing
-pnpm dev                   # http://localhost:3000, sign in as admin / admin-password-1
+pnpm jellyfin:dev   # a disposable Jellyfin 10.11 on :8096; writes .env.local if it is missing
+pnpm dev            # http://localhost:3000, sign in as admin / admin-password-1
 ```
 
 ```bash
-pnpm test               # unit + integration (integration needs Docker)
+pnpm test           # unit and integration
 pnpm test:unit
 pnpm test:integration
 pnpm lint && pnpm typecheck
 pnpm build
-pnpm ops:check          # builds the image and checks the container healthcheck against Jellyfin in compose
-pnpm db:generate        # after editing lib/db/schema.ts
-pnpm jellyfin:gen       # regenerate lib/jellyfin/openapi.json + generated types
+pnpm ops:check      # builds the image and checks its health against Jellyfin in compose
+pnpm db:generate    # after editing lib/db/schema.ts
+pnpm jellyfin:gen   # regenerate the OpenAPI snapshot and client
 ```
 
-Layout: `app/` routes (server components and server actions), `components/` UI, `lib/services/` the only code that talks to Jellyfin and audits every write, `lib/policy/` pure policy logic (catalog, merge, diff, protection), `lib/lifecycle/` the scheduler's decision function, `tests/integration/` container-backed tests, `drizzle/` migrations. Design choices are recorded one line each in `DECISIONS.md`.
+**Layout.** `app/` routes, as server components and server actions. `components/` the interface.
+`lib/services/` the only code that talks to Jellyfin, and it audits every write. `lib/policy/` pure
+policy logic: the field catalogue, merge, diff and the protection rules. `lib/lifecycle/` the
+scheduler's decision function. `tests/integration/` container-backed tests. `drizzle/` migrations.
+
+**Documents.** [`DESIGN.md`](DESIGN.md) is the interface system as shipped: tokens, components and
+the patterns that repeat. [`DECISIONS.md`](DECISIONS.md) records every design and architecture
+decision, one line each, in the order they were made. [`SPEC.md`](SPEC.md) is what the app is meant
+to do. `docs/design/` holds the audit, direction and plan behind the current interface.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a pull request:
+
+- `pnpm lint && pnpm typecheck && pnpm test` should pass. Integration tests need Docker.
+- Anything that touches Jellyfin goes through `lib/services/` and records an audit entry.
+- Anything that changes the interface follows `DESIGN.md`, and adds a line to `DECISIONS.md`
+  explaining why.
+- Keep the two audiences apart: the console is dense and keyboard-driven, the guest pages are one
+  column and say as little as possible.
+
+## Security
+
+The API key has full administrator rights over your Jellyfin server, so treat the console hostname
+as privileged and keep it off the public internet. If you find a vulnerability, please report it
+privately through GitHub's security advisories rather than opening a public issue.
+
+## License
+
+To be decided before the first public release. Until a `LICENSE` file is added, no permission to
+use, copy or distribute this code is granted.
+
+jellycrew is an independent project and is not affiliated with or endorsed by the Jellyfin project.
