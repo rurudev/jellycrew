@@ -27,9 +27,10 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
     // The crossings are only the trigger; which group is current is then measured, so the
     // answer is the same whether you scrolled there or jumped.
     const pick = () => {
-      // At the bottom of the page the last section can never reach the top of the viewport,
-      // so being there is what makes it current.
-      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      // A short last section can never reach the top of the viewport, so reaching the bottom
+      // of a page that actually scrolls is what makes it current.
+      const scrollable = document.documentElement.scrollHeight > window.innerHeight + 2;
+      const atBottom = scrollable && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
       let current = atBottom ? elements[elements.length - 1] : elements[0];
       if (!atBottom) {
         for (const element of elements) {
@@ -38,9 +39,16 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
       }
       if (current) setActive(current.id);
     };
+    // Crossings alone miss the last stretch of a scroll, so the scroll itself is watched too.
     const observer = new IntersectionObserver(pick, { rootMargin: "-80px 0px -70% 0px" });
     for (const element of elements) observer.observe(element);
-    return () => observer.disconnect();
+    window.addEventListener("scroll", pick, { passive: true });
+    window.addEventListener("resize", pick);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", pick);
+      window.removeEventListener("resize", pick);
+    };
   }, [ids]);
 
   return (

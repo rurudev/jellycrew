@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adminActor } from "@/lib/auth/actor";
 import { optionalInt } from "@/lib/forms/zod";
 import { errorMessage, redirectWithNotice } from "@/lib/notice";
+import type { ProfileActionState } from "./state";
 import type { PolicyEditorState } from "@/lib/policy/editor-state";
 import { parseEditorSubmission } from "@/lib/policy/editor-submit";
 import { PolicyFormError } from "@/lib/policy/form";
@@ -30,23 +30,24 @@ function parseProfileForm(formData: FormData) {
   });
 }
 
-export async function createProfileAction(formData: FormData): Promise<void> {
+/** Reports back to the dialog, which then sends the operator to the new profile. */
+export async function createProfileAction(_prev: ProfileActionState, formData: FormData): Promise<ProfileActionState> {
   const actor = await adminActor();
   const parsed = parseProfileForm(formData);
-  if (!parsed.success) redirectWithNotice("/profiles", { error: parsed.error.issues[0]?.message ?? "Invalid input." });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   const source = String(formData.get("source") ?? "blank");
   const userId = String(formData.get("userId") ?? "");
   const sourceId = String(formData.get("sourceProfileId") ?? "");
-  if (source === "user" && !userId) redirectWithNotice("/profiles", { error: "Choose a user to snapshot." });
-  if (source === "clone" && !sourceId) redirectWithNotice("/profiles", { error: "Choose a profile to clone." });
+  if (source === "user" && !userId) return { error: "Choose the user to copy settings from." };
+  if (source === "clone" && !sourceId) return { error: "Choose the profile to copy." };
   let id: string;
   try {
     id = source === "user" ? (await createProfileFromUser(actor, userId, parsed.data)).id : source === "clone" ? cloneProfile(actor, sourceId, parsed.data).id : createBlankProfile(actor, parsed.data).id;
   } catch (err) {
-    redirectWithNotice("/profiles", { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
   revalidatePath("/profiles");
-  redirectWithNotice(`/profiles/${id}`, { ok: "Profile created." });
+  return { ok: `Profile ${parsed.data.name} created.`, href: `/profiles/${id}` };
 }
 
 export async function updateProfileAction(formData: FormData): Promise<void> {
@@ -109,20 +110,29 @@ export async function saveProfilePolicyAction(_prev: PolicyEditorState, formData
 }
 
 /** Apply the profile to every member: preview (redirect with ?applyAll=1) then confirm. */
-export async function applyToMembersAction(formData: FormData): Promise<void> {
+/** Two steps in one action: without `confirm` it returns what would change, with it it writes. */
+export async function applyToMembersAction(_prev: ProfileActionState, formData: FormData): Promise<ProfileActionState> {
   const actor = await adminActor();
   const id = String(formData.get("profileId") ?? "");
-  const confirm = formData.get("confirm") === "1";
-  if (!confirm) redirect(`/profiles/${id}?applyAll=1`);
+  if (!id) return { error: "Missing profile id." };
+  if (formData.get("confirm") !== "1") {
+    try {
+      const members = await listProfileMembers(id);
+      return { preview: members.map((m) => ({ id: m.id, name: m.name, changes: m.drift })) };
+    } catch (err) {
+      return { error: errorMessage(err) };
+    }
+  }
   let results;
   try {
     const members = await listProfileMembers(id);
     results = await executeBulk(actor, "apply_profile", members.map((m) => m.id), { profileId: id });
   } catch (err) {
-    redirectWithNotice(`/profiles/${id}`, { error: errorMessage(err) });
+    return { error: errorMessage(err) };
   }
   const failed = results.filter((r) => !r.ok);
   revalidatePath(`/profiles/${id}`);
   revalidatePath("/users");
-  redirectWithNotice(`/profiles/${id}`, failed.length ? { error: `Applied to ${results.length - failed.length} member(s); ${failed.length} failed: ${failed.map((f) => `${f.name}: ${f.message}`).join("; ")}` } : { ok: `Applied to ${results.length} member(s).` });
+  if (failed.length) return { error: `Applied to ${results.length - failed.length} of ${results.length}. Failed: ${failed.map((f) => `${f.name} (${f.message})`).join(", ")}.` };
+  return { ok: results.length === 1 ? "Applied to 1 member." : `Applied to ${results.length} members.` };
 }

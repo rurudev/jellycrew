@@ -43,7 +43,7 @@ export function FormField({
       <FieldLabel htmlFor={id} className={cn(hideLabel && "sr-only")}>
         {label}
       </FieldLabel>
-      {controlClassName ? <div className={controlClassName}>{control}</div> : control}
+      {controlClassName ? <div className={cn("w-full", controlClassName)}>{control}</div> : control}
       {error ? (
         <FieldError id={errorId} className="text-xs">
           {error}

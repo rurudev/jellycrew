@@ -18,7 +18,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 10 | Invites | `design/invites` | done, merged 2026-09-12 |
 | 11 | Invite acceptance and guest forms | `design/invite-acceptance` | done, merged 2026-09-12 |
 | 12 | Settings | `design/settings` | done, merged 2026-09-12 |
-| 13 | Profiles | `design/profiles` | planned |
+| 13 | Profiles | `design/profiles` | done, merged 2026-09-12 |
 | 14 | Sessions and audit | `design/sessions-and-audit` | planned |
 | 15 | Self-service and login | `design/self-service-and-login` | planned |
 | 16 | Polish, sweep, document | `design/polish` | planned |

@@ -1,19 +1,20 @@
 "use client";
 
-import { createContext, useActionState, useContext, useId, useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { useActionState, useId, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyField } from "@/components/ui/copy-field";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogHost, useOpenDialog } from "@/components/ui/dialog-host";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { IDLE } from "@/lib/forms/action-state";
+import type { ReactNode } from "react";
 import type { InviteDefaults } from "@/lib/invites/defaults";
 import { createInviteAction } from "@/app/(admin)/invites/actions";
 
@@ -25,13 +26,11 @@ function usesLabel(uses: number): string {
   return uses === 0 ? "Unlimited" : uses === 1 ? "One person" : `${uses} people`;
 }
 
-const OpenDialog = createContext<(() => void) | null>(null);
-
 /** Opens the one dialog the page owns. Usable from the header and from the empty state. */
 export function NewInviteButton({ variant }: { variant?: "default" | "outline" }) {
-  const open = useContext(OpenDialog);
+  const open = useOpenDialog();
   return (
-    <Button type="button" variant={variant} onClick={() => open?.()}>
+    <Button type="button" variant={variant} onClick={open}>
       <PlusIcon data-icon="inline-start" aria-hidden />
       New invite
     </Button>
@@ -41,35 +40,13 @@ export function NewInviteButton({ variant }: { variant?: "default" | "outline" }
 /**
  * Making an invite: the terms of the last one are already filled in, and the finished link is
  * shown here rather than put in the URL. `/invites?new=1` opens it on arrival, which is where
- * the Invite button on the users page leads. One dialog serves every trigger on the page.
+ * the Invite button on the users page leads.
  */
 export function NewInvite({ profiles, defaults, children }: { profiles: Array<{ id: string; name: string }>; defaults: InviteDefaults; children: ReactNode }) {
-  const params = useSearchParams();
-  // Read once: closing must not be undone by the parameter still sitting in the URL.
-  const [open, setOpen] = useState(() => params.get("new") === "1");
-  // A fresh form each time it opens, so the last invite's link is never shown for a new one.
-  const [attempt, setAttempt] = useState(0);
-
-  const close = () => {
-    setOpen(false);
-    setAttempt((n) => n + 1);
-    const next = new URLSearchParams(window.location.search);
-    if (next.has("new")) {
-      next.delete("new");
-      const query = next.toString();
-      window.history.replaceState(null, "", query ? `${window.location.pathname}?${query}` : window.location.pathname);
-    }
-  };
-
   return (
-    <OpenDialog.Provider value={() => setOpen(true)}>
+    <DialogHost param="new" className="sm:max-w-lg" dialog={<NewInviteBody profiles={profiles} defaults={defaults} />}>
       {children}
-      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
-        <DialogContent className="sm:max-w-lg">
-          <NewInviteBody key={attempt} profiles={profiles} defaults={defaults} />
-        </DialogContent>
-      </Dialog>
-    </OpenDialog.Provider>
+    </DialogHost>
   );
 }
 
