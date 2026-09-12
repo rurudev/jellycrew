@@ -167,13 +167,13 @@ export function BulkSelection({ action, profiles, ids, children }: { action: (pr
             <>
               <DialogHeader>
                 <DialogTitle>
-                  {BULK_LABELS[state.kind!]}: {state.results.filter((r) => r.ok).length} ok, {state.results.filter((r) => !r.ok).length} failed
+                  {BULK_LABELS[state.kind!]}: {state.results.filter((r) => r.status === "applied").length} applied, {state.results.filter((r) => r.status === "skipped").length} skipped, {state.results.filter((r) => r.status === "failed").length} failed
                 </DialogTitle>
               </DialogHeader>
               <ul className="max-h-[60vh] space-y-1.5 overflow-y-auto">
                 {state.results.map((r) => (
                   <li key={r.userId} className="flex flex-wrap items-center gap-2">
-                    <StatusBadge tone={r.ok ? (r.message.startsWith("Skipped") ? "neutral" : "success") : "destructive"}>{r.ok ? "ok" : "failed"}</StatusBadge>
+                    <StatusBadge tone={r.status === "applied" ? "success" : r.status === "skipped" ? "neutral" : "destructive"}>{r.status}</StatusBadge>
                     <span className="font-medium">{r.name}</span>
                     <span className="text-muted-foreground">{r.message}</span>
                   </li>

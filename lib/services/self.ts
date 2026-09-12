@@ -12,7 +12,7 @@ import { listDevices, revokeDevice, type DeviceView } from "./devices";
 import { getProfile } from "./profiles";
 import { sessionsForUser } from "./sessions";
 import { getServerStatus } from "./system";
-import { VERIFY_TOKEN_TTL_MS, consumeToken, issueToken } from "./tokens";
+import { VERIFY_TOKEN_TTL_MS, consumeToken, issueToken, peekToken } from "./tokens";
 import { validatePassword } from "./user-actions";
 import { getMeta } from "./users";
 
@@ -104,8 +104,15 @@ export async function changeOwnPassword(userId: string, currentPassword: string,
   recordAudit({ actor: selfActor(userId, requestId), action: "self.password.change", targetUserId: userId });
 }
 
+/** Refuses to act for an account Jellyfin has disabled since the session was issued. */
+async function assertActive(userId: string): Promise<void> {
+  const user = await fetchUser(userId);
+  if (user.Policy?.IsDisabled) throw new SelfServiceError("This account is disabled. Ask whoever runs the server to turn it back on.");
+}
+
 /** Revokes one of the signed-in user's own devices. */
 export async function revokeOwnDevice(userId: string, deviceId: string, requestId?: string): Promise<void> {
+  await assertActive(userId);
   const device = (await listDevices(userId)).find((d) => d.id === deviceId && d.lastUserId === userId);
   if (!device) throw new SelfServiceError("That device does not belong to your account.");
   await revokeDevice(selfActor(userId, requestId), deviceId);
@@ -126,11 +133,14 @@ export async function setOwnEmail(userId: string, email: string, requestId?: str
   if (!normalized) throw new SelfServiceError("Enter an email address.");
   if (!isMailConfigured()) throw new MailNotConfiguredError();
   const user = await fetchUser(userId);
+  if (user.Policy?.IsDisabled) throw new SelfServiceError("This account is disabled. Ask whoever runs the server to turn it back on.");
   const before = getMeta(userId);
-  getDb().update(userMeta).set({ email: normalized, emailVerifiedAt: null, updatedAt: new Date() }).where(eq(userMeta.jellyfinUserId, userId)).run();
   const actor = selfActor(userId, requestId);
-  recordAudit({ actor, action: "self.email.set", targetUserId: userId, before: { email: before.email, verified: !!before.emailVerifiedAt }, after: { email: normalized, verified: false } });
+  // The address is only recorded once the mail is on its way: a failed send must not replace a
+  // verified address with an unverified one the user never asked for.
   await sendVerification(actor, userId, user.Name ?? userId, normalized);
+  getDb().update(userMeta).set({ email: normalized, emailVerifiedAt: null, updatedAt: new Date() }).where(eq(userMeta.jellyfinUserId, userId)).run();
+  recordAudit({ actor, action: "self.email.set", targetUserId: userId, before: { email: before.email, verified: !!before.emailVerifiedAt }, after: { email: normalized, verified: false } });
 }
 
 export async function resendOwnVerification(userId: string, requestId?: string): Promise<void> {
@@ -153,6 +163,12 @@ export type VerifyEmailResult = { ok: true; email: string } | { ok: false; reaso
 
 /** Consumes a verification token; the address must still be the one on file. */
 export function verifyEmailToken(token: string, requestId?: string): VerifyEmailResult {
+  // Peek before consuming: a link that no longer matches the address on file should stay usable
+  // in case the address is put back, rather than being burned on the way to a dead end.
+  const peeked = peekToken("email_verify", token);
+  if (!peeked.ok) return peeked;
+  const pending = getMeta(peeked.row.jellyfinUserId);
+  if (!peeked.row.email || pending.email !== peeked.row.email) return { ok: false, reason: "mismatch" };
   const result = consumeToken("email_verify", token);
   if (!result.ok) return result;
   const meta = getMeta(result.row.jellyfinUserId);

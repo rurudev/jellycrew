@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits } from "@/lib/ratelimit";
+import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits, ipLimit } from "@/lib/ratelimit";
 import { json, originAllowed, readJson, tooMany } from "@/lib/public/http";
 import { ResetError, consumePasswordReset, resetTokenStatus } from "@/lib/services/reset";
 import { hashToken } from "@/lib/tokens";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 function limits(request: Request, token: string) {
   return [
-    { key: `reset-consume:ip:${clientIp(request)}`, ...PUBLIC_LIMITS.perIp },
+    ...ipLimit(`reset-consume:ip:${clientIp(request)}`, clientIp(request), PUBLIC_LIMITS.perIp),
     { key: `reset-consume:token:${hashToken(token).slice(0, 16)}`, max: 10, windowMs: 3_600_000 },
   ];
 }

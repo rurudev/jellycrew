@@ -2,6 +2,7 @@ import { JellyfinError, fetchUser, fetchUsers, setUserPasswordRaw, updateUser, u
 import type { DisabledReason } from "@/lib/db/schema";
 import { getSettingOrDefault } from "@/lib/settings";
 import { recordAudit, type Actor } from "./audit";
+import { withUserPolicyLock } from "./policy-writes";
 import { assertProtected } from "./protection";
 import { invalidateSessionCache } from "./sessions";
 import { markDisabledByApp } from "./users";
@@ -18,6 +19,10 @@ export class UserActionError extends Error {
  * last-admin and self protections. `reason` is recorded in user_meta for disables.
  */
 export async function setUserEnabled(actor: Actor, userId: string, enabled: boolean, reason: DisabledReason = "manual"): Promise<{ changed: boolean }> {
+  return withUserPolicyLock(userId, () => setUserEnabledLocked(actor, userId, enabled, reason));
+}
+
+async function setUserEnabledLocked(actor: Actor, userId: string, enabled: boolean, reason: DisabledReason): Promise<{ changed: boolean }> {
   const user = await fetchUser(userId);
   const live = (user.Policy ?? {}) as Record<string, unknown>;
   const currentlyDisabled = live.IsDisabled === true;

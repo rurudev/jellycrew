@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lt, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lt, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { audit, type ActorType, type AuditRow } from "@/lib/db/schema";
 import { logger } from "@/lib/log";
@@ -64,7 +64,16 @@ function auditWhere(f: AuditFilters) {
   const conds = [];
   if (f.actorType) conds.push(eq(audit.actorType, f.actorType));
   if (f.actorId) conds.push(eq(audit.actorId, f.actorId));
-  if (f.action) conds.push(f.action.endsWith("*") ? like(audit.action, `${f.action.slice(0, -1)}%`) : eq(audit.action, f.action));
+  if (f.action) {
+    if (f.action.endsWith("*")) {
+      // A range beats LIKE here: SQLite only uses the index for LIKE with case_sensitive_like on,
+      // so the prefix filter would otherwise scan the whole table.
+      const prefix = f.action.slice(0, -1);
+      conds.push(and(gte(audit.action, prefix), lt(audit.action, `${prefix}\u{10FFFF}`)));
+    } else {
+      conds.push(eq(audit.action, f.action));
+    }
+  }
   if (f.targetUserId) conds.push(eq(audit.targetUserId, f.targetUserId));
   if (f.from) conds.push(gte(audit.ts, f.from));
   if (f.to) conds.push(lte(audit.ts, f.to));

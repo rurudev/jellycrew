@@ -57,10 +57,23 @@ export const PUBLIC_LIMITS = {
   loginPerIp: { max: 10, windowMs: 60_000 },
 } as const;
 
+/** The address of a caller we cannot identify. */
+export const UNKNOWN_IP = "unknown";
+
+/**
+ * A limit keyed on the caller's address, which applies only when the address is actually known.
+ * Behind a proxy that forwards nothing, every caller looks like the same one, and a per-address
+ * limit would then be a switch that locks everybody out at once. Limits keyed on a username or
+ * a token still apply in that case.
+ */
+export function ipLimit(key: string, ip: string, limit: { max: number; windowMs: number }): Array<{ key: string; max: number; windowMs: number }> {
+  return ip === UNKNOWN_IP ? [] : [{ key, ...limit }];
+}
+
 export function clientIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]!.trim() || "unknown";
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
+  if (fwd) return fwd.split(",")[0]!.trim() || UNKNOWN_IP;
+  return request.headers.get("x-real-ip")?.trim() || UNKNOWN_IP;
 }
 
 export class RateLimitedError extends Error {

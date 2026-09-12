@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull, lt, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { token as tokenTable, userMeta, type UserMeta } from "@/lib/db/schema";
 import { parseDate } from "@/lib/format";
@@ -146,6 +146,8 @@ export interface LifecycleRunResult {
   deleted: Array<{ userId: string; name: string }>;
   skippedAdmins: number;
   errors: Array<{ userId: string; name: string; error: string }>;
+  /** Expired tokens removed in this pass. */
+  prunedTokens?: number;
 }
 
 /** Builds decision inputs for every Jellyfin user from live data plus app metadata. */
@@ -172,20 +174,69 @@ export async function collectLifecycleInputs(): Promise<LifecycleInput[]> {
   });
 }
 
+/**
+ * Takes the due deletion for this user, in one statement. The pass decides from a snapshot but
+ * can take minutes to reach a given user, and an admin may cancel the deletion in between; the
+ * conditional update is what makes that cancellation win. Returns false when the row no longer
+ * says the account is due, in which case nothing is deleted.
+ */
+export function claimDueDeletion(userId: string, now: Date = new Date()): Date | null {
+  const before = getDb().select().from(userMeta).where(eq(userMeta.jellyfinUserId, userId)).get();
+  const claimed = getDb()
+    .update(userMeta)
+    .set({ deleteAfter: null, updatedAt: new Date() })
+    .where(and(eq(userMeta.jellyfinUserId, userId), isNotNull(userMeta.deleteAfter), lte(userMeta.deleteAfter, now)))
+    .run();
+  return claimed.changes === 1 ? (before?.deleteAfter ?? null) : null;
+}
+
+/** Puts a claimed deletion back when the delete itself failed, so the next pass tries again. */
+function releaseDeletionClaim(userId: string, deleteAfter: Date | null): void {
+  if (!deleteAfter) return;
+  getDb().update(userMeta).set({ deleteAfter, updatedAt: new Date() }).where(eq(userMeta.jellyfinUserId, userId)).run();
+}
+
+/**
+ * A decision that disables is re-read too: an admin who extended an expiry or cleared the
+ * inactivity rule while the pass was working should not have the account disabled anyway.
+ */
+function stillDueToDisable(input: LifecycleInput, now: Date): boolean {
+  const meta = getDb().select().from(userMeta).where(eq(userMeta.jellyfinUserId, input.userId)).get();
+  if (!meta) return false;
+  const decision = decideLifecycle({ ...input, expiresAt: meta.expiresAt, deleteAfter: meta.deleteAfter, inactivityDisableDays: effectiveInactivityDays(meta.inactivityDisableDays, profilesById().get(meta.profileId ?? "")?.inactivityDisableDays) }, now);
+  return decision.action === "disable";
+}
+
+/** Reset and verification tokens are single-use and short-lived; spent ones are only clutter. */
+export const TOKEN_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function pruneSpentTokens(now: Date = new Date()): number {
+  const cutoff = new Date(now.getTime() - TOKEN_RETENTION_MS);
+  return getDb().delete(tokenTable).where(lt(tokenTable.expiresAt, cutoff)).run().changes;
+}
+
 /** One scheduler pass. Every change is audited with the system actor. */
 export async function runLifecycle(now: Date = new Date()): Promise<LifecycleRunResult> {
   const inputs = await collectLifecycleInputs();
-  const result: LifecycleRunResult = { at: now.toISOString(), scanned: inputs.length, disabled: [], deleted: [], skippedAdmins: 0, errors: [] };
+  const result: LifecycleRunResult = { at: now.toISOString(), scanned: inputs.length, disabled: [], deleted: [], skippedAdmins: 0, errors: [], prunedTokens: pruneSpentTokens(now) };
   for (const input of inputs) {
     const decision: LifecycleDecision = decideLifecycle(input, now);
     if (input.isAdmin) result.skippedAdmins += 1;
     if (decision.action === "none") continue;
     try {
       if (decision.action === "disable") {
+        if (!stillDueToDisable(input, now)) continue;
         await setUserEnabled(SYSTEM_ACTOR, input.userId, false, decision.reason);
         result.disabled.push({ userId: input.userId, name: input.name, reason: decision.reason });
       } else {
-        await deleteUserNow(SYSTEM_ACTOR, input.userId, { reason: "grace period ended" });
+        const claimed = claimDueDeletion(input.userId, now);
+        if (!claimed) continue;
+        try {
+          await deleteUserNow(SYSTEM_ACTOR, input.userId, { reason: "grace period ended" });
+        } catch (err) {
+          releaseDeletionClaim(input.userId, claimed);
+          throw err;
+        }
         result.deleted.push({ userId: input.userId, name: input.name });
       }
     } catch (err) {

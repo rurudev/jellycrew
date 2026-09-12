@@ -6,7 +6,7 @@ import { call } from "@/lib/jellyfin/client";
 import { ProtectionError } from "@/lib/policy/protection";
 import type { Actor } from "@/lib/services/audit";
 import { executeBulk, previewBulk } from "@/lib/services/bulk";
-import { cancelDeletion, collectLifecycleInputs, deleteUserNow, extendExpiry, runLifecycle, scheduleDeletion, updateUserMeta } from "@/lib/services/lifecycle";
+import { cancelDeletion, claimDueDeletion, collectLifecycleInputs, deleteUserNow, extendExpiry, runLifecycle, scheduleDeletion, updateUserMeta } from "@/lib/services/lifecycle";
 import { createBlankProfile, assignProfile } from "@/lib/services/profiles";
 import { getJobStatus, runJob, runLifecycleJob } from "@/lib/services/scheduler";
 import { setSetting } from "@/lib/settings";
@@ -154,6 +154,36 @@ describe("scheduler", () => {
     } finally {
       updateUserMeta(admin(), adminId, { expiresAt: null, inactivityDisableDays: null });
       for (const u of [expired, inactive, fresh]) await deleteRawUser(u.id);
+    }
+  });
+
+  it("does not delete an account whose deletion was cancelled while the pass was running", async () => {
+    const user = await createRawUser(uniqueName("cancel-race"));
+    try {
+      // Due for deletion: the pass will decide to delete this account.
+      await scheduleDeletion(admin(), user.id);
+      getDb().update(userMeta).set({ deleteAfter: new Date(Date.now() - day) }).where(eq(userMeta.jellyfinUserId, user.id)).run();
+      const inputs = await collectLifecycleInputs();
+      expect(inputs.find((i) => i.userId === user.id)?.deleteAfter).toBeInstanceOf(Date);
+
+      // The guard the pass applies just before it deletes: the row must still say "due".
+      const claimed = claimDueDeletion(user.id);
+      expect(claimed).toBeInstanceOf(Date);
+      expect(meta(user.id)?.deleteAfter).toBeNull();
+      // A second pass holding the same stale decision finds nothing left to claim.
+      expect(claimDueDeletion(user.id)).toBeNull();
+
+      // Put it back, then cancel the way an admin would: the claim must now refuse.
+      getDb().update(userMeta).set({ deleteAfter: new Date(Date.now() - day) }).where(eq(userMeta.jellyfinUserId, user.id)).run();
+      await cancelDeletion(admin(), user.id);
+      expect(claimDueDeletion(user.id)).toBeNull();
+
+      const result = await runLifecycle();
+      expect(result.deleted.map((d) => d.userId)).not.toContain(user.id);
+      expect(await exists(user.id)).toBe(true);
+      expect(meta(user.id)?.deleteAfter).toBeNull();
+    } finally {
+      await deleteRawUser(user.id);
     }
   });
 

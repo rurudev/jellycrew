@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RateLimiter, clientIp } from "./ratelimit";
+import { RateLimiter, UNKNOWN_IP, clientIp, ipLimit } from "./ratelimit";
 
 describe("RateLimiter", () => {
   it("allows up to max hits per window and then blocks with a retry hint", () => {
@@ -29,5 +29,18 @@ describe("clientIp", () => {
     expect(clientIp(new Request("http://x", { headers: { "x-forwarded-for": "9.9.9.9, 10.0.0.1" } }))).toBe("9.9.9.9");
     expect(clientIp(new Request("http://x", { headers: { "x-real-ip": "8.8.8.8" } }))).toBe("8.8.8.8");
     expect(clientIp(new Request("http://x"))).toBe("unknown");
+  });
+});
+
+describe("ipLimit", () => {
+  const limit = { max: 10, windowMs: 60_000 };
+
+  it("limits a caller we can identify", () => {
+    expect(ipLimit("login:ip:203.0.113.7", "203.0.113.7", limit)).toEqual([{ key: "login:ip:203.0.113.7", max: 10, windowMs: 60_000 }]);
+  });
+
+  it("drops the limit when every caller looks the same", () => {
+    // Behind a proxy that forwards nothing, one bucket would lock out everyone at once.
+    expect(ipLimit("login:ip:unknown", UNKNOWN_IP, limit)).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isMailConfigured } from "@/lib/mail";
-import { RateLimitedError, clientIp, enforceLimits } from "@/lib/ratelimit";
+import { RateLimitedError, clientIp, enforceLimits, ipLimit } from "@/lib/ratelimit";
 import { json, originAllowed, readJson, tooMany } from "@/lib/public/http";
 import { RESET_GENERIC_MESSAGE, requestPasswordReset } from "@/lib/services/reset";
 import { hashToken } from "@/lib/tokens";
@@ -18,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) return json({ error: "Enter your username or email address." }, { status: 400 });
   try {
     enforceLimits([
-      { key: `reset:ip:${clientIp(request)}`, max: 5, windowMs: 60_000 },
+      ...ipLimit(`reset:ip:${clientIp(request)}`, clientIp(request), { max: 5, windowMs: 60_000 }),
       { key: `reset:id:${hashToken(parsed.data.identifier.toLowerCase()).slice(0, 16)}`, max: 5, windowMs: 3_600_000 },
     ]);
   } catch (err) {

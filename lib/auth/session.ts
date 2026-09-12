@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { sealData, unsealData } from "iron-session";
 import { redirect } from "next/navigation";
 import { env } from "@/lib/env";
+import { isStillActiveUser, isStillAdmin } from "./still-valid";
 
 export const ADMIN_COOKIE = "jellycrew_admin";
 export const ADMIN_TTL_SECONDS = 12 * 60 * 60;
@@ -52,9 +53,17 @@ export async function unsealSession<T extends AdminSession | SelfSession>(
   }
 }
 
+/**
+ * The signed-in administrator, or null. The cookie is only the claim: Jellyfin is asked whether
+ * that account is still an enabled administrator, so demoting or deleting someone there ends
+ * their access here too. The answer is cached briefly, and a short grace period covers a
+ * Jellyfin that is momentarily unreachable.
+ */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const store = await cookies();
-  return unsealSession<AdminSession>(store.get(ADMIN_COOKIE)?.value, "admin", ADMIN_TTL_SECONDS);
+  const claim = await unsealSession<AdminSession>(store.get(ADMIN_COOKIE)?.value, "admin", ADMIN_TTL_SECONDS);
+  if (!claim) return null;
+  return (await isStillAdmin(claim.userId)) ? claim : null;
 }
 
 /** For server components and actions in the admin area. Redirects to /login when not signed in. */
@@ -75,9 +84,12 @@ export async function clearAdminSession(): Promise<void> {
   store.delete(ADMIN_COOKIE);
 }
 
+/** The signed-in user, or null. An account disabled since sign-in no longer has a session. */
 export async function getSelfSession(): Promise<SelfSession | null> {
   const store = await cookies();
-  return unsealSession<SelfSession>(store.get(SELF_COOKIE)?.value, "self", SELF_TTL_SECONDS);
+  const claim = await unsealSession<SelfSession>(store.get(SELF_COOKIE)?.value, "self", SELF_TTL_SECONDS);
+  if (!claim) return null;
+  return (await isStillActiveUser(claim.userId)) ? claim : null;
 }
 
 export async function setSelfSession(session: Omit<SelfSession, "kind" | "issuedAt">): Promise<void> {

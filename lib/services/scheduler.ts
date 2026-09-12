@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { jobRun, type JobRun } from "@/lib/db/schema";
@@ -7,41 +8,74 @@ import { runLifecycle } from "./lifecycle";
 
 export const LIFECYCLE_JOB = "lifecycle";
 export const LIFECYCLE_INTERVAL_MS = 15 * 60 * 1000;
-const LOCK_MS = 10 * 60 * 1000;
+/**
+ * The lease a run holds, kept short and extended by a heartbeat while the run is alive. A slow
+ * pass therefore never loses its lock to the next tick, and a process that dies mid-run frees
+ * the job within one lease instead of holding it for as long as the pass might have taken.
+ */
+export const LOCK_MS = 5 * 60 * 1000;
+const HEARTBEAT_MS = 60 * 1000;
 const START_DELAY_MS = 30 * 1000;
 
+if (LOCK_MS < 3 * HEARTBEAT_MS) throw new Error("The job lease must outlast several heartbeats, or a live run loses its own lock.");
+
+/** True when the row says a run is holding the lease right now. */
+export function isJobRunning(job: JobRun | undefined, now: Date = new Date()): boolean {
+  return Boolean(job?.lockUntil && job.lockUntil > now);
+}
+
 /**
- * Runs `fn` under a database lock so that only one process (or one HMR instance) runs a
- * job at a time. Returns null when the lock is held by someone else.
+ * Runs `fn` under a database lock so that only one process (or one HMR instance) runs a job at
+ * a time. Returns null when the lock is held by someone else. The lock carries a run id: the
+ * release is conditional on it, so a run that overran cannot clear the lease of the run that
+ * replaced it.
  */
 export async function runJob<T>(name: string, fn: () => Promise<T>, now: Date = new Date()): Promise<T | null> {
   const db = getDb();
+  const runId = randomUUID();
   db.insert(jobRun).values({ name }).onConflictDoNothing().run();
-  const lockUntil = new Date(now.getTime() + LOCK_MS);
   const acquired = db
     .update(jobRun)
-    .set({ lockUntil, lastStartedAt: now })
+    .set({ lockUntil: new Date(now.getTime() + LOCK_MS), lastStartedAt: now, runId })
     .where(and(eq(jobRun.name, name), or(isNull(jobRun.lockUntil), lt(jobRun.lockUntil, now))))
     .run();
   if (acquired.changes === 0) {
     logger.info({ job: name }, "job lock held elsewhere; skipping");
     return null;
   }
+
+  const heartbeat = setInterval(() => {
+    const extended = db
+      .update(jobRun)
+      .set({ lockUntil: new Date(Date.now() + LOCK_MS) })
+      .where(and(eq(jobRun.name, name), eq(jobRun.runId, runId)))
+      .run();
+    // Lost the lease to a takeover: stop extending and let the other run own the row.
+    if (extended.changes === 0) clearInterval(heartbeat);
+  }, HEARTBEAT_MS);
+  heartbeat.unref?.();
+
   let result: T | undefined;
   let error: unknown;
   try {
     result = await fn();
   } catch (err) {
     error = err;
+  } finally {
+    clearInterval(heartbeat);
   }
-  db.update(jobRun)
+
+  const released = db
+    .update(jobRun)
     .set({
       lockUntil: null,
+      runId: null,
       lastFinishedAt: new Date(),
       lastResult: error ? { ok: false, error: error instanceof Error ? error.message : String(error) } : { ok: true, ...(result as object) },
     })
-    .where(eq(jobRun.name, name))
+    .where(and(eq(jobRun.name, name), eq(jobRun.runId, runId)))
     .run();
+  if (released.changes === 0) logger.warn({ job: name, runId }, "job finished after its lease was taken over; result not recorded");
   if (error) throw error;
   return result as T;
 }
@@ -51,14 +85,18 @@ export function getJobStatus(name: string): JobRun | undefined {
 }
 
 export async function runLifecycleJob(now: Date = new Date()) {
-  return runJob(LIFECYCLE_JOB, async () => {
-    const result = await runLifecycle(now);
-    logger.info({ job: LIFECYCLE_JOB, ...result }, "lifecycle run finished");
-    if (result.disabled.length || result.deleted.length || result.errors.length) {
-      recordAudit({ actor: SYSTEM_ACTOR, action: "lifecycle.run", detail: result });
-    }
-    return result;
-  }, now);
+  return runJob(
+    LIFECYCLE_JOB,
+    async () => {
+      const result = await runLifecycle(now);
+      logger.info({ job: LIFECYCLE_JOB, ...result }, "lifecycle run finished");
+      if (result.disabled.length || result.deleted.length || result.errors.length) {
+        recordAudit({ actor: SYSTEM_ACTOR, action: "lifecycle.run", detail: result });
+      }
+      return result;
+    },
+    now,
+  );
 }
 
 declare global {

@@ -14,27 +14,37 @@ export async function GET(request: Request): Promise<Response> {
   const filters = parseAuditFilters(params);
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const encoder = new TextEncoder();
+  const rows = iterateAudit(filters);
+  let started = false;
+  let wroteRow = false;
+  // One chunk per pull, so the client's pace decides how fast rows are read out of SQLite.
+  // Producing the whole file in start() would block the event loop and hold it all in memory.
   const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
+    pull(controller) {
       try {
-        if (format === "csv") {
-          controller.enqueue(encoder.encode(auditCsvHeader()));
-          for (const row of iterateAudit(filters)) controller.enqueue(encoder.encode(auditRowToCsv(row)));
-        } else {
-          controller.enqueue(encoder.encode("[\n"));
-          let first = true;
-          for (const row of iterateAudit(filters)) {
-            controller.enqueue(encoder.encode(`${first ? "" : ",\n"}${JSON.stringify(auditRowToPlain(row))}`));
-            first = false;
-          }
-          controller.enqueue(encoder.encode("\n]\n"));
+        if (!started) {
+          started = true;
+          controller.enqueue(encoder.encode(format === "csv" ? auditCsvHeader() : "[\n"));
+          return;
         }
+        const next = rows.next();
+        if (!next.done) {
+          const row = next.value;
+          controller.enqueue(encoder.encode(format === "csv" ? auditRowToCsv(row) : `${wroteRow ? ",\n" : ""}${JSON.stringify(auditRowToPlain(row))}`));
+          wroteRow = true;
+          return;
+        }
+        if (format === "json") controller.enqueue(encoder.encode("\n]\n"));
         controller.close();
       } catch (err) {
         controller.error(err);
       }
     },
+    cancel() {
+      rows.return?.(undefined);
+    },
   });
+
   return new Response(stream, {
     headers: {
       "content-type": format === "csv" ? "text/csv; charset=utf-8" : "application/json; charset=utf-8",

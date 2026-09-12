@@ -121,6 +121,8 @@ export const audit = sqliteTable(
 export const jobRun = sqliteTable("job_run", {
   name: text("name").primaryKey(),
   lockUntil: ts("lock_until"),
+  /** Who holds the lease. The release is conditional on it, so an overrun run cannot clear a newer one's lock. */
+  runId: text("run_id"),
   lastStartedAt: ts("last_started_at"),
   lastFinishedAt: ts("last_finished_at"),
   lastResult: text("last_result", { mode: "json" }).$type<unknown>(),

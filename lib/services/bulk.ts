@@ -41,6 +41,8 @@ export interface BulkResultRow {
   userId: string;
   name: string;
   ok: boolean;
+  /** What actually happened. "skipped" is not a failure, but it is not a change either. */
+  status: "applied" | "skipped" | "failed";
   message: string;
   changes?: FieldChange[];
 }
@@ -165,64 +167,64 @@ export async function executeBulk(actor: Actor, kind: BulkKind, userIds: string[
   const results: BulkResultRow[] = [];
   for (const row of preview) {
     if (row.skip) {
-      results.push({ userId: row.userId, name: row.name, ok: true, message: `Skipped: ${row.skip}` });
+      results.push({ userId: row.userId, name: row.name, ok: true, status: "skipped", message: `Skipped: ${row.skip}` });
       continue;
     }
     try {
       switch (kind) {
         case "assign_profile":
           assignProfile(actor, row.userId, params.profileId ?? null);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "apply_profile": {
           const changes = await applyProfileToUser(actor, row.userId, params.profileId!);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: changes.length ? `${changes.length} field(s) updated` : "Already matched; assignment recorded", changes });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: changes.length ? `${changes.length} field(s) updated` : "Already matched; assignment recorded", changes });
           break;
         }
         case "enable":
           await setUserEnabled(actor, row.userId, true);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: "Enabled" });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: "Enabled" });
           break;
         case "disable":
           await setUserEnabled(actor, row.userId, false, "manual");
-          results.push({ userId: row.userId, name: row.name, ok: true, message: "Disabled" });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: "Disabled" });
           break;
         case "set_expiry":
           setExpiry(actor, row.userId, new Date(params.date!));
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "extend_expiry":
           extendExpiry(actor, row.userId, params.days!);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "clear_expiry":
           setExpiry(actor, row.userId, null);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: "Expiry removed" });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: "Expiry removed" });
           break;
         case "schedule_deletion":
           await scheduleDeletion(actor, row.userId);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "cancel_deletion":
           await cancelDeletion(actor, row.userId);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: "Deletion cancelled, account enabled" });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: "Deletion cancelled, account enabled" });
           break;
         case "add_label":
           addLabel(actor, row.userId, params.label!);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "remove_label":
           removeLabel(actor, row.userId, params.label!);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: row.summary });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: row.summary });
           break;
         case "send_reset_link": {
           const { email } = await adminEmailResetLink(actor, row.userId);
-          results.push({ userId: row.userId, name: row.name, ok: true, message: `Reset link emailed to ${email}` });
+          results.push({ userId: row.userId, name: row.name, ok: true, status: "applied", message: `Reset link emailed to ${email}` });
           break;
         }
       }
     } catch (err) {
-      results.push({ userId: row.userId, name: row.name, ok: false, message: err instanceof Error ? err.message : String(err) });
+      results.push({ userId: row.userId, name: row.name, ok: false, status: "failed", message: err instanceof Error ? err.message : String(err) });
     }
   }
   recordAudit({
@@ -231,9 +233,9 @@ export async function executeBulk(actor: Actor, kind: BulkKind, userIds: string[
     detail: {
       params,
       requested: userIds.length,
-      succeeded: results.filter((r) => r.ok && !r.message.startsWith("Skipped")).length,
-      skipped: results.filter((r) => r.message.startsWith("Skipped")).length,
-      failed: results.filter((r) => !r.ok).length,
+      succeeded: results.filter((r) => r.status === "applied").length,
+      skipped: results.filter((r) => r.status === "skipped").length,
+      failed: results.filter((r) => r.status === "failed").length,
       userIds,
     },
   });

@@ -37,7 +37,8 @@ export function parseAuditFilters(params: Record<string, string | string[] | und
     raw.from = from;
   }
   if (to && !Number.isNaN(Date.parse(to))) {
-    f.to = new Date(`${to}T23:59:59.999Z`.length === 29 && to.length === 10 ? `${to}T23:59:59.999Z` : to);
+    // A date alone means the whole of that day, or the filter would drop everything after midnight.
+    f.to = to.length === 10 ? new Date(`${to}T23:59:59.999Z`) : new Date(to);
     raw.to = to;
   }
   const before = Number(get("before"));

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits } from "@/lib/ratelimit";
+import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits, ipLimit } from "@/lib/ratelimit";
 import { json, originAllowed, readJson, tooMany } from "@/lib/public/http";
 import { InviteError, publicInviteInfo, redeemInvite } from "@/lib/services/invites";
 import { getServerStatus } from "@/lib/services/system";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 function limits(request: Request, token: string) {
   const ip = clientIp(request);
   return [
-    { key: `invite:ip:${ip}`, ...PUBLIC_LIMITS.perIp },
+    ...ipLimit(`invite:ip:${ip}`, ip, PUBLIC_LIMITS.perIp),
     { key: `invite:token:${hashToken(token).slice(0, 16)}`, ...PUBLIC_LIMITS.perToken },
   ];
 }

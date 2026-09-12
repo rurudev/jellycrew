@@ -3,6 +3,7 @@ import { diffPolicies, type FieldChange } from "@/lib/policy/diff";
 import { policyHash } from "@/lib/policy/hash";
 import { copyManagedFields, mergeEdit } from "@/lib/policy/merge";
 import { recordAudit, type Actor } from "./audit";
+import { withUserPolicyLock } from "./policy-writes";
 import { assertProtected } from "./protection";
 import { markDisabledByApp } from "./users";
 
@@ -68,6 +69,10 @@ export async function saveUserPolicy(actor: Actor, input: PolicySaveInput): Prom
 /** Copies the profile-managed fields of `sourceId` onto `targetId`. Per-user fields are untouched. */
 export async function copyPolicyFromUser(actor: Actor, targetId: string, sourceId: string, confirm: boolean): Promise<FieldChange[]> {
   if (targetId === sourceId) throw new Error("Source and target are the same user.");
+  return withUserPolicyLock(targetId, () => copyPolicyFromUserLocked(actor, targetId, sourceId, confirm));
+}
+
+async function copyPolicyFromUserLocked(actor: Actor, targetId: string, sourceId: string, confirm: boolean): Promise<FieldChange[]> {
   const [target, source] = await Promise.all([fetchUser(targetId), fetchUser(sourceId)]);
   const live = (target.Policy ?? {}) as Record<string, unknown>;
   const merged = copyManagedFields(live, (source.Policy ?? {}) as Record<string, unknown>);

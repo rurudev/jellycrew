@@ -9,6 +9,7 @@ import { policyHash } from "@/lib/policy/hash";
 import { applyProfilePolicy, extractManagedFields, mergeEdit } from "@/lib/policy/merge";
 import { PROFILE_MANAGED_FIELDS } from "@/lib/policy/fields";
 import { recordAudit, type Actor } from "./audit";
+import { withUserPolicyLock } from "./policy-writes";
 import { ensureMetaRows, getMeta } from "./users";
 
 export class ProfileError extends Error {
@@ -202,6 +203,10 @@ export async function previewApplyProfile(userId: string, profileId: string): Pr
  * assignment. Per-user and unknown fields are preserved.
  */
 export async function applyProfileToUser(actor: Actor, userId: string, profileId: string): Promise<FieldChange[]> {
+  return withUserPolicyLock(userId, () => applyProfileToUserLocked(actor, userId, profileId));
+}
+
+async function applyProfileToUserLocked(actor: Actor, userId: string, profileId: string): Promise<FieldChange[]> {
   const profile = requireProfile(profileId);
   const user = await fetchUser(userId);
   const live = (user.Policy ?? {}) as Record<string, unknown>;

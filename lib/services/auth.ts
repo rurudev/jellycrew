@@ -1,3 +1,4 @@
+import { forgetSessionCheck } from "@/lib/auth/still-valid";
 import { JellyfinError, authenticateByName, logoutSession } from "@/lib/jellyfin";
 import { logger } from "@/lib/log";
 import { recordAudit, type Actor } from "./audit";
@@ -56,6 +57,8 @@ export async function loginAdmin(username: string, password: string, requestId?:
     recordAudit({ actor, action: "admin.login.denied", targetUserId: identity.userId, detail: { reason: "not_admin" } });
     throw new LoginError("not_admin", "This account is not a Jellyfin administrator.");
   }
+  // Jellyfin has just confirmed this account, so any cached "no" from before is stale.
+  forgetSessionCheck(identity.userId);
   recordAudit({ actor, action: "admin.login", targetUserId: identity.userId });
   return identity;
 }

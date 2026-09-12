@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { sealSession, selfCookieHeader, SELF_TTL_SECONDS } from "@/lib/auth/session";
-import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits } from "@/lib/ratelimit";
+import { forgetSessionCheck } from "@/lib/auth/still-valid";
+import { PUBLIC_LIMITS, RateLimitedError, clientIp, enforceLimits, ipLimit } from "@/lib/ratelimit";
 import { json, originAllowed, readJson, tooMany } from "@/lib/public/http";
 import { LoginError } from "@/lib/services/auth";
 import { loginSelf } from "@/lib/services/self";
@@ -18,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) return json({ error: "Username and password are required." }, { status: 400 });
   try {
     enforceLimits([
-      { key: `me-login:ip:${clientIp(request)}`, ...PUBLIC_LIMITS.loginPerIp },
+      ...ipLimit(`me-login:ip:${clientIp(request)}`, clientIp(request), PUBLIC_LIMITS.loginPerIp),
       { key: `me-login:user:${hashToken(parsed.data.username.toLowerCase()).slice(0, 16)}`, ...PUBLIC_LIMITS.loginPerIp },
     ]);
   } catch (err) {
@@ -28,6 +29,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const identity = await loginSelf(parsed.data.username, parsed.data.password, request.headers.get("x-request-id") ?? undefined);
     const value = await sealSession({ kind: "self", userId: identity.userId, userName: identity.userName, issuedAt: Date.now() }, SELF_TTL_SECONDS);
+    forgetSessionCheck(identity.userId);
     return json({ ok: true, userName: identity.userName }, { headers: { "set-cookie": selfCookieHeader(value) } });
   } catch (err) {
     if (err instanceof LoginError) return json({ error: err.message, code: err.code }, { status: err.code === "unavailable" ? 503 : 401 });

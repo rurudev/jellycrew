@@ -5,13 +5,14 @@ import { StatusDot } from "@/components/ui/status-badge";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Timestamp } from "@/components/ui/timestamp";
 import { lifecycleSummary } from "@/lib/lifecycle/summary";
+import { isJobRunning } from "@/lib/services/scheduler";
 import type { JobRun } from "@/lib/db/schema";
 import { runLifecycleNowAction } from "@/app/(admin)/settings/actions";
 
 /** What the scheduler last did, as a sentence. The full result stays one disclosure away. */
 export function AutomationSection({ job, intervalMs, id }: { job: JobRun | undefined; intervalMs: number; id: string }) {
   const summary = lifecycleSummary(job?.lastResult);
-  const running = Boolean(job?.lockUntil && job.lockUntil > new Date());
+  const running = isJobRunning(job);
   const touched = summary ? summary.disabled.length + summary.deleted.length + summary.errors.length : 0;
   return (
     <Section
