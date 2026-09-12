@@ -1,37 +1,44 @@
 import { publicInviteInfo } from "@/lib/services/invites";
-import { getServerStatus } from "@/lib/services/system";
+import { publicServerName } from "@/lib/public/server-name";
 import { getSettingOrDefault } from "@/lib/settings";
-import { Callout } from "@/components/ui/callout";
+import { GuestMessage } from "@/components/public/guest-message";
 import { SignupForm } from "./signup-form";
 
 export const metadata = { title: "You're invited" };
 
-const closed: Record<string, string> = {
-  expired: "This invite has expired. Ask the person who invited you for a new link.",
-  exhausted: "This invite has already been used. Ask the person who invited you for a new link.",
-  revoked: "This invite is no longer valid.",
+const closed: Record<string, { title: string; body: string }> = {
+  expired: { title: "This invite has expired", body: "Ask the person who invited you for a fresh link." },
+  exhausted: { title: "This invite has been used", body: "Ask the person who invited you for a fresh link." },
+  revoked: { title: "This invite was withdrawn", body: "Ask the person who invited you whether you should still have access." },
 };
 
 export default async function InvitePage(props: PageProps<"/invite/[token]">) {
   const { token } = await props.params;
   const info = publicInviteInfo(token);
-  const server = await getServerStatus();
-  const serverName = server.serverName ?? "Jellyfin";
+  const serverName = await publicServerName();
+
   if (!info) {
-    return <Callout tone="error" title="Invalid invite">This invite link is not valid. Check that you copied the whole link.</Callout>;
+    return <GuestMessage tone="warning" title="This link is not valid" body="Check that you copied the whole link, including the part after the last slash." />;
   }
   if (info.status !== "active") {
-    return <Callout tone="warning" title="Invite closed">{closed[info.status]}</Callout>;
+    const message = closed[info.status]!;
+    return <GuestMessage tone="warning" title={message.title} body={message.body} />;
   }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Join {serverName}</h1>
-        <p className="mt-1 text-muted-foreground">Create your Jellyfin account{info.label ? ` (${info.label})` : ""}.</p>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">You&apos;re invited to {serverName}</h1>
+        <p className="text-muted-foreground">Pick a username and password below, and you can start watching straight away.</p>
       </div>
-      {info.note ? <Callout tone="info">{info.note}</Callout> : null}
-      {info.accountExpiryDays ? <p className="text-sm text-muted-foreground">Access will be valid for {info.accountExpiryDays} days after signup.</p> : null}
-      <SignupForm token={token} requireEmail={info.requireEmail} minPasswordLength={getSettingOrDefault("minPasswordLength")} />
+      {info.note ? <blockquote className="border-l-2 border-primary pl-4 text-muted-foreground">{info.note}</blockquote> : null}
+      <SignupForm
+        token={token}
+        requireEmail={info.requireEmail}
+        minPasswordLength={getSettingOrDefault("minPasswordLength")}
+        serverName={serverName}
+        accountExpiryDays={info.accountExpiryDays ?? null}
+      />
     </div>
   );
 }

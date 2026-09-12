@@ -3,15 +3,16 @@ import { headers } from "next/headers";
 import { RateLimitedError, enforceLimits, PUBLIC_LIMITS } from "@/lib/ratelimit";
 import { verifyEmailToken } from "@/lib/services/self";
 import { hashToken } from "@/lib/tokens";
-import { Callout } from "@/components/ui/callout";
+import { GuestMessage } from "@/components/public/guest-message";
 
 export const metadata = { title: "Verify email" };
 
 const reasons = {
-  invalid: "This verification link is not valid.",
-  used: "This verification link was already used.",
-  expired: "This verification link has expired. Request a new one from your account page.",
-  mismatch: "The address in this link is no longer the one on your account. Request a new link.",
+  invalid: "Check that you copied the whole link, including the part after the last slash.",
+  used: "This link has already been used, so your address is most likely verified already.",
+  expired: "Verification links do not last forever. Ask for a new one from your account page.",
+  mismatch: "The address in this link is no longer the one on your account. Ask for a new link.",
+  ratelimited: "Too many attempts. Wait a minute and try again.",
 } as const;
 
 export default async function VerifyEmailPage(props: PageProps<"/me/verify/[token]">) {
@@ -29,22 +30,20 @@ export default async function VerifyEmailPage(props: PageProps<"/me/verify/[toke
     if (err instanceof RateLimitedError) result = { ok: false, reason: "ratelimited" };
     else throw err;
   }
-  return (
-    <div className="space-y-4">
-      {result.ok ? (
-        <Callout tone="success" title="Email verified">
-          {result.email} is now verified and can be used to reset your password.
-        </Callout>
-      ) : (
-        <Callout tone="warning" title="Could not verify">
-          {result.reason === "ratelimited" ? "Too many attempts. Try again later." : reasons[result.reason]}
-        </Callout>
-      )}
-      <p className="text-sm">
-        <Link href="/me" className="underline">
-          Back to my account
-        </Link>
-      </p>
-    </div>
+  const back = (
+    <p>
+      <Link href="/me" className="underline">
+        Back to my account
+      </Link>
+    </p>
+  );
+  return result.ok ? (
+    <GuestMessage tone="success" title="Email verified" body={`${result.email} can now be used to reset your password.`}>
+      {back}
+    </GuestMessage>
+  ) : (
+    <GuestMessage tone="warning" title="That did not verify" body={reasons[result.reason]}>
+      {back}
+    </GuestMessage>
   );
 }
