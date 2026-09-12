@@ -1,10 +1,16 @@
+import type { Metadata } from "next";
 import { publicInviteInfo, type InviteStatus } from "@/lib/services/invites";
 import { publicServerName } from "@/lib/public/server-name";
 import { getSettingOrDefault } from "@/lib/settings";
 import { GuestMessage } from "@/components/public/guest-message";
 import { SignupForm } from "./signup-form";
 
-export const metadata = { title: "You're invited" };
+/** A dead link should not promise an invitation in the tab title. */
+export async function generateMetadata(props: PageProps<"/invite/[token]">): Promise<Metadata> {
+  const { token } = await props.params;
+  const info = publicInviteInfo(token);
+  return { title: info?.status === "active" ? "You're invited" : "Invite" };
+}
 
 const closed: Record<Exclude<InviteStatus, "active">, { title: string; body: string }> = {
   expired: { title: "This invite has expired", body: "Ask the person who invited you for a fresh link." },
