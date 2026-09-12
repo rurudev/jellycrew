@@ -6,7 +6,7 @@ import { call } from "@/lib/jellyfin/client";
 import { ProtectionError } from "@/lib/policy/protection";
 import type { Actor } from "@/lib/services/audit";
 import { executeBulk, previewBulk } from "@/lib/services/bulk";
-import { cancelDeletion, claimDueDeletion, collectLifecycleInputs, deleteUserNow, extendExpiry, runLifecycle, scheduleDeletion, updateUserMeta } from "@/lib/services/lifecycle";
+import { cancelDeletion, collectLifecycleInputs, deleteUserNow, extendExpiry, runLifecycle, scheduleDeletion, stillDueToDelete, updateUserMeta } from "@/lib/services/lifecycle";
 import { createBlankProfile, assignProfile } from "@/lib/services/profiles";
 import { getJobStatus, runJob, runLifecycleJob } from "@/lib/services/scheduler";
 import { setSetting } from "@/lib/settings";
@@ -167,16 +167,13 @@ describe("scheduler", () => {
       expect(inputs.find((i) => i.userId === user.id)?.deleteAfter).toBeInstanceOf(Date);
 
       // The guard the pass applies just before it deletes: the row must still say "due".
-      const claimed = claimDueDeletion(user.id);
-      expect(claimed).toBeInstanceOf(Date);
-      expect(meta(user.id)?.deleteAfter).toBeNull();
-      // A second pass holding the same stale decision finds nothing left to claim.
-      expect(claimDueDeletion(user.id)).toBeNull();
+      expect(stillDueToDelete(user.id)).toBe(true);
+      // The schedule is left alone by the check, so a crash before the delete cannot lose it.
+      expect(meta(user.id)?.deleteAfter).toBeInstanceOf(Date);
 
-      // Put it back, then cancel the way an admin would: the claim must now refuse.
-      getDb().update(userMeta).set({ deleteAfter: new Date(Date.now() - day) }).where(eq(userMeta.jellyfinUserId, user.id)).run();
+      // Cancel the way an admin would: the same check must now refuse.
       await cancelDeletion(admin(), user.id);
-      expect(claimDueDeletion(user.id)).toBeNull();
+      expect(stillDueToDelete(user.id)).toBe(false);
 
       const result = await runLifecycle();
       expect(result.deleted.map((d) => d.userId)).not.toContain(user.id);

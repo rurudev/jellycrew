@@ -28,6 +28,17 @@ export class RateLimiter {
     return { allowed: true, remaining: max - stamps.length, retryAfterSeconds: 0 };
   }
 
+  /** Whether the next call would be allowed, without recording an attempt. */
+  peek(key: string, max: number, windowMs: number): RateLimitResult {
+    const t = this.now();
+    const stamps = (this.hits.get(key) ?? []).filter((s) => t - s < windowMs);
+    if (stamps.length >= max) {
+      const retryAfterMs = windowMs - (t - stamps[0]);
+      return { allowed: false, remaining: 0, retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)) };
+    }
+    return { allowed: true, remaining: max - stamps.length, retryAfterSeconds: 0 };
+  }
+
   reset(key?: string): void {
     if (key === undefined) this.hits.clear();
     else this.hits.delete(key);
@@ -60,14 +71,32 @@ export const PUBLIC_LIMITS = {
 /** The address of a caller we cannot identify. */
 export const UNKNOWN_IP = "unknown";
 
+/** How much room the shared bucket gets when every caller looks the same. */
+const UNKNOWN_IP_FACTOR = 10;
+
 /**
- * A limit keyed on the caller's address, which applies only when the address is actually known.
- * Behind a proxy that forwards nothing, every caller looks like the same one, and a per-address
- * limit would then be a switch that locks everybody out at once. Limits keyed on a username or
- * a token still apply in that case.
+ * A limit keyed on the caller's address. Behind a proxy that forwards nothing, every caller
+ * looks like the same one: the limit still applies so there is always a ceiling, but with far
+ * more room, or ten bad guesses would lock out everybody at once. Limits keyed on a username or
+ * a token are unaffected either way.
  */
 export function ipLimit(key: string, ip: string, limit: { max: number; windowMs: number }): Array<{ key: string; max: number; windowMs: number }> {
-  return ip === UNKNOWN_IP ? [] : [{ key, ...limit }];
+  return ip === UNKNOWN_IP ? [{ key, max: limit.max * UNKNOWN_IP_FACTOR, windowMs: limit.windowMs }] : [{ key, ...limit }];
+}
+
+/** Like `enforceLimits`, but it only looks: nothing is recorded, so a success costs nothing. */
+export function checkLimits(pairs: Array<{ key: string; max: number; windowMs: number }>): void {
+  let worst = 0;
+  for (const p of pairs) {
+    const r = rateLimiter.peek(p.key, p.max, p.windowMs);
+    if (!r.allowed) worst = Math.max(worst, r.retryAfterSeconds);
+  }
+  if (worst > 0) throw new RateLimitedError(worst);
+}
+
+/** Records one attempt against each key, for the paths that only count failures. */
+export function recordAttempts(pairs: Array<{ key: string; max: number; windowMs: number }>): void {
+  for (const p of pairs) rateLimiter.check(p.key, p.max, p.windowMs);
 }
 
 export function clientIp(request: Request): string {

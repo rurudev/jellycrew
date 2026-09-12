@@ -34,6 +34,10 @@ function pick(policy: Record<string, unknown>, keys: string[]): Record<string, u
  * refetched, compared with the hash the editor carried, merged with the edit and diffed.
  */
 export async function saveUserPolicy(actor: Actor, input: PolicySaveInput): Promise<PolicySaveResult> {
+  return withUserPolicyLock(input.userId, () => saveUserPolicyLocked(actor, input));
+}
+
+async function saveUserPolicyLocked(actor: Actor, input: PolicySaveInput): Promise<PolicySaveResult> {
   const user = await fetchUser(input.userId);
   const live = (user.Policy ?? {}) as Record<string, unknown>;
   const liveHash = policyHash(live);

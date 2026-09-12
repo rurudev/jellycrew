@@ -39,8 +39,9 @@ describe("ipLimit", () => {
     expect(ipLimit("login:ip:203.0.113.7", "203.0.113.7", limit)).toEqual([{ key: "login:ip:203.0.113.7", max: 10, windowMs: 60_000 }]);
   });
 
-  it("drops the limit when every caller looks the same", () => {
-    // Behind a proxy that forwards nothing, one bucket would lock out everyone at once.
-    expect(ipLimit("login:ip:unknown", UNKNOWN_IP, limit)).toEqual([]);
+  it("keeps a ceiling but a roomier one when every caller looks the same", () => {
+    // Behind a proxy that forwards nothing there is one bucket for everybody: still a limit,
+    // or the endpoint has none at all, but not one that ten bad guesses can exhaust.
+    expect(ipLimit("login:ip:unknown", UNKNOWN_IP, limit)).toEqual([{ key: "login:ip:unknown", max: 100, windowMs: 60_000 }]);
   });
 });

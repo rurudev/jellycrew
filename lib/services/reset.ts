@@ -55,15 +55,10 @@ export async function requestPasswordReset(identifier: string, ctx: { ip?: strin
       userName = u.Name ?? u.Id;
     }
   } else if (byEmail.length > 1) {
-    // Nothing enforces one address per account. When several share it, the account whose name
-    // was typed wins; otherwise the request is refused rather than silently doing nothing.
-    const match = users.find((x) => byEmail.some((m) => m.jellyfinUserId === x.Id) && (x.Name ?? "").toLowerCase() === needle);
-    if (match) {
-      userId = match.Id;
-      userName = match.Name ?? match.Id;
-    } else {
-      logger.warn({ count: byEmail.length }, "reset request: several accounts share this verified address; ask for a username instead");
-    }
+    // Nothing enforces one verified address per account. Picking one of them would mail the
+    // link to somebody who did not ask for it, so nothing is sent; typing the username instead
+    // takes the branch below, which resolves to exactly one account.
+    logger.warn({ count: byEmail.length }, "reset request: several accounts share this verified address, so the request was ignored; the user should enter their username");
   } else if (byEmail.length === 0) {
     const u = users.find((x) => (x.Name ?? "").toLowerCase() === needle);
     if (u) {

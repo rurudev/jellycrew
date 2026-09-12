@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, lt, lte } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { token as tokenTable, userMeta, type UserMeta } from "@/lib/db/schema";
 import { parseDate } from "@/lib/format";
@@ -175,25 +175,14 @@ export async function collectLifecycleInputs(): Promise<LifecycleInput[]> {
 }
 
 /**
- * Takes the due deletion for this user, in one statement. The pass decides from a snapshot but
- * can take minutes to reach a given user, and an admin may cancel the deletion in between; the
- * conditional update is what makes that cancellation win. Returns false when the row no longer
- * says the account is due, in which case nothing is deleted.
+ * Is this account still due for deletion, right now? The pass decides from a snapshot but can
+ * take minutes to reach a given user, and an admin may cancel in between; this is read again
+ * immediately before the irreversible call so the cancellation wins. Nothing is written here:
+ * clearing the schedule first would lose it for good if the process died before the delete.
  */
-export function claimDueDeletion(userId: string, now: Date = new Date()): Date | null {
-  const before = getDb().select().from(userMeta).where(eq(userMeta.jellyfinUserId, userId)).get();
-  const claimed = getDb()
-    .update(userMeta)
-    .set({ deleteAfter: null, updatedAt: new Date() })
-    .where(and(eq(userMeta.jellyfinUserId, userId), isNotNull(userMeta.deleteAfter), lte(userMeta.deleteAfter, now)))
-    .run();
-  return claimed.changes === 1 ? (before?.deleteAfter ?? null) : null;
-}
-
-/** Puts a claimed deletion back when the delete itself failed, so the next pass tries again. */
-function releaseDeletionClaim(userId: string, deleteAfter: Date | null): void {
-  if (!deleteAfter) return;
-  getDb().update(userMeta).set({ deleteAfter, updatedAt: new Date() }).where(eq(userMeta.jellyfinUserId, userId)).run();
+export function stillDueToDelete(userId: string, now: Date = new Date()): boolean {
+  const meta = getDb().select().from(userMeta).where(eq(userMeta.jellyfinUserId, userId)).get();
+  return Boolean(meta?.deleteAfter && meta.deleteAfter.getTime() <= now.getTime());
 }
 
 /**
@@ -229,14 +218,8 @@ export async function runLifecycle(now: Date = new Date()): Promise<LifecycleRun
         await setUserEnabled(SYSTEM_ACTOR, input.userId, false, decision.reason);
         result.disabled.push({ userId: input.userId, name: input.name, reason: decision.reason });
       } else {
-        const claimed = claimDueDeletion(input.userId, now);
-        if (!claimed) continue;
-        try {
-          await deleteUserNow(SYSTEM_ACTOR, input.userId, { reason: "grace period ended" });
-        } catch (err) {
-          releaseDeletionClaim(input.userId, claimed);
-          throw err;
-        }
+        if (!stillDueToDelete(input.userId, now)) continue;
+        await deleteUserNow(SYSTEM_ACTOR, input.userId, { reason: "grace period ended" });
         result.deleted.push({ userId: input.userId, name: input.name });
       }
     } catch (err) {

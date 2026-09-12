@@ -17,25 +17,35 @@ export async function GET(request: Request): Promise<Response> {
   const rows = iterateAudit(filters);
   let started = false;
   let wroteRow = false;
-  // One chunk per pull, so the client's pace decides how fast rows are read out of SQLite.
-  // Producing the whole file in start() would block the event loop and hold it all in memory.
+  // A chunk per pull, batched: the client's pace decides how fast rows leave SQLite, without
+  // paying a socket write per row. Producing the whole file in start() would block the event
+  // loop and hold the result in memory.
+  const ROWS_PER_CHUNK = 200;
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
       try {
+        const parts: string[] = [];
         if (!started) {
           started = true;
-          controller.enqueue(encoder.encode(format === "csv" ? auditCsvHeader() : "[\n"));
-          return;
+          parts.push(format === "csv" ? auditCsvHeader() : "[\n");
         }
-        const next = rows.next();
-        if (!next.done) {
-          const row = next.value;
-          controller.enqueue(encoder.encode(format === "csv" ? auditRowToCsv(row) : `${wroteRow ? ",\n" : ""}${JSON.stringify(auditRowToPlain(row))}`));
+        let done = false;
+        for (let i = 0; i < ROWS_PER_CHUNK; i++) {
+          const next = rows.next();
+          if (next.done) {
+            done = true;
+            break;
+          }
+          if (format === "csv") {
+            parts.push(auditRowToCsv(next.value));
+          } else {
+            parts.push(`${wroteRow ? ",\n" : ""}${JSON.stringify(auditRowToPlain(next.value))}`);
+          }
           wroteRow = true;
-          return;
         }
-        if (format === "json") controller.enqueue(encoder.encode("\n]\n"));
-        controller.close();
+        if (done && format === "json") parts.push("\n]\n");
+        if (parts.length > 0) controller.enqueue(encoder.encode(parts.join("")));
+        if (done) controller.close();
       } catch (err) {
         controller.error(err);
       }

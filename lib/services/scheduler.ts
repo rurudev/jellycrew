@@ -19,11 +19,6 @@ const START_DELAY_MS = 30 * 1000;
 
 if (LOCK_MS < 3 * HEARTBEAT_MS) throw new Error("The job lease must outlast several heartbeats, or a live run loses its own lock.");
 
-/** True when the row says a run is holding the lease right now. */
-export function isJobRunning(job: JobRun | undefined, now: Date = new Date()): boolean {
-  return Boolean(job?.lockUntil && job.lockUntil > now);
-}
-
 /**
  * Runs `fn` under a database lock so that only one process (or one HMR instance) runs a job at
  * a time. Returns null when the lock is held by someone else. The lock carries a run id: the

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/** True when the job row says a run is holding the lease right now. */
+export function isJobRunning(job: { lockUntil: Date | null } | undefined, now: Date = new Date()): boolean {
+  return Boolean(job?.lockUntil && job.lockUntil > now);
+}
+
 const RunResult = z.object({
   at: z.string().optional(),
   scanned: z.number().optional(),

@@ -4,9 +4,6 @@ import { logger } from "@/lib/log";
 
 /** How long an answer is reused before asking Jellyfin again. */
 const CACHE_MS = 30_000;
-/** How long a past success keeps a session alive while Jellyfin cannot be reached. */
-const GRACE_MS = 5 * 60_000;
-
 type Kind = "admin" | "self";
 
 interface Seen {
@@ -41,16 +38,20 @@ async function check(kind: Kind, userId: string): Promise<boolean> {
     seen.set(key, { ok, at: now });
     return ok;
   } catch (err) {
-    // A 404 is an answer: the account is gone. Anything else means Jellyfin could not be
-    // reached, and a session that was valid moments ago keeps working for a short while.
+    // A 404 is an answer: the account is gone, so the session goes with it.
     const status = err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
     if (status === 404) {
       seen.set(key, { ok: false, at: now });
       return false;
     }
-    const recent = Boolean(cached?.ok && now - cached.at < GRACE_MS);
-    if (!recent) logger.warn({ userId, kind, err }, "could not re-check the session against Jellyfin");
-    return recent;
+    // Anything else means Jellyfin could not be reached, and the answer is unknown. Refusing
+    // here would sign every administrator out whenever Jellyfin restarts, including on a cold
+    // process where nothing is cached, and sign-in needs Jellyfin too, so there would be no way
+    // back in. Nothing can be changed while Jellyfin is down either: every write goes through
+    // it. The session is therefore kept, and the outage is logged. Nothing is cached, so the
+    // next request asks again.
+    logger.warn({ userId, kind, err }, "could not re-check the session against Jellyfin; keeping it until Jellyfin answers");
+    return true;
   }
 }
 

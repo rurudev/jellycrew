@@ -10,6 +10,7 @@ import { diffPolicies } from "@/lib/policy/diff";
 import { generateToken, hashToken, isTokenShaped } from "@/lib/tokens";
 import { inviteUrl } from "@/lib/urls";
 import { recordAudit, type Actor } from "./audit";
+import { withUserPolicyLock } from "./policy-writes";
 import { deleteUserNow } from "./lifecycle";
 import { getProfile } from "./profiles";
 import { invalidateSessionCache } from "./sessions";
@@ -220,7 +221,7 @@ export async function redeemInvite(input: RedeemInput, now: Date = new Date()): 
       const live = (user.Policy ?? {}) as Record<string, unknown>;
       const merged = applyProfilePolicy(live, profile.policy);
       appliedKeys = diffPolicies(live, merged).map((c) => c.key);
-      if (appliedKeys.length > 0) await updateUserPolicy(userId, merged);
+      if (appliedKeys.length > 0) await withUserPolicyLock(userId, () => updateUserPolicy(userId, merged));
     }
     const db = getDb();
     const claimed = db

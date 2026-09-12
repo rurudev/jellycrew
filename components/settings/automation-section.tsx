@@ -4,8 +4,7 @@ import { Section } from "@/components/ui/section";
 import { StatusDot } from "@/components/ui/status-badge";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Timestamp } from "@/components/ui/timestamp";
-import { lifecycleSummary } from "@/lib/lifecycle/summary";
-import { isJobRunning } from "@/lib/services/scheduler";
+import { isJobRunning, lifecycleSummary } from "@/lib/lifecycle/summary";
 import type { JobRun } from "@/lib/db/schema";
 import { runLifecycleNowAction } from "@/app/(admin)/settings/actions";
 
