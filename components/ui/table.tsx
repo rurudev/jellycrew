@@ -77,7 +77,8 @@ function SortHead({
   const Icon = active ? (dir === "asc" ? ArrowUpIcon : ArrowDownIcon) : ChevronsUpDownIcon
   return (
     <TableHead aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"} className={className}>
-      <Link href={href} className={cn("inline-flex items-center gap-1 rounded-sm hover:text-foreground", active && "text-foreground")}>
+      {/* Fills the cell so the whole header is the target, not just the word. */}
+      <Link href={href} className={cn("-mx-3 flex h-9 items-center gap-1 px-3 hover:text-foreground", active && "text-foreground")}>
         {label}
         <Icon aria-hidden className={cn("size-3.5", !active && "opacity-50")} />
       </Link>

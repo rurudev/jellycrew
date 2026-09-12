@@ -74,3 +74,29 @@ Server components by default; every action authenticates inside itself (`adminAc
 - Dev server on :3000 and the disposable Jellyfin container are running; the dev database holds only the seed admin, no profiles, no invites.
 - Chromium (Playwright build 1200) is now in `~/Library/Caches/ms-playwright`; the MCP still launches the `chrome` channel. Adding `"--browser", "chromium"` to the Playwright args in `.mcp.json` fixes it.
 - Screenshots from this session: session scratchpad `shots/` (24 public-page captures).
+
+## 6. Re-score after the redesign (2026-09-12)
+
+Measured on the shipped code with the same method as section 2, over every console screen and the
+guest surface, in both themes at 1440 and 390 px.
+
+| Finding from the audit | Then | Now |
+| --- | --- | --- |
+| Hand-rolled components, no system | 0 shared primitives | `components/ui` with 30 pieces, all screens composed from them |
+| `zinc-*` and `dark:` scattered through app code | 180 uses | 0 outside the shadcn-generated files, which the theme variant drives |
+| Unlabeled controls | several per screen | 0 on every screen checked |
+| Focus visibility | browser default | 2 px primary outline, offset, on every interactive element |
+| `aria-sort` / `aria-current` | absent | on sortable headers, the nav and the jump lists |
+| Touch targets under 24 px | filter row, sort headers, row actions | sort headers fill their cell; guest controls are 44 px |
+| 11 px text | 5 uses | 0; the scale starts at 12 px |
+| Horizontal overflow at 390 px | every console page | none; tables scroll inside their own container |
+| Raw JSON on screen | scheduler result, audit columns | sentences, with the JSON behind a disclosure |
+| Loading states | none | `loading.tsx` on every console route, in the shape of the page it precedes |
+| Duplicate fetches | status probed twice, devices twice, links unsealed in a loop | `React.cache` on the status probe, `Promise.all` for links |
+| Duplicated form logic | 4 public fetch blocks, 2 `optionalInt`, 4 `back()` helpers | one hook, one `lib/forms/zod`, one `backToUser` |
+| Boolean and mode props | `showUser`, `scope` + `hidden` + `cancelHref` | `columns` lists and one `target` prop |
+| Contrast | untested | `lib/ui/contrast.test.ts` fails the build below the floors |
+
+Still open, by choice: `notFound()` behind a loading boundary answers HTTP 200; timestamps use the
+native tooltip rather than a focusable one; sticky table headers were dropped as noise. The one
+proposal that needs an off-limits layer is in `docs/design/plan.md`.

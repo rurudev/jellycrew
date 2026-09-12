@@ -172,3 +172,6 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - The refresh indicator says what it is doing in words next to a status dot, and says it is paused while the tab is hidden.
 - `/me` speaks to the person, not the operator: "Hello, <name>", "Your access", "Where you are signed in", and a disabled account says what happened and who to ask. Password fields are `PasswordField`s at 44 px, and signing a device out is a confirmation, since it locks somebody out of their own client.
 - The admin sign-in page is a card on the canvas rather than bare text: the tool's name, which server it manages, the unreachable alert in the system's own style, and a password field that can be revealed.
+- `@custom-variant dark` stays in `globals.css` even though no app code writes `dark:` any more: the shadcn-generated components use it, and it is what ties their `dark:` utilities to the theme cookie rather than to the operating system alone.
+- A sortable header's link fills its cell, so the target is the 36 px header rather than the word inside it.
+- `DESIGN.md` is written from the shipped code rather than from intentions, and the audit carries a re-score of the same measurements it opened with.

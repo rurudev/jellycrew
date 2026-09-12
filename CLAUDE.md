@@ -13,4 +13,4 @@
 
 ## Design work
 
-The UI redesign is documented in `docs/design/`: `audit.md` (findings), `direction.md` (design system and screen direction), `plan.md` (work packages, once approved). Read `direction.md` before touching any UI.
+`DESIGN.md` is the system as shipped: tokens, components and the patterns that repeat. The redesign that produced it is documented in `docs/design/`: `audit.md` (findings), `direction.md` (design system and screen direction), `plan.md` (work packages, once approved). Read `direction.md` before touching any UI.
