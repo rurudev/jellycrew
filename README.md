@@ -205,7 +205,8 @@ privately through GitHub's security advisories rather than opening a public issu
 
 ## License
 
-To be decided before the first public release. Until a `LICENSE` file is added, no permission to
-use, copy or distribute this code is granted.
+[GNU Affero General Public License v3.0 or later](LICENSE). Run it, change it and pass it on; if
+you offer a changed version to other people over a network, offer them its source too. Running the
+published image unmodified asks nothing of you.
 
 jellycrew is an independent project and is not affiliated with or endorsed by the Jellyfin project.

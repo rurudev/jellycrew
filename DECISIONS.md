@@ -97,6 +97,8 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - `docker-compose.example.yml` documents the two-router exposure model with Traefik: the admin router on an internal hostname, the public router restricted to `/invite`, `/reset`, `/me`, `/healthz`, `/api/public`, `/_next/static` and `/favicon.ico`, plus an optional Traefik rate limit.
 - `docker-compose.ci.yml` + `scripts/compose-check.sh` (`pnpm ops:check`) build the image, bootstrap a Jellyfin container through the app's own harness, and assert the container's healthcheck is `healthy`, `/healthz` reports Jellyfin reachable at the pinned version, and the process is not root. GitHub Actions runs it alongside the unit and integration jobs.
 - The README's online backup uses better-sqlite3's `backup()` from inside the container (the image has no `sqlite3` CLI); stopping and snapshotting the volume is the alternative.
+- `.github/workflows/release.yml` publishes `ghcr.io/rurudev/jellycrew` on every push to main and on `v*` tags; `ci.yml` only ever built the image to health-check it and threw it away. Each architecture builds on its own native runner (`ubuntu-latest`, `ubuntu-24.04-arm`) and the two digests are merged into one manifest afterwards, because `better-sqlite3` has no prebuilt binary for Alpine and an emulated arm64 build would compile it and Next under QEMU.
+- The licence is AGPL-3.0-or-later. jellycrew is reached through a browser, so plain GPL's distribution trigger would never fire for somebody hosting a modified copy, which is the only case worth covering. Running the published image unmodified owes nothing. Sole copyright ownership keeps a different licence available later; the first external PR merged without a CLA ends that.
 
 ## Design
 
