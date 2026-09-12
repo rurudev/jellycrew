@@ -48,7 +48,9 @@ function ApplyToMembersBody({ profileId, profileName }: { profileId: string; pro
         <input type="hidden" name="profileId" value={profileId} />
         {state.error ? <Callout tone="error">{state.error}</Callout> : null}
 
-        {preview ? (
+        {state.ok ? (
+          <p>{state.ok}</p>
+        ) : preview ? (
           preview.length === 0 ? (
             <p className="text-muted-foreground">This profile has no members yet.</p>
           ) : drifting.length === 0 ? (
@@ -74,14 +76,17 @@ function ApplyToMembersBody({ profileId, profileName }: { profileId: string; pro
           <p className="text-muted-foreground">Check what would change before anything is written.</p>
         )}
 
+        {drifting.map((member) => (
+          <input key={member.id} type="hidden" name="memberId" value={member.id} />
+        ))}
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>{state.ok ? "Close" : "Cancel"}</DialogClose>
-          {preview && drifting.length > 0 ? (
+          {!state.ok && preview && drifting.length > 0 ? (
             <Button type="submit" name="confirm" value="1" disabled={pending}>
               {pending ? <Spinner data-icon="inline-start" /> : null}
               {pending ? "Applying…" : `Apply to ${drifting.length === 1 ? "1 member" : `${drifting.length} members`}`}
             </Button>
-          ) : preview ? null : (
+          ) : state.ok || preview ? null : (
             <Button type="submit" variant="outline" disabled={pending}>
               {pending ? <Spinner data-icon="inline-start" /> : null}
               {pending ? "Checking…" : "Show what would change"}

@@ -170,3 +170,5 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - The audit table's before, after and detail columns collapse into one "What changed" disclosure with formatted JSON, so nothing is truncated mid-word and the row stays readable. Actors and targets show names with the id in the tooltip.
 - A device id can be hundreds of characters (browsers report a whole user-agent string), so the device column truncates it on one line with the full value in the tooltip instead of stretching the table.
 - The refresh indicator says what it is doing in words next to a status dot, and says it is paused while the tab is hidden.
+- `/me` speaks to the person, not the operator: "Hello, <name>", "Your access", "Where you are signed in", and a disabled account says what happened and who to ask. Password fields are `PasswordField`s at 44 px, and signing a device out is a confirmation, since it locks somebody out of their own client.
+- The admin sign-in page is a card on the canvas rather than bare text: the tool's name, which server it manages, the unreachable alert in the system's own style, and a password field that can be revealed.

@@ -3,10 +3,12 @@ import { getSelfOverview } from "@/lib/services/self";
 import { getSettingOrDefault } from "@/lib/settings";
 import { Timestamp } from "@/components/ui/timestamp";
 import { Callout } from "@/components/ui/callout";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FormField, Hint } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { KeyValue } from "@/components/ui/key-value";
+import { PasswordField } from "@/components/ui/password-field";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,159 +18,178 @@ import { SelfLoginForm } from "./login-form";
 
 export const metadata = { title: "My account" };
 
-const reasonText = { expired: "Your access has expired.", inactive: "Your account was disabled after a period of inactivity.", manual: "Your account was disabled by an administrator." } as const;
+const reasonText = {
+  expired: "Your access ran out.",
+  inactive: "It was disabled after a long time without use.",
+  manual: "An administrator disabled it.",
+} as const;
 
 export default async function MePage() {
   const session = await getSelfSession();
   const overview = session ? await getSelfOverview(session.userId) : null;
+
   if (!session || !overview) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">My account</h1>
-          <p className="mt-1 text-muted-foreground">Sign in with your Jellyfin credentials to manage your password, email and devices.</p>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Your account</h1>
+          <p className="text-muted-foreground">Sign in with the username and password you use for Jellyfin to change your password, add an email address or sign a device out.</p>
         </div>
         <SelfLoginForm />
       </div>
     );
   }
+
   const minPasswordLength = getSettingOrDefault("minPasswordLength");
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Hi, {overview.userName}</h1>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Hello, {overview.userName}</h1>
+          <p className="text-muted-foreground">Your account on {overview.serverName}.</p>
+        </div>
         <form action={logoutSelfAction}>
-          <SubmitButton variant="ghost" size="sm">
+          <SubmitButton variant="outline" pendingLabel="Signing out…">
             Sign out
           </SubmitButton>
         </form>
       </div>
+
       {overview.isDisabled ? (
         <Callout tone="error" title="This account is disabled">
-          {overview.disabledReason ? reasonText[overview.disabledReason] : ""} Contact the administrator.
+          {overview.disabledReason ? `${reasonText[overview.disabledReason]} ` : ""}Ask whoever runs the server to turn it back on.
         </Callout>
       ) : null}
-      <Section title="Overview">
+
+      <Section title="Your access">
         <KeyValue>
           <KeyValue.Item label="Server">{overview.serverName}</KeyValue.Item>
-          <KeyValue.Item label="Profile">{overview.profileName ?? <span className="text-muted-foreground">none</span>}</KeyValue.Item>
-          <KeyValue.Item label="Access until">{overview.expiresAt ? <Timestamp date={overview.expiresAt} absolute /> : "no expiry"}</KeyValue.Item>
+          <KeyValue.Item label="Settings from">{overview.profileName ?? <span className="text-muted-foreground">no profile</span>}</KeyValue.Item>
+          <KeyValue.Item label="Runs until">{overview.expiresAt ? <Timestamp date={overview.expiresAt} absolute /> : <span className="text-muted-foreground">no end date</span>}</KeyValue.Item>
         </KeyValue>
       </Section>
 
-      <Section title="Password">
-        <form action={changePasswordAction} className="grid gap-3 sm:grid-cols-3">
+      <Section title="Password" description={`At least ${minPasswordLength} characters. Your current password is checked first.`}>
+        <form action={changePasswordAction} className="space-y-4">
           <FormField id="currentPassword" label="Current password">
-            <Input name="currentPassword" size="lg" type="password" required autoComplete="current-password" />
+            <PasswordField name="currentPassword" size="lg" required autoComplete="current-password" />
           </FormField>
           <FormField id="newPassword" label="New password">
-            <Input name="newPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+            <PasswordField name="newPassword" size="lg" required minLength={minPasswordLength} autoComplete="new-password" />
           </FormField>
           <FormField id="confirmPassword" label="Repeat new password">
-            <Input name="confirmPassword" size="lg" type="password" required minLength={minPasswordLength} autoComplete="new-password" />
+            <PasswordField name="confirmPassword" size="lg" required minLength={minPasswordLength} autoComplete="new-password" />
           </FormField>
-          <div className="space-y-1 sm:col-span-3">
-            <SubmitButton variant="outline" size="lg" pendingLabel="Changing…">
-              Change password
-            </SubmitButton>
-            <Hint>At least {minPasswordLength} characters. Your current password is checked first.</Hint>
-          </div>
+          <SubmitButton size="lg" className="w-full sm:w-auto" pendingLabel="Changing…">
+            Change password
+          </SubmitButton>
         </form>
       </Section>
 
-      <Section title="Email">
-        <p className="mb-2">
-          {overview.email ? (
+      <Section title="Email" description="An address is only used to send you a password reset link, and only once you have confirmed it.">
+        <div className="space-y-4">
+          <p className="flex flex-wrap items-center gap-2">
+            {overview.email ? (
+              <>
+                <span className="font-medium">{overview.email}</span>
+                {overview.emailVerified ? <StatusBadge tone="success">confirmed</StatusBadge> : <StatusBadge tone="warning">not confirmed yet</StatusBadge>}
+              </>
+            ) : (
+              <span className="text-muted-foreground">No address yet.</span>
+            )}
+          </p>
+          {overview.mailConfigured ? (
             <>
-              <span className="font-medium">{overview.email}</span> {overview.emailVerified ? <StatusBadge tone="success">verified</StatusBadge> : <StatusBadge tone="warning">not verified</StatusBadge>}
-            </>
-          ) : (
-            <span className="text-muted-foreground">No email address on file.</span>
-          )}
-        </p>
-        {overview.mailConfigured ? (
-          <div className="space-y-3">
-            <form action={setEmailAction} className="flex flex-wrap items-end gap-2">
-              <FormField id="email" label={overview.email ? "Change email address" : "Add email address"} className="min-w-64">
-                <Input name="email" size="lg" type="email" required autoComplete="email" />
-              </FormField>
-              <SubmitButton variant="outline" size="lg" pendingLabel="Sending…">
-                Send verification link
-              </SubmitButton>
-            </form>
-            {overview.email && !overview.emailVerified ? (
-              <form action={resendVerificationAction}>
-                <SubmitButton variant="ghost" size="sm" pendingLabel="Sending…">
-                  Resend verification email
+              <form action={setEmailAction} className="space-y-4">
+                <FormField id="email" label={overview.email ? "Change your address" : "Add an address"} help="We send a link there; the address counts once you open it.">
+                  <Input name="email" size="lg" type="email" required autoComplete="email" />
+                </FormField>
+                <SubmitButton variant="outline" size="lg" className="w-full sm:w-auto" pendingLabel="Sending…">
+                  Send the link
                 </SubmitButton>
               </form>
-            ) : null}
-            <Hint>Only a verified address can be used to reset a forgotten password.</Hint>
-          </div>
-        ) : (
-          <Hint>Email is not set up on this server, so addresses cannot be verified here. Contact the administrator if you need a password reset.</Hint>
-        )}
+              {overview.email && !overview.emailVerified ? (
+                <form action={resendVerificationAction}>
+                  <SubmitButton variant="ghost" pendingLabel="Sending…">
+                    Send the link again
+                  </SubmitButton>
+                </form>
+              ) : null}
+            </>
+          ) : (
+            <Hint>This server does not send email, so an address cannot be confirmed here. Ask whoever runs it if you need a password reset.</Hint>
+          )}
+        </div>
       </Section>
 
-      <Section title="Active sessions">
-        <Table variant="plain">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client</TableHead>
-              <TableHead>Device</TableHead>
-              <TableHead>Now playing</TableHead>
-              <TableHead>Last activity</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {overview.sessions.length === 0 ? <EmptyState.Row colSpan={4} title="No active sessions." /> : null}
-            {overview.sessions.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell>{s.client ?? "—"}</TableCell>
-                <TableCell>{s.deviceName ?? "—"}</TableCell>
-                <TableCell>{s.nowPlaying ? s.nowPlaying.title : <span className="text-muted-foreground">idle</span>}</TableCell>
-                <TableCell>
-                  <Timestamp date={s.lastActivity} />
-                </TableCell>
+      <Section title="Where you are signed in" description="Sign a device out if you no longer use it, or if you do not recognise it.">
+        <div className="space-y-4">
+          <Table variant="plain">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Playing now</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Last seen</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Section>
+            </TableHeader>
+            <TableBody>
+              {overview.sessions.length === 0 ? <EmptyState.Row colSpan={3} title="Nothing is playing" description="This shows what is open right now." /> : null}
+              {overview.sessions.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>{s.nowPlaying ? s.nowPlaying.title : <span className="text-muted-foreground">nothing</span>}</TableCell>
+                  <TableCell>
+                    {s.client ?? "—"}
+                    {s.deviceName ? <div className="text-xs text-muted-foreground">{s.deviceName}</div> : null}
+                  </TableCell>
+                  <TableCell>
+                    <Timestamp date={s.lastActivity} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-      <Section title="Devices">
-        <Table variant="plain">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Device</TableHead>
-              <TableHead>App</TableHead>
-              <TableHead>Last used</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {overview.devices.length === 0 ? <EmptyState.Row colSpan={4} title="No devices." /> : null}
-            {overview.devices.map((d) => (
-              <TableRow key={d.id}>
-                <TableCell>{d.name}</TableCell>
-                <TableCell>
-                  {d.appName ?? "—"} <span className="text-muted-foreground">{d.appVersion}</span>
-                </TableCell>
-                <TableCell>
-                  <Timestamp date={d.lastActivity} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <form action={revokeOwnDeviceAction}>
-                    <input type="hidden" name="deviceId" value={d.id} />
-                    <SubmitButton size="sm" variant="destructive" pendingLabel="Signing out…">
-                      Sign out device
-                    </SubmitButton>
-                  </form>
-                </TableCell>
+          <Table variant="plain">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Device</TableHead>
+                <TableHead>App</TableHead>
+                <TableHead>Last used</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {overview.devices.length === 0 ? <EmptyState.Row colSpan={4} title="No devices yet" description="A device appears here the first time you sign in on it." /> : null}
+              {overview.devices.map((d) => (
+                <TableRow key={d.id}>
+                  <TableCell className="max-w-48">
+                    <div className="truncate">{d.name || <span className="text-muted-foreground">unnamed</span>}</div>
+                  </TableCell>
+                  <TableCell>
+                    {d.appName ?? "—"}
+                    {d.appVersion ? <span className="text-muted-foreground"> {d.appVersion}</span> : null}
+                  </TableCell>
+                  <TableCell>
+                    <Timestamp date={d.lastActivity} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ConfirmDialog
+                      label="Sign out"
+                      size="sm"
+                      variant="outline"
+                      title={`Sign ${d.name || "this device"} out?`}
+                      description="It will ask for your password the next time you use it. Nothing else changes."
+                      confirmLabel="Sign it out"
+                      action={revokeOwnDeviceAction}
+                      hidden={{ deviceId: d.id }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </Section>
     </div>
   );

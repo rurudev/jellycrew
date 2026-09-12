@@ -15,13 +15,13 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const next = typeof search.next === "string" ? search.next : undefined;
   const [status, theme] = await Promise.all([getServerStatus(), getTheme()]);
   return (
-    <main className="relative flex flex-1 items-center justify-center p-6">
+    <main className="relative flex flex-1 items-center justify-center p-4">
       <div className="absolute top-3 right-3">
-        <ThemeToggle theme={theme} />
+        <ThemeToggle theme={theme} compact />
       </div>
-      <div className="w-full max-w-sm space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold">jellycrew</h1>
+      <div className="w-full max-w-sm space-y-5 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
+        <div className="space-y-2">
+          <h1 className="text-lg font-semibold">jellycrew</h1>
           <p className="text-muted-foreground">
             Sign in with a Jellyfin administrator account
             {status.serverName ? (
@@ -33,7 +33,11 @@ export default async function LoginPage(props: PageProps<"/login">) {
             .
           </p>
         </div>
-        {!status.reachable ? <Callout tone="error" title="Jellyfin is unreachable">{status.error}</Callout> : null}
+        {!status.reachable ? (
+          <Callout tone="error" title="Jellyfin is unreachable">
+            {status.error ?? "Check that the server is running and that JELLYFIN_URL points at it."}
+          </Callout>
+        ) : null}
         <LoginForm next={next} />
       </div>
     </main>

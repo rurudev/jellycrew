@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface IndexedSection {
@@ -17,6 +17,8 @@ export interface IndexedSection {
  */
 export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
   const [active, setActive] = useState<string | null>(null);
+  // A click says where the operator meant to go; scrolling only takes over again afterwards.
+  const jumpedAt = useRef(0);
   const ids = sections.map((s) => s.id).join(",");
   useEffect(() => {
     const elements = ids
@@ -26,7 +28,10 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
     if (elements.length === 0) return;
     // The crossings are only the trigger; which group is current is then measured, so the
     // answer is the same whether you scrolled there or jumped.
-    const pick = () => {
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      if (Date.now() - jumpedAt.current < 700) return;
       // A short last section can never reach the top of the viewport, so reaching the bottom
       // of a page that actually scrolls is what makes it current.
       const scrollable = document.documentElement.scrollHeight > window.innerHeight + 2;
@@ -39,12 +44,17 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
       }
       if (current) setActive(current.id);
     };
+    // Scroll events outpace layout, so measuring happens once per frame.
+    const pick = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
     // Crossings alone miss the last stretch of a scroll, so the scroll itself is watched too.
     const observer = new IntersectionObserver(pick, { rootMargin: "-80px 0px -70% 0px" });
     for (const element of elements) observer.observe(element);
     window.addEventListener("scroll", pick, { passive: true });
     window.addEventListener("resize", pick);
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("scroll", pick);
       window.removeEventListener("resize", pick);
@@ -58,7 +68,10 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
           <li key={section.id} className="shrink-0">
             <a
               href={`#${section.id}`}
-              onClick={() => setActive(section.id)}
+              onClick={() => {
+                jumpedAt.current = Date.now();
+                setActive(section.id);
+              }}
               aria-current={active === section.id ? "true" : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-r-md border-l-2 px-2 py-1 whitespace-nowrap hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:whitespace-normal",

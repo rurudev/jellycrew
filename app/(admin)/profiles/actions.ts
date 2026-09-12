@@ -109,7 +109,6 @@ export async function saveProfilePolicyAction(_prev: PolicyEditorState, formData
   }
 }
 
-/** Apply the profile to every member: preview (redirect with ?applyAll=1) then confirm. */
 /** Two steps in one action: without `confirm` it returns what would change, with it it writes. */
 export async function applyToMembersAction(_prev: ProfileActionState, formData: FormData): Promise<ProfileActionState> {
   const actor = await adminActor();
@@ -123,10 +122,14 @@ export async function applyToMembersAction(_prev: ProfileActionState, formData: 
       return { error: errorMessage(err) };
     }
   }
+  // Only the members the preview listed, so the count in the result is the count that was shown.
+  const chosen = formData.getAll("memberId").map(String).filter(Boolean);
   let results;
   try {
     const members = await listProfileMembers(id);
-    results = await executeBulk(actor, "apply_profile", members.map((m) => m.id), { profileId: id });
+    const ids = chosen.length ? members.filter((m) => chosen.includes(m.id)).map((m) => m.id) : members.map((m) => m.id);
+    if (ids.length === 0) return { ok: "Nothing to apply: every member already matches." };
+    results = await executeBulk(actor, "apply_profile", ids, { profileId: id });
   } catch (err) {
     return { error: errorMessage(err) };
   }

@@ -20,7 +20,7 @@ Status: draft for approval (Phase 3, 2026-09-11). Executes `direction.md` (appro
 | 12 | Settings | `design/settings` | done, merged 2026-09-12 |
 | 13 | Profiles | `design/profiles` | done, merged 2026-09-12 |
 | 14 | Sessions and audit | `design/sessions-and-audit` | done, merged 2026-09-12 |
-| 15 | Self-service and login | `design/self-service-and-login` | planned |
+| 15 | Self-service and login | `design/self-service-and-login` | done, merged 2026-09-12 |
 | 16 | Polish, sweep, document | `design/polish` | planned |
 
 Update the State column (planned → in progress → done, with the merge commit) as packages land.
