@@ -13,7 +13,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build
+# public/ holds no tracked files, so a fresh checkout has no such directory
+RUN mkdir -p public && pnpm build
 
 # ---- runtime: minimal, non-root, /data is the only state
 FROM node:22-alpine AS runtime
