@@ -3,10 +3,10 @@ import { requireAdmin } from "@/lib/auth/session";
 import { distinctAuditActions, listAudit, type AuditFilters } from "@/lib/services/audit";
 import { listUsers } from "@/lib/services/users";
 import { AuditTable } from "@/components/audit/audit-table";
-import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
+import { AutoSubmitInput, AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { buttonVariants } from "@/components/ui/button";
 import { FilterForm } from "@/components/ui/filter-form";
-import { Input } from "@/components/ui/input";
+import { Chip } from "@/components/ui/chip";
 import { PageHeader } from "@/components/ui/page-header";
 
 export const metadata = { title: "Audit" };
@@ -104,8 +104,21 @@ export default async function AuditPage(props: PageProps<"/audit">) {
           ))}
           {filters.raw.targetUserId && !users.some((u) => u.id === filters.raw.targetUserId) ? <option value={filters.raw.targetUserId}>{filters.raw.targetUserId.slice(0, 8)}… (gone)</option> : null}
         </AutoSubmitSelect>
-        <Input name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" className="w-auto" />
-        <Input name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" className="w-auto" />
+        <AutoSubmitInput name="from" type="date" defaultValue={filters.raw.from ?? ""} aria-label="From date" className="w-auto" />
+        <AutoSubmitInput name="to" type="date" defaultValue={filters.raw.to ?? ""} aria-label="To date" className="w-auto" />
+        {/* Set by a link or an export URL: it has no control of its own, so it travels in a
+            hidden field and shows as a chip that can be removed. */}
+        {filters.raw.actorId ? (
+          <>
+            <input type="hidden" name="actorId" value={filters.raw.actorId} />
+            <Chip>
+              Actor {nameById.get(filters.raw.actorId) ?? `${filters.raw.actorId.slice(0, 8)}…`}
+              <Link href={`/audit?${new URLSearchParams(Object.fromEntries(Object.entries(filters.raw).filter(([k]) => k !== "actorId")))}`} aria-label="Remove the actor filter" className="ml-1 underline">
+                remove
+              </Link>
+            </Chip>
+          </>
+        ) : null}
         <button type="submit" className="sr-only" tabIndex={-1}>
           Apply filters
         </button>

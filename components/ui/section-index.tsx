@@ -62,7 +62,7 @@ export function SectionIndex({ sections }: { sections: IndexedSection[] }) {
   }, [ids]);
 
   return (
-    <nav aria-label="Sections" className="min-w-0 lg:sticky lg:top-12">
+    <nav aria-label="On this page" className="min-w-0 lg:sticky lg:top-12">
       <ul className="flex gap-1 overflow-x-auto [scrollbar-width:none] lg:flex-col lg:overflow-visible">
         {sections.map((section) => (
           <li key={section.id} className="shrink-0">

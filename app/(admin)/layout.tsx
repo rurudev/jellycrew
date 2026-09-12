@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
             jellycrew
           </Link>
           {/* Scrolls sideways on narrow screens instead of wrapping or overflowing the page. */}
-          <nav aria-label="Sections" className="flex min-w-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav aria-label="Main" className="flex min-w-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {nav.map((n) => (
               <NavLink key={n.href} href={n.href}>
                 {n.label}

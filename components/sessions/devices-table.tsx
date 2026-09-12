@@ -49,7 +49,7 @@ const COLUMNS: Record<DeviceColumn, { head: string; className?: string; cell: (d
         label="Revoke"
         size="sm"
         variant="outline"
-        title={`Revoke ${d.name}?`}
+        title={`Revoke ${d.name || "this device"}?`}
         description="Signs this device out and invalidates its tokens. Whoever uses it has to sign in again; nothing else changes."
         confirmLabel="Revoke device"
         action={revokeDeviceAction}

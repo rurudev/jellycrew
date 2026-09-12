@@ -128,7 +128,8 @@ export async function applyToMembersAction(_prev: ProfileActionState, formData: 
   try {
     const members = await listProfileMembers(id);
     const ids = chosen.length ? members.filter((m) => chosen.includes(m.id)).map((m) => m.id) : members.map((m) => m.id);
-    if (ids.length === 0) return { ok: "Nothing to apply: every member already matches." };
+    if (ids.length === 0) return { error: chosen.length ? "Those members are no longer in this profile. Preview again." : "This profile has no members." };
+    if (chosen.length && ids.length < chosen.length) return { error: `Only ${ids.length} of the ${chosen.length} members you saw are still in this profile. Preview again.` };
     results = await executeBulk(actor, "apply_profile", ids, { profileId: id });
   } catch (err) {
     return { error: errorMessage(err) };
