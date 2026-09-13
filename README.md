@@ -1,14 +1,33 @@
+<div align="center">
+
 # jellycrew
 
-Self-hosted user management for a single [Jellyfin](https://jellyfin.org) server. It replaces the
-Jellyfin dashboard for everything about people: who has access, to what, on what terms, for how
-long, and what they are watching right now.
+**Self-hosted user management for a single [Jellyfin](https://jellyfin.org) server.**
 
-![The users list](docs/screenshots/users.png)
+<p>
+<a href="https://github.com/rurudev/jellycrew/actions/workflows/ci.yml"><img src="https://github.com/rurudev/jellycrew/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://github.com/rurudev/jellycrew/actions/workflows/release.yml"><img src="https://github.com/rurudev/jellycrew/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+<a href="https://github.com/rurudev/jellycrew/pkgs/container/jellycrew"><img src="https://img.shields.io/badge/image-ghcr.io%2Frurudev%2Fjellycrew-2496ED?logo=docker&logoColor=white" alt="Container image"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue" alt="License: AGPL-3.0-or-later"></a>
+<img src="https://img.shields.io/badge/Jellyfin-10.11.11-00A4DC?logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.11">
+</p>
+
+</div>
+
+jellycrew replaces the Jellyfin dashboard for everything about people: who has access, to what, on
+what terms, for how long, and what they are watching right now. It is one container, one SQLite
+file and one API key.
 
 Jellyfin stays the source of truth for users, policies, sessions, devices and libraries. jellycrew
 owns only what Jellyfin cannot: profiles, lifecycle rules, invites, contact details, reset tokens
-and an audit trail. One container, one SQLite file, one API key.
+and an audit trail.
+
+<img src="docs/screenshots/users.png" alt="The users list: one filterable table with status, profile, drift, last seen, labels and live sessions">
+
+[Why](#why) · [Features](#features) · [Preview](#preview) · [Install](#install) ·
+[Configuration](#configuration) · [Security](#security) · [Backup](#backup-and-restore) ·
+[Upgrading](#upgrading) · [Development](#development) · [Support](#support) ·
+[Contributing](#contributing) · [License](#license)
 
 ## Why
 
@@ -21,7 +40,7 @@ changed last month.
 jellycrew adds exactly that layer and nothing else. It does not transcode, index or stream
 anything, and it never stores a password of its own.
 
-## What it does
+## Features
 
 - **Users.** One filterable table with status (enabled, disabled by you, disabled by automation
   with the reason, expiring, scheduled for deletion), profile and drift, last seen, labels and live
@@ -51,9 +70,11 @@ append-only.
 Tested against Jellyfin **10.11.11**; the interface warns you when the live server runs a different
 minor version.
 
+## Preview
+
 ### One person's page
 
-![Everything about one user on one page](docs/screenshots/user-detail.png)
+<img src="docs/screenshots/user-detail.png" alt="Everything about one user on one page">
 
 What differs from the profile or from Jellyfin's defaults comes first, so you read two lines
 instead of forty-four. Sessions, devices and history sit below; the profile, the lifecycle rules
@@ -61,7 +82,7 @@ and the facts sit beside them.
 
 ### The access editor
 
-![Editing one user's access](docs/screenshots/access-editor.png)
+<img src="docs/screenshots/access-editor.png" alt="Editing one user's access">
 
 Forty-four fields with help text, a jump list, and a diff before anything is written.
 
@@ -87,16 +108,27 @@ docker run -d --name jellycrew -p 3000:3000 -v jellycrew-data:/data \
   ghcr.io/rurudev/jellycrew:latest
 ```
 
+Open `http://localhost:3000` and sign in with any Jellyfin administrator account — jellycrew has
+none of its own. The database migrates itself on first start; a bad environment stops the container
+and the log names the variable. The image is published for `linux/amd64` and `linux/arm64`.
+
 `JELLYFIN_URL` is Jellyfin as the container reaches it, so use the host's address rather than
-`localhost`. Open `http://localhost:3000` and sign in with any Jellyfin administrator account —
-jellycrew has none of its own. The database migrates itself; a bad environment stops the container
-and the log names the variable.
+`localhost`.
 
-To run it next to Jellyfin in Docker instead, start from
-[`docker-compose.example.yml`](docker-compose.example.yml). Either way you deploy it, read
-[Exposure](#exposure) before it is reachable from anywhere but your LAN.
+### Docker Compose
 
-### Configuration
+To run jellycrew next to Jellyfin, start from [`docker-compose.example.yml`](docker-compose.example.yml):
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+# fill in JELLYFIN_API_KEY, PUBLIC_BASE_URL and SESSION_SECRET
+docker compose up -d
+```
+
+Either way you deploy it, read [Security](#security) before it is reachable from anywhere but your
+LAN.
+
+## Configuration
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
@@ -109,9 +141,10 @@ To run it next to Jellyfin in Docker instead, start from
 | `SMTP_FROM` | with SMTP | Sender address |
 | `LOG_LEVEL` | no | `fatal` to `trace`, default `info` |
 
-Everything else is a setting inside the app, so changing it needs no restart.
+Everything else is a setting inside the app, so changing it needs no restart. A copy of the table
+is in [`.env.example`](.env.example).
 
-## Exposure
+## Security
 
 One container serves two audiences:
 
@@ -128,6 +161,10 @@ hours, guest sessions thirty days.
 If guests have to reach it from the internet, put a reverse proxy or tunnel in front of it and route
 only the guest paths there. The example compose file publishes port 3000 as-is, so give it a
 LAN-only bind address (`"192.168.1.10:3000:3000"`) when nothing else is standing in front.
+
+The API key has full administrator rights over your Jellyfin server, so treat the console hostname
+as privileged and keep it off the public internet. If you find a vulnerability, please report it
+privately through GitHub's security advisories rather than opening a public issue.
 
 ## Backup and restore
 
@@ -180,7 +217,16 @@ scheduler's decision function. `tests/integration/` container-backed tests. `dri
 **Documents.** [`DESIGN.md`](DESIGN.md) is the interface system as shipped: tokens, components and
 the patterns that repeat. [`DECISIONS.md`](DECISIONS.md) records every design and architecture
 decision, one line each, in the order they were made. [`SPEC.md`](SPEC.md) is what the app is meant
-to do. `docs/design/` holds the audit, direction and plan behind the current interface.
+to do. `docs/design/` holds the audit, direction and plan behind the current interface, and
+`docs/audit-*.md` the security and data-layer audits. `AGENTS.md` describes the stack for coding
+agents.
+
+## Support
+
+- Read [`SPEC.md`](SPEC.md), [`DECISIONS.md`](DECISIONS.md) and `docs/` first: most "why is it like
+  this" questions are answered there.
+- Bugs and feature requests go to [GitHub Issues](https://github.com/rurudev/jellycrew/issues).
+  Please include your Jellyfin version and what the interface reported.
 
 ## Contributing
 
@@ -193,16 +239,10 @@ Issues and pull requests are welcome. Before opening a pull request:
 - Keep the two audiences apart: the console is dense and keyboard-driven, the guest pages are one
   column and say as little as possible.
 
-## Security
-
-The API key has full administrator rights over your Jellyfin server, so treat the console hostname
-as privileged and keep it off the public internet. If you find a vulnerability, please report it
-privately through GitHub's security advisories rather than opening a public issue.
-
 ## License
 
-[GNU Affero General Public License v3.0 or later](LICENSE). Run it, change it and pass it on; if
-you offer a changed version to other people over a network, offer them its source too. Running the
+[GNU Affero General Public License v3.0 or later](LICENSE). Run it, change it and pass it on; if you
+offer a changed version to other people over a network, offer them its source too. Running the
 published image unmodified asks nothing of you.
 
 jellycrew is an independent project and is not affiliated with or endorsed by the Jellyfin project.
