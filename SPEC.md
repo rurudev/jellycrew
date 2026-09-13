@@ -93,7 +93,7 @@ Login with Jellyfin credentials. Shows profile name, expiry, and disabled reason
 
 ## 7. Ops
 
-Multi-stage Dockerfile (node:22-alpine, non-root, standalone build), `/data` volume as the only state, HEALTHCHECK on `/healthz`. `docker-compose.example.yml` with Traefik labels showing two routers: the admin UI on an internal hostname, and a public router that matches only `/invite`, `/reset`, `/me`, `/healthz` and their assets. Env: JELLYFIN_URL, JELLYFIN_API_KEY, PUBLIC_BASE_URL, DATA_DIR, SESSION_SECRET, SMTP_URL, SMTP_FROM, LOG_LEVEL. README covers first run, the exposure model, backup (copy `app.db` with `sqlite3 .backup` or snapshot the volume), and upgrades. DECISIONS.md is kept current.
+Multi-stage Dockerfile (node:22-alpine, non-root, standalone build), `/data` volume as the only state, HEALTHCHECK on `/healthz`. `docker-compose.example.yml` runs Jellyfin and jellycrew together with no reverse proxy or TLS: one published port, and the exposure model (console stays on the LAN, a proxy in front routes only the guest paths) is described in the README rather than encoded in a proxy's labels. Env: JELLYFIN_URL, JELLYFIN_API_KEY, PUBLIC_BASE_URL, DATA_DIR, SESSION_SECRET, SMTP_URL, SMTP_FROM, LOG_LEVEL. README covers first run, the exposure model, backup (better-sqlite3's `backup()` from inside the container, or snapshot the volume), and upgrades. DECISIONS.md is kept current.
 
 # Out of scope for v1
 

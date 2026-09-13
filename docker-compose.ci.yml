@@ -1,5 +1,5 @@
 # Used by `pnpm ops:check` and CI: builds the image and checks the container's healthcheck
-# against a real Jellyfin container. No Traefik.
+# against a real Jellyfin container.
 services:
   jellyfin:
     image: jellyfin/jellyfin:10.11.11

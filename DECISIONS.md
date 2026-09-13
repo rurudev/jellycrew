@@ -196,3 +196,7 @@ One line per decision, newest at the bottom. See SPEC.md for the requirements th
 - The audit export builds a chunk of two hundred rows per pull instead of the whole file inside the stream's start callback, where it blocked the event loop and held the result in memory. A row per chunk would have traded that for a socket write per row.
 - Bulk results carry a status (`applied`, `skipped`, `failed`) instead of a message prefix, so "20 ok" can no longer mean "20 users already had that label and nothing happened".
 - Spent reset and verification tokens are pruned by the lifecycle pass after a week. The audit log is deliberately not pruned: it is the record of what happened, and a homelab's is small.
+
+## Packaging (2026-09-13)
+
+- `docker-compose.example.yml` is two plain services and no reverse proxy, superseding the Traefik labels of Stage 7: a reverse proxy is the operator's choice and not this project's, and a fifty-line label block carrying a hand-maintained path allowlist was the most intimidating file in a repository whose install is otherwise one `docker run`. The example publishes Jellyfin on 8096 and jellycrew on 3000, with a note to narrow the bind address; the exposure model now lives in one README paragraph (console on the LAN, a proxy in front routes only the guest paths) that does not name a product.

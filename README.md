@@ -92,8 +92,9 @@ docker run -d --name jellycrew -p 3000:3000 -v jellycrew-data:/data \
 jellycrew has none of its own. The database migrates itself; a bad environment stops the container
 and the log names the variable.
 
-For a real deployment — a hostname, TLS, mail, and the console kept off the public internet — start
-from [`docker-compose.example.yml`](docker-compose.example.yml) and read [Exposure](#exposure).
+To run it next to Jellyfin in Docker instead, start from
+[`docker-compose.example.yml`](docker-compose.example.yml). Either way you deploy it, read
+[Exposure](#exposure) before it is reachable from anywhere but your LAN.
 
 ### Configuration
 
@@ -112,19 +113,21 @@ Everything else is a setting inside the app, so changing it needs no restart.
 
 ## Exposure
 
-One container serves two audiences, and the example compose file routes them separately.
+One container serves two audiences:
 
 - **The console** (`/`, `/users`, `/profiles`, `/sessions`, `/invites`, `/audit`, `/settings`,
-  `/login`) belongs on an internal hostname that only resolves on your LAN or VPN. Do not publish
-  it.
+  `/login`) requires a Jellyfin administrator session, and belongs on an address that only resolves
+  on your LAN or VPN. Do not publish it.
 - **The guest paths** (`/invite/*`, `/reset*`, `/me*`, `/api/public/*`, `/healthz` and the static
-  assets) are the only ones routed on the public hostname. Every other path there is simply not
-  served.
+  assets) are all a guest needs, and the only ones worth publishing.
 
-Public endpoints are rate-limited per IP and per token inside the app, and the example adds a
-Traefik limit in front as a second layer. Session cookies are `HttpOnly` and `SameSite=Lax`, and
-`Secure` whenever `PUBLIC_BASE_URL` is `https`. Console sessions last twelve hours, guest sessions
-thirty days.
+Guest endpoints are rate-limited per IP and per token inside the app. Session cookies are `HttpOnly`
+and `SameSite=Lax`, and `Secure` whenever `PUBLIC_BASE_URL` is `https`. Console sessions last twelve
+hours, guest sessions thirty days.
+
+If guests have to reach it from the internet, put a reverse proxy or tunnel in front of it and route
+only the guest paths there. The example compose file publishes port 3000 as-is, so give it a
+LAN-only bind address (`"192.168.1.10:3000:3000"`) when nothing else is standing in front.
 
 ## Backup and restore
 
